@@ -69,13 +69,8 @@ st.write(fig)
 
 # Find the donation amount which gives the desired net income.
 
-from policyengine_us import IndividualSim
 import pandas as pd
-import plotly.express as px
 
-sim = IndividualSim(year=2022)
-sim.add_person(name="head", age=25, employment_income = 100_000)
-members = ["head"]
 # if adults == 2:
 #     sim.add_person(name="spouse")
 #     members += ["spouse"]
@@ -83,13 +78,13 @@ members = ["head"]
 #     child = "child{}".format(i)
 #     sim.add_person(name=child, age=6)
 #     members += [child]
-sim.add_tax_unit(name="tax_unit", members=members, premium_tax_credit=0)
-sim.add_household(name="household", members=members)
-sim.vary("charitable_cash_donations", max=100_000, step=10)
+# sim.add_tax_unit(name="tax_unit", members=members, premium_tax_credit=0)
+# sim.add_household(name="household", members=members)
+# sim.vary("charitable_cash_donations", max=100_000, step=10)
 df = pd.DataFrame(
     dict(
-        charitable_cash_donations=sim.calc("charitable_cash_donations")[0],
-        net_income=sim.calc("spm_unit_net_income").round()[0],
+        charitable_cash_donations=donations,
+        net_income=net_income_by_donation,
         # adults=adults,
         # children=str(children)
     )
@@ -106,7 +101,7 @@ def linear_approx(x1, y1, x2, y2, goal_y=0.9):
     y2: upper_buond_income
     goal_y: the desired income percentage, typically 90% (because donate 10%)
     '''
-    return (x1 + (x2 - x1) * (goal_y - y1)/(y2 - goal_y)).round()
+    return int(x1 + (x2 - x1) * (goal_y - y1)/(y2 - goal_y))
 
 def get_desired_donation_amount(df, linear_approximation=True, medium=False, desired_income_perccentage=0.9, lower_bound=0.895, upper_bound=0.905):
   #maybe can split into another function
@@ -126,4 +121,4 @@ donation_amount = get_desired_donation_amount(df)
 
 
 
-st.write(f"You should donate {donation_amount} to charity.")
+st.write(f"You should donate ${donation_amount} to charity.")
