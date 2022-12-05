@@ -1,3 +1,4 @@
+
 from policyengine_us import Simulation
 import streamlit as st
 
@@ -68,8 +69,61 @@ st.write(fig)
 
 # Find the donation amount which gives the desired net income.
 
-for i, net_income in enumerate(net_income_by_donation):
-    if net_income - donations[i] - net_income_by_donation[0] <= -lower_by_amount:
-        break
+from policyengine_us import IndividualSim
+import pandas as pd
+import plotly.express as px
 
-st.write(f"You should donate {donations[i]:,.0f} to charity to lower your net income by ${lower_by_amount:,.0f}.")
+sim = IndividualSim(year=2022)
+sim.add_person(name="head", age=25, employment_income = 100_000)
+members = ["head"]
+# if adults == 2:
+#     sim.add_person(name="spouse")
+#     members += ["spouse"]
+# for i in range(children):
+#     child = "child{}".format(i)
+#     sim.add_person(name=child, age=6)
+#     members += [child]
+sim.add_tax_unit(name="tax_unit", members=members, premium_tax_credit=0)
+sim.add_household(name="household", members=members)
+sim.vary("charitable_cash_donations", max=100_000, step=10)
+df = pd.DataFrame(
+    dict(
+        charitable_cash_donations=sim.calc("charitable_cash_donations")[0],
+        net_income=sim.calc("spm_unit_net_income").round()[0],
+        # adults=adults,
+        # children=str(children)
+    )
+)
+
+df['net_income_after_donations'] = df.net_income - df.charitable_cash_donations
+df["percent_change_to_net_income"] = df.net_income_after_donations / df.net_income_after_donations[0]
+
+def linear_approx(x1, y1, x2, y2, goal_y=0.9):
+    '''
+    x1: lower_bound_donation_amount
+    y1: lower_bound_percentage
+    x2: upper_bound_donation_amount
+    y2: upper_buond_income
+    goal_y: the desired income percentage, typically 90% (because donate 10%)
+    '''
+    return (x1 + (x2 - x1) * (goal_y - y1)/(y2 - goal_y)).round()
+
+def get_desired_donation_amount(df, linear_approximation=True, medium=False, desired_income_perccentage=0.9, lower_bound=0.895, upper_bound=0.905):
+  #maybe can split into another function
+  upper_bound_donation = df[df.percent_change_to_net_income >= 0.9].tail(1).charitable_cash_donations.iloc[0]
+  lower_bound_donation = df[df.percent_change_to_net_income < 0.9].head(1).charitable_cash_donations.iloc[0]
+  
+  if medium:
+     return (upper_bound_donation - lower_bound_donation) // 2 + lower_bound_donation
+  
+  if linear_approximation:
+    upper_bound_percentage = df[df.percent_change_to_net_income >= 0.9].tail(1).percent_change_to_net_income.iloc[0]
+    lower_bound_percentage = df[df.percent_change_to_net_income < 0.9].head(1).percent_change_to_net_income.iloc[0]
+    
+    return linear_approx(lower_bound_donation, lower_bound_percentage, upper_bound_donation, upper_bound_percentage, desired_income_perccentage)
+
+donation_amount = get_desired_donation_amount(df)
+
+
+
+st.write(f"You should donate {donation_amount} to charity.")
