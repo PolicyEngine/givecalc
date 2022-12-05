@@ -1,5 +1,6 @@
 from policyengine_us import Simulation
 import streamlit as st
+import numpy as np
 
 # This is an app which tells people how much money they'd need to donate to lower their net income (after taxes and benefits) by x%.
 
@@ -14,13 +15,21 @@ st.write(
 
 # Now, we ask the user for their income and the amount they want to lower it by.
 
-income = st.number_input(
+income_params = dict(min_value=0, max_value=1000000, step=1000)
+user_income = st.number_input(
     "What is your annual income?",
-    min_value=0,
-    max_value=1000000,
-    value=50000,
-    step=1000,
+    **income_params,
+    value=50000
 )
+
+marital_status = st.selectbox("Marital status", ["single", "married"])
+
+if marital_status == 'married':
+    spouse_income = st.number_input(
+        "What is your spouse's annual income?",
+        **income_params,
+        value=0
+    )
 
 # Give people the option of inputting a percent or absolute amount to lower their net income by.
 
@@ -36,7 +45,7 @@ if lower_by == "a percentage":
         value=10,
         step=1,
     )
-    lower_by_amount = income * lower_by_amount / 100
+    lower_by_amount = user_income * lower_by_amount / 100
 else:
     lower_by_amount = st.number_input(
         "Lower my net income by what amount?",
@@ -46,17 +55,23 @@ else:
         step=1000,
     )
 
+
+people = dict(
+    person=dict(employment_income={2022: user_income})
+)
+people_names = ["person"]
+
+if marital_status == 'married':
+    people['spouse'] = dict(employment_income={2022: spouse_income})
+    people_names.append("spouse")
+
 simulation = Simulation(
     situation=dict(
-        people=dict(
-            person=dict(
-                employment_income={2022: income},
-            ),
-        ),
+        people=people,
         tax_units=dict(
             tax_unit=dict(
                 premium_tax_credit={2022: 0},
-                members=["person"],
+                members=people_names,
             )
         ),
         axes=[
@@ -73,7 +88,10 @@ simulation = Simulation(
 )
 
 net_income_by_donation = simulation.calculate("household_net_income")
-donations = simulation.calculate("charitable_cash_donations")
+donations = np.reshape(
+    simulation.calculate("charitable_cash_donations"),
+    (len(people_names), 101)
+)[0]
 
 import plotly.express as px
 
