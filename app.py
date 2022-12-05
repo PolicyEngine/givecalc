@@ -16,12 +16,20 @@ st.write(
 # Now, we ask the user for their income and the amount they want to lower it by.
 
 income_params = dict(min_value=0, max_value=1000000, step=1000)
-user_income = st.number_input("What is your annual income?", **income_params, value=50000)
+user_income = st.number_input(
+    "What is your annual income?",
+    **income_params,
+    value=50000
+)
 
 marital_status = st.selectbox("Marital status", ["single", "married"])
 
 if marital_status == 'married':
-    spouse_income = st.number_input("What is your spouse's annual income?", **income_params, value=0)
+    spouse_income = st.number_input(
+        "What is your spouse's annual income?",
+        **income_params,
+        value=0
+    )
 
 # Give people the option of inputting a percent or absolute amount to lower their net income by.
 
@@ -80,7 +88,10 @@ simulation = Simulation(
 )
 
 net_income_by_donation = simulation.calculate("household_net_income")
-donations = np.reshape(simulation.calculate("charitable_cash_donations"), (len(people_names), 101))[0]
+donations = np.reshape(
+    simulation.calculate("charitable_cash_donations"),
+    (len(people_names), 101)
+)[0]
 
 import plotly.express as px
 
