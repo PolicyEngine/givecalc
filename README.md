@@ -1,0 +1,2 @@
+# givecalc
+Giving pledge calculator
