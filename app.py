@@ -17,18 +17,14 @@ st.write(
 
 income_params = dict(min_value=0, max_value=1000000, step=1000)
 user_income = st.number_input(
-    "What is your annual income?",
-    **income_params,
-    value=50000
+    "What is your annual income?", **income_params, value=50000
 )
 
 marital_status = st.selectbox("Marital status", ["single", "married"])
 
-if marital_status == 'married':
+if marital_status == "married":
     spouse_income = st.number_input(
-        "What is your spouse's annual income?",
-        **income_params,
-        value=0
+        "What is your spouse's annual income?", **income_params, value=0
     )
 
 # Give people the option of inputting a percent or absolute amount to lower their net income by.
@@ -56,14 +52,16 @@ else:
     )
 
 
-people = dict(
-    person=dict(employment_income={2022: user_income})
-)
+people = dict(person=dict(employment_income={2022: user_income}))
 people_names = ["person"]
+total_income = user_income
 
-if marital_status == 'married':
-    people['spouse'] = dict(employment_income={2022: spouse_income})
+if marital_status == "married":
+    people["spouse"] = dict(employment_income={2022: spouse_income})
     people_names.append("spouse")
+    total_income += spouse_income
+
+INCREMENTS = 1_001
 
 simulation = Simulation(
     situation=dict(
@@ -79,8 +77,8 @@ simulation = Simulation(
                 dict(
                     name="charitable_cash_donations",
                     min=0,
-                    max=lower_by_amount * 2,
-                    count=101,
+                    max=total_income,
+                    count=INCREMENTS,
                 )
             ]
         ],
@@ -90,41 +88,17 @@ simulation = Simulation(
 net_income_by_donation = simulation.calculate("household_net_income")
 donations = np.reshape(
     simulation.calculate("charitable_cash_donations"),
-    (len(people_names), 101)
+    (len(people_names), INCREMENTS),
 )[0]
-
-import plotly.express as px
-
-fig = px.line(x=donations, y=net_income_by_donation - donations,).update_layout(
-    title="Net income after taxes, benefits and donations",
-    xaxis_title="Donation amount",
-    yaxis_title="Net income",
-    yaxis_tickformat="$,.0f",
-    xaxis_tickformat="$,.0f",
-)
-
-st.write(fig)
 
 # Find the donation amount which gives the desired net income.
 
 import pandas as pd
 
-# if adults == 2:
-#     sim.add_person(name="spouse")
-#     members += ["spouse"]
-# for i in range(children):
-#     child = "child{}".format(i)
-#     sim.add_person(name=child, age=6)
-#     members += [child]
-# sim.add_tax_unit(name="tax_unit", members=members, premium_tax_credit=0)
-# sim.add_household(name="household", members=members)
-# sim.vary("charitable_cash_donations", max=100_000, step=10)
 df = pd.DataFrame(
     dict(
         charitable_cash_donations=donations,
         net_income=net_income_by_donation,
-        # adults=adults,
-        # children=str(children)
     )
 )
 
@@ -150,8 +124,6 @@ def get_desired_donation_amount(
     linear_approximation=True,
     medium=False,
     desired_income_perccentage=0.9,
-    lower_bound=0.895,
-    upper_bound=0.905,
 ):
     # maybe can split into another function
     upper_bound_donation = (
@@ -166,7 +138,9 @@ def get_desired_donation_amount(
     )
 
     if medium:
-        return (upper_bound_donation - lower_bound_donation) // 2 + lower_bound_donation
+        return (
+            upper_bound_donation - lower_bound_donation
+        ) // 2 + lower_bound_donation
 
     if linear_approximation:
         upper_bound_percentage = (
@@ -190,6 +164,32 @@ def get_desired_donation_amount(
 
 
 donation_amount = get_desired_donation_amount(df)
+
+import plotly.express as px
+
+zero_row = df.loc[df["percent_change_to_net_income"] >= 0].iloc[-1:]
+max_x = float(zero_row["charitable_cash_donations"])
+
+fig = px.line(
+    df, "charitable_cash_donations", "percent_change_to_net_income"
+).update_layout(
+    title="Net income after taxes, benefits and donations",
+    xaxis_title="Donation amount",
+    yaxis_title="Net income",
+    yaxis_tickformat=".2f",
+    xaxis_tickformat="$,.0f",
+    yaxis_range=[0, 1],
+    xaxis_range=[0, max_x],
+)
+import plotly.graph_objects as go
+
+fig.add_trace(go.Scatter(x=[donation_amount], y=[0.9], mode="markers"))
+
+# fig.add_vline(
+#     x=donation_amount, line_width=3, line_dash="dash", line_color="red"
+# )
+
+st.write(fig)
 
 
 st.write(f"You should donate ${donation_amount} to charity.")
