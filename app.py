@@ -93,7 +93,9 @@ donation_type = st.radio(
 )
 
 # Add foster care checkbox for Arizona and Mississippi
-is_foster_care_org = st.checkbox("Is this donation to a qualifying foster care organization?")
+is_foster_care_org = st.checkbox(
+    "Is this donation to a qualifying foster care organization?"
+)
 
 # Reduction type selector
 reduction_type = st.radio(
@@ -249,7 +251,8 @@ if st.button("Calculate"):
 
 # Add collapsible section for tax program explanations
 with st.expander("Learn about state and federal tax programs for charitable giving"):
-    st.markdown("""
+    st.markdown(
+        """
         ### Federal Charitable Deduction
         The federal charitable deduction allows you to deduct charitable contributions from your taxable income if you itemize deductions on your tax return. The deduction is limited to 60% of your adjusted gross income for cash donations.
 
@@ -267,16 +270,19 @@ with st.expander("Learn about state and federal tax programs for charitable givi
         
         ### New Hampshire Education Tax Credit
         New Hampshire provides a tax credit of up to 85% of contributions made to approved scholarship organizations. This credit can be used against business profits tax, business enterprise tax, or interest and dividends tax.
-    """)
+    """
+    )
 
 # Add a visual separator
 st.divider()
 
 # Add before the final divider
-st.markdown("""
+st.markdown(
+    """
 ### Find Eligible Organizations
 You can search for IRS-qualified tax-exempt organizations using the [IRS Tax Exempt Organization Search Tool](https://apps.irs.gov/app/eos/).
-""")
+"""
+)
 
 # Add a visual separator
 st.divider()

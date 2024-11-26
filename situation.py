@@ -5,7 +5,11 @@ DEFAULT_AGE = 30
 
 
 def create_situation(
-    employment_income, is_married=False, state_code="TX", donation_type="cash", is_foster_care_org=False
+    employment_income,
+    is_married=False,
+    state_code="TX",
+    donation_type="cash",
+    is_foster_care_org=False,
 ):
     """
     Creates a PolicyEngine situation with charitable donations axis.
@@ -48,10 +52,16 @@ def create_situation(
 
     # Determine which charitable contribution field to use based on state and organization type
     if is_foster_care_org:
-        az_donation_field = "az_charitable_contributions_to_qualifying_foster_care_organizations"
-        ms_donation_field = "ms_charitable_contributions_to_qualifying_foster_care_organizations"
+        az_donation_field = (
+            "az_charitable_contributions_to_qualifying_foster_care_organizations"
+        )
+        ms_donation_field = (
+            "ms_charitable_contributions_to_qualifying_foster_care_organizations"
+        )
     else:
-        az_donation_field = "az_charitable_contributions_to_qualifying_charitable_organizations"
+        az_donation_field = (
+            "az_charitable_contributions_to_qualifying_charitable_organizations"
+        )
         ms_donation_field = None
 
     situation.update(
@@ -62,7 +72,9 @@ def create_situation(
                 "your tax unit": {
                     "members": members,
                     az_donation_field: {YEAR: 0} if az_donation_field else {},
-                    "ms_charitable_contributions_to_qualifying_foster_care_organizations": {YEAR: 0} if ms_donation_field else {},
+                    "ms_charitable_contributions_to_qualifying_foster_care_organizations": (
+                        {YEAR: 0} if ms_donation_field else {}
+                    ),
                 }
             },
             "spm_units": {"your spm_unit": {"members": members}},
