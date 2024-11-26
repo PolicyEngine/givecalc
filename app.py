@@ -92,6 +92,9 @@ donation_type = st.radio(
     "Type of charitable donation", ["Cash", "Non-cash"], horizontal=True
 )
 
+# Add foster care checkbox for Arizona and Mississippi
+is_foster_care_org = st.checkbox("Is this donation to a qualifying foster care organization?")
+
 # Reduction type selector
 reduction_type = st.radio(
     "How would you like to specify the income reduction?",
@@ -109,7 +112,7 @@ if reduction_type == "Absolute amount ($)":
     )
 else:
     reduction_percentage = st.number_input(
-        "What percentage of your income would you like to reduce? (%)",
+        "By what percentage would you like to reduce your income? (%)",
         min_value=0,
         max_value=100,
         value=10,
@@ -240,19 +243,22 @@ if st.button("Calculate"):
         }
     ).set_index("Metric")
 
-    # Display the table
-    st.table(results_df)
+    # Display the table in a collapsible section
+    with st.expander("View detailed results"):
+        st.table(results_df)
 
 # Add collapsible section for tax program explanations
 with st.expander("Learn about state and federal tax programs for charitable giving"):
-    st.markdown(
-        """
+    st.markdown("""
         ### Federal Charitable Deduction
         The federal charitable deduction allows you to deduct charitable contributions from your taxable income if you itemize deductions on your tax return. The deduction is limited to 60% of your adjusted gross income for cash donations.
 
         ### Arizona Charitable Contributions Credit
-        Arizona offers a dollar-for-dollar tax credit for contributions to Qualifying Charitable Organizations (QCOs). Single filers can claim up to \$400, and married filing jointly can claim up to $800. These donations help organizations that serve low-income residents, children with chronic illness, or foster care.
-                
+        Arizona offers a dollar-for-dollar tax credit for contributions to Qualifying Charitable Organizations. Single filers can claim up to \$400 (\$500 if donating to foster care organizations), and married filing jointly can claim up to \$800 ($1,000). These donations help organizations that serve low-income residents, children with chronic illness, or foster care.
+
+        ### Mississippi Foster Care Charitable Tax Credit
+        Mississippi provides a tax credit for donations to eligible charitable organizations that provide foster care, adoption, and services to children in foster care. The credit is dollar-for-dollar up to \$500 for single filers and \$1,000 for joint filers.                
+        
         ### Vermont Charitable Contributions Credit
         Vermont offers a tax credit of 5% of the first $20,000 in eligible charitable contributions when claiming the federal charitable contribution deduction.
         
@@ -261,8 +267,16 @@ with st.expander("Learn about state and federal tax programs for charitable givi
         
         ### New Hampshire Education Tax Credit
         New Hampshire provides a tax credit of up to 85% of contributions made to approved scholarship organizations. This credit can be used against business profits tax, business enterprise tax, or interest and dividends tax.
-    """
-    )
+    """)
+
+# Add a visual separator
+st.divider()
+
+# Add before the final divider
+st.markdown("""
+### Find Eligible Organizations
+You can search for IRS-qualified tax-exempt organizations using the [IRS Tax Exempt Organization Search Tool](https://apps.irs.gov/app/eos/).
+""")
 
 # Add a visual separator
 st.divider()
