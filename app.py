@@ -2,7 +2,9 @@
 
 import streamlit as st
 import numpy as np
+import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from policyengine_us import Simulation
 from situation import create_situation
 
@@ -41,57 +43,99 @@ reduction_amount = st.number_input(
 )
 
 if st.button("Calculate"):
-    # Calculate donations across income range
-    incomes = np.linspace(0, 1000000, 51)  # 51 points for smooth graph
-    required_donations = []
-    baseline_net_incomes = []
-    final_net_incomes = []
+    # Calculate for single income point
+    situation = create_situation(income, is_married=is_married, state_code=state)
+    simulation = Simulation(situation=situation)
     
-    for test_income in incomes:
-        situation = create_situation(test_income, is_married=is_married, state_code=state)
-        simulation = Simulation(situation=situation)
-        
-        # Get net income for each donation amount
-        net_incomes = simulation.calculate("household_net_income")
-        baseline_net_income = net_incomes[0]  # net income with zero donations
-        baseline_net_incomes.append(baseline_net_income)
-        
-        # Calculate target net income by subtracting the fixed reduction amount
-        target_net_income = baseline_net_income - reduction_amount
-        
-        # Get donations array
-        donations = simulation.calculate("charitable_cash_donations")
-        
-        # Calculate net income after donations
-        net_income_after_donations = net_incomes - donations
-        
-        # Find donation amount that gets us closest to target
-        closest_index = np.abs(net_income_after_donations - target_net_income).argmin()
-        required_donation = donations[closest_index]
-        required_donations.append(required_donation)
-        final_net_incomes.append(net_income_after_donations[closest_index])
-        
-        # Print details for the selected income level
-        if abs(test_income - income) < 0.01:  # Check if this is the user's input income
-            st.write(f"For income ${test_income:,.2f}:")
-            st.write(f"Household net income without donations: ${baseline_net_income:,.2f}")
-            st.write(f"Household net income with donations: ${net_income_after_donations[closest_index]:,.2f}")
-            st.write(f"Required donation: ${required_donation:,.2f}")
+    net_income_by_donation = simulation.calculate("household_net_income")
+    donations = simulation.calculate("charitable_cash_donations")
     
-    # Create graph
+    # Create DataFrame for analysis and round values
+    df = pd.DataFrame({
+        "charitable_cash_donations": np.round(donations),
+        "net_income": np.round(net_income_by_donation),
+    })
+    
+    df["net_income_after_donations"] = np.round(df.net_income - df.charitable_cash_donations)
+    baseline_net_income = df.net_income_after_donations.iloc[0]
+    
+    # Calculate change in net income
+    df["net_income_change"] = baseline_net_income - df["net_income_after_donations"]
+    
+    target_net_income = np.round(baseline_net_income - reduction_amount)
+    
+    # Find closest match to target net income
+    df["distance_to_target"] = np.abs(df.net_income_after_donations - target_net_income)
+    required_donation = int(np.round(df.loc[df.distance_to_target.idxmin(), "charitable_cash_donations"]))
+    
+    # First display the required donation prominently
+    st.write(f"Required donation: ${required_donation:,}")
+    actual_final_income = int(np.round(df.loc[df.distance_to_target.idxmin(), "net_income_after_donations"]))
+    actual_income_change = int(np.round(df.loc[df.distance_to_target.idxmin(), "net_income_change"]))
+
+    # Create graph showing net income change vs donations
     fig = px.line(
-        x=incomes,
-        y=required_donations,
+        df,
+        x="charitable_cash_donations",
+        y="net_income_change",
         labels={
-            "x": "Annual Income ($)",
-            "y": "Required Donation ($)"
+            "charitable_cash_donations": "Donation Amount ($)",
+            "net_income_change": "Net Income Reduction ($)"
         },
-        title=f"Required Donations to Reduce Income by ${reduction_amount:,.0f} in {state}"
+        title=f"Net Income Reduction vs Donations for ${income:,} income in {state}"
     )
     
+    # Add point for the required donation
+    fig.add_trace(
+        go.Scatter(
+            x=[required_donation],
+            y=[actual_income_change],
+            mode="markers",
+            name="Required Donation",
+            marker=dict(
+                size=10,
+                color="red",
+                symbol="circle"
+            ),
+        )
+    )
+    
+    # Set axis ranges to start at 0
     fig.update_layout(
         xaxis_tickformat="$,",
         yaxis_tickformat="$,",
+        xaxis_range=[0, max(df.charitable_cash_donations)],
+        yaxis_range=[0, max(df.net_income_change)],
+        xaxis=dict(
+            zeroline=True,
+            zerolinewidth=2,
+            zerolinecolor='black'
+        ),
+        yaxis=dict(
+            zeroline=True,
+            zerolinewidth=2,
+            zerolinecolor='black'
+        )
     )
     
     st.plotly_chart(fig)
+
+    
+    # Create table with all other information
+    results_df = pd.DataFrame({
+        'Metric': [
+            'Household net income without donations',
+            'Target net income',
+            'Actual net income after donation',
+            'Net income reduction'
+        ],
+        'Amount': [
+            f"${int(baseline_net_income):,}",
+            f"${int(target_net_income):,}",
+            f"${int(actual_final_income):,}",
+            f"${int(actual_income_change):,}"
+        ]
+    }).set_index('Metric')
+    
+    # Display the table
+    st.table(results_df)
