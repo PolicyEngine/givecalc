@@ -63,6 +63,19 @@ STATES = [
 
 st.title("Charity Donation Calculator")
 
+st.markdown(
+    """
+This calculator helps you determine how much you need to donate to charity to achieve a desired reduction in your net income. 
+Simply enter your income, state, and desired reduction (either as a dollar amount or percentage), and the calculator will:
+- Calculate the required charitable donation
+- Show how your net income changes with different donation amounts
+- Display the tax implications of your charitable giving
+"""
+)
+
+# Add a visual separator
+st.divider()
+
 # State selector
 state = st.selectbox("Select your state", options=STATES)
 
@@ -146,8 +159,11 @@ if st.button("Calculate"):
     )
 
     # Display the reduction type and target
+    reduction_percentage_calc = (reduction_amount / income) * 100
     if reduction_type == "Absolute amount ($)":
-        st.write(f"Target reduction: ${int(reduction_amount):,}")
+        st.write(
+            f"Target reduction: ${int(reduction_amount):,} ({reduction_percentage_calc:.1f}%)"
+        )
     else:
         st.write(
             f"Target reduction: {reduction_percentage}% (${int(reduction_amount):,})"
@@ -215,20 +231,38 @@ if st.button("Calculate"):
         {
             "Metric": [
                 "Household net income without donations",
-                "Target net income",
                 "Actual net income after donation",
-                "Net income reduction",
-                "Net income reduction percentage",
             ],
             "Amount": [
                 f"${int(baseline_net_income):,}",
-                f"${int(target_net_income):,}",
                 f"${int(actual_final_income):,}",
-                f"${int(actual_income_change):,}",
-                f"{actual_income_change_pct:.1f}%",
             ],
         }
     ).set_index("Metric")
 
     # Display the table
     st.table(results_df)
+
+# Add collapsible section for tax program explanations
+with st.expander("Learn about state and federal tax programs for charitable giving"):
+    st.markdown(
+        """
+        ### Federal Charitable Deduction
+        The federal charitable deduction allows you to deduct charitable contributions from your taxable income if you itemize deductions on your tax return. The deduction is limited to 60% of your adjusted gross income for cash donations.
+
+        ### Arizona Charitable Contributions Credit
+        Arizona offers a dollar-for-dollar tax credit for contributions to Qualifying Charitable Organizations (QCOs). Single filers can claim up to \$400, and married filing jointly can claim up to $800. These donations help organizations that serve low-income residents, children with chronic illness, or foster care.
+                
+        ### Vermont Charitable Contributions Credit
+        Vermont offers a tax credit of 5% of the first $20,000 in eligible charitable contributions when claiming the federal charitable contribution deduction.
+        
+        ### Colorado Charitable Contribution Subtraction
+        Colorado allows taxpayers to subtract charitable contributions over $500 from their state taxable income when they claim the federal standard deduction, effectively extending the benefit of charitable giving to non-itemizers.
+        
+        ### New Hampshire Education Tax Credit
+        New Hampshire provides a tax credit of up to 85% of contributions made to approved scholarship organizations. This credit can be used against business profits tax, business enterprise tax, or interest and dividends tax.
+    """
+    )
+
+# Add a visual separator
+st.divider()

@@ -50,7 +50,14 @@ def create_situation(
         {
             "families": {"your family": {"members": members}},
             "marital_units": {"your marital unit": {"members": members}},
-            "tax_units": {"your tax unit": {"members": members}},
+            "tax_units": {
+                "your tax unit": {
+                    "members": members,
+                    "az_charitable_contributions_to_qualifying_charitable_organizations": {
+                        YEAR: 0  # This will be set to the donation amount in simulation
+                    },
+                }
+            },
             "spm_units": {"your spm_unit": {"members": members}},
             "households": {
                 "your household": {"members": members, "state_name": {YEAR: state_code}}
