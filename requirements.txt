@@ -2,3 +2,4 @@ streamlit
 policyengine-us
 plotly
 numpy
+pandas
