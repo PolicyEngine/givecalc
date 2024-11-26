@@ -122,6 +122,21 @@ if st.button("Calculate"):
         title=f"Net Income Reduction vs Donations for ${income:,} income in {state}"
     )
     
+    # Add marker point for target donation
+    fig.add_trace(
+        go.Scatter(
+            x=[required_donation],
+            y=[actual_y],
+            mode='markers',
+            name='Target Donation',
+            marker=dict(
+                color='rgb(99, 110, 250)',
+                size=12,
+                symbol='circle'
+            )
+        )
+    )
+    
     fig.update_layout(
         xaxis_tickformat="$,",
         yaxis_tickformat=y_tickformat,
