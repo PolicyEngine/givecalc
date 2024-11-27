@@ -36,7 +36,9 @@ def create_situation(
                 "employment_income": {YEAR: employment_income},
                 "mortgage_interest": {YEAR: mortgage_interest},
                 "real_estate_taxes": {YEAR: real_estate_taxes},
-                "medical_out_of_pocket_expenses": {YEAR: medical_out_of_pocket_expenses},
+                "medical_out_of_pocket_expenses": {
+                    YEAR: medical_out_of_pocket_expenses
+                },
                 "casualty_loss": {YEAR: casualty_loss},
             }
         }
@@ -58,7 +60,7 @@ def create_situation(
         child_id = f"child_{i}"
         situation["people"][child_id] = {
             "age": {YEAR: 10},  # Default age for children
-            "employment_income": {YEAR: 0}
+            "employment_income": {YEAR: 0},
         }
         members.append(child_id)
 
@@ -98,7 +100,10 @@ def create_situation(
             },
             "spm_units": {"your spm_unit": {"members": members.copy()}},
             "households": {
-                "your household": {"members": members.copy(), "state_name": {YEAR: state_code}}
+                "your household": {
+                    "members": members.copy(),
+                    "state_name": {YEAR: state_code},
+                }
             },
             "axes": [
                 [

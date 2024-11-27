@@ -95,7 +95,7 @@ num_children = st.number_input(
     max_value=10,  # Setting a reasonable maximum
     value=0,
     step=1,
-    help="Enter the number of dependent children"
+    help="Enter the number of dependent children",
 )
 
 # Add before the reduction type selector
@@ -111,41 +111,41 @@ is_foster_care_org = st.checkbox(
 # Create collapsible section for itemized deductions
 with st.expander("Sources for other itemized deductions", expanded=False):
     st.markdown("Enter your itemized deductions below:")
-    
+
     mortgage_interest = st.number_input(
-        "Annual mortgage interest ($)", 
-        min_value=0, 
-        max_value=100000, 
-        value=0, 
+        "Annual mortgage interest ($)",
+        min_value=0,
+        max_value=100000,
+        value=0,
         step=1000,
-        help="Enter the amount of mortgage interest paid annually"
+        help="Enter the amount of mortgage interest paid annually",
     )
 
     real_estate_taxes = st.number_input(
-        "Annual real estate taxes ($)", 
-        min_value=0, 
-        max_value=50000, 
-        value=0, 
+        "Annual real estate taxes ($)",
+        min_value=0,
+        max_value=50000,
+        value=0,
         step=500,
-        help="Enter the amount of property taxes paid annually"
+        help="Enter the amount of property taxes paid annually",
     )
 
     medical_expenses = st.number_input(
-        "Annual medical out-of-pocket expenses ($)", 
-        min_value=0, 
-        max_value=100000, 
-        value=0, 
+        "Annual medical out-of-pocket expenses ($)",
+        min_value=0,
+        max_value=100000,
+        value=0,
         step=500,
-        help="Enter the amount of medical expenses paid out of pocket annually"
+        help="Enter the amount of medical expenses paid out of pocket annually",
     )
 
     casualty_loss = st.number_input(
-        "Casualty and theft losses ($)", 
-        min_value=0, 
-        max_value=100000, 
-        value=0, 
+        "Casualty and theft losses ($)",
+        min_value=0,
+        max_value=100000,
+        value=0,
         step=500,
-        help="Enter the amount of casualty and theft losses from federally declared disasters"
+        help="Enter the amount of casualty and theft losses from federally declared disasters",
     )
 
 
@@ -179,7 +179,7 @@ if st.button("Calculate"):
     max_donation = income  # Maximum donation can't exceed income
     num_points = 100  # Number of points to simulate
     donations = np.linspace(0, max_donation, num_points)
-    
+
     situation = create_situation(
         income,
         is_married=is_married,
@@ -191,35 +191,41 @@ if st.button("Calculate"):
         medical_out_of_pocket_expenses=medical_expenses,
         casualty_loss=casualty_loss,
     )
-    
+
     # Add axis for donations
     donation_column = (
         "charitable_cash_donations"
         if donation_type == "Cash"
         else "charitable_non_cash_donations"
     )
-    
-    situation["axes"] = [[{
-        "count": num_points,
-        "name": donation_column,
-        "min": 0,
-        "max": max_donation,
-        "period": "2023"
-    }]]
-    
+
+    situation["axes"] = [
+        [
+            {
+                "count": num_points,
+                "name": donation_column,
+                "min": 0,
+                "max": max_donation,
+                "period": "2023",
+            }
+        ]
+    ]
+
     simulation = Simulation(situation=situation)
     net_income_by_donation = simulation.calculate("household_net_income").reshape(-1)
-    
+
     # Create DataFrame with calculations
-    df = pd.DataFrame({
-        donation_column: donations,
-        "net_income": net_income_by_donation,
-    })
+    df = pd.DataFrame(
+        {
+            donation_column: donations,
+            "net_income": net_income_by_donation,
+        }
+    )
 
     # Calculate net income changes
     df["net_income_after_donations"] = df.net_income - df[donation_column]
     baseline_net_income = df.net_income_after_donations.iloc[0]
-    
+
     # Calculate changes relative to baseline
     df["net_income_change"] = baseline_net_income - df["net_income_after_donations"]
     df["net_income_change_pct"] = (df["net_income_change"] / income) * 100
@@ -228,12 +234,16 @@ if st.button("Calculate"):
     target_net_income = baseline_net_income - reduction_amount
     df["distance_to_target"] = np.abs(df.net_income_after_donations - target_net_income)
     closest_match_idx = df.distance_to_target.idxmin()
-    
+
     # Get values for display
     required_donation = int(np.round(df.loc[closest_match_idx, donation_column]))
-    actual_final_income = int(np.round(df.loc[closest_match_idx, "net_income_after_donations"]))
+    actual_final_income = int(
+        np.round(df.loc[closest_match_idx, "net_income_after_donations"])
+    )
     actual_income_change = int(np.round(df.loc[closest_match_idx, "net_income_change"]))
-    actual_income_change_pct = float(np.round(df.loc[closest_match_idx, "net_income_change_pct"], 2))
+    actual_income_change_pct = float(
+        np.round(df.loc[closest_match_idx, "net_income_change_pct"], 2)
+    )
 
     # Display the reduction type and target
     reduction_percentage_calc = (reduction_amount / income) * 100
@@ -256,12 +266,22 @@ if st.button("Calculate"):
         y_tickformat = "$,"
         actual_y = actual_income_change
         y_range = [0, max(df[y_col])]
+        hover_template = (
+            "Donation Amount ($)=$%{x:,.0f}<br>"
+            + "Net Income Reduction ($)=$%{y:,.0f}<br>"
+            + "<extra></extra>"
+        )
     else:
         y_col = "net_income_change_pct"
         y_label = "Net Income Reduction (%)"
         y_tickformat = ".1f"
         actual_y = actual_income_change_pct
         y_range = [0, min(100, max(df[y_col]))]
+        hover_template = (
+            "Donation Amount ($)=$%{x:,.0f}<br>"
+            + "Net Income Reduction (%)=%{y:.1f}%<br>"
+            + "<extra></extra>"
+        )
 
     fig = px.line(
         df,
@@ -271,14 +291,8 @@ if st.button("Calculate"):
         title=f"Net Income Reduction vs Donations for ${income:,} income in {state}",
     )
 
-    # Update hover template to format both numbers consistently
-    fig.update_traces(
-        hovertemplate=(
-            "Donation Amount ($)=$%{x:,.0f}<br>" +  # Round to nearest dollar
-            "Net Income Reduction ($)=$%{y:,.0f}<br>" +  # Add $ and use same formatting
-            "<extra></extra>"
-        )
-    )
+    # Update hover template based on reduction type
+    fig.update_traces(hovertemplate=hover_template)
 
     # Add marker point for target donation with rounded value
     fig.add_trace(
@@ -302,16 +316,75 @@ if st.button("Calculate"):
     fig = format_fig(fig)
     st.plotly_chart(fig)
 
-    # Create table with all other information
+    # Calculate marginal cost of giving (how much $1 of donations reduces net income)
+    df["marginal_cost"] = -np.gradient(df.net_income_after_donations) / np.gradient(
+        df[donation_column]
+    )
+
+    # Get marginal cost at the recommended donation point
+    marginal_cost = df.loc[closest_match_idx, "marginal_cost"]
+
+    # Display the marginal cost
+    st.write(f"Marginal cost of giving: ${marginal_cost:.2f}")
+    st.write(
+        f"This means each additional dollar donated reduces your net income by ${marginal_cost:.2f}"
+    )
+
+    # Create second graph showing marginal cost vs donations
+    fig2 = px.line(
+        df,
+        x=donation_column,
+        y="marginal_cost",
+        labels={
+            donation_column: "Donation Amount ($)",
+            "marginal_cost": "Marginal Cost of Giving ($)",
+        },
+        title=f"Marginal Cost of Charitable Giving for ${income:,} income in {state}",
+    )
+
+    # Add marker point for target donation with rounded value
+    fig2.add_trace(
+        go.Scatter(
+            x=[int(np.round(required_donation))],  # Round to nearest dollar
+            y=[marginal_cost],
+            mode="markers",
+            name="Target Donation",
+            marker=dict(color="rgb(99, 110, 250)", size=12, symbol="circle"),
+        )
+    )
+
+    # Update hover template for the marginal cost graph
+    fig2.update_traces(
+        hovertemplate=(
+            "Donation Amount ($)=$%{x:,.0f}<br>"  # Round to nearest dollar
+            + "Marginal Cost of Giving ($)=$%{y:.2f}<br>"  # Show 2 decimal places with $
+            + "<extra></extra>"
+        )
+    )
+
+    fig2.update_layout(
+        xaxis_tickformat="$,",
+        yaxis_tickformat=".2f",
+        xaxis_range=[0, max(df[donation_column])],
+        yaxis_range=[0, 1],
+        xaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
+        yaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
+    )
+    fig2 = format_fig(fig2)
+    st.plotly_chart(fig2)
+
+    # Update the results table to include marginal cost
     results_df = pd.DataFrame(
         {
             "Metric": [
                 "Household net income without donations",
                 "Actual net income after donation",
+                "Marginal cost of giving at target donation",
             ],
             "Amount": [
                 f"${int(baseline_net_income):,}",
                 f"${int(actual_final_income):,}",
+                f"${marginal_cost:.2f}",
             ],
         }
     ).set_index("Metric")
