@@ -84,8 +84,19 @@ income = st.number_input(
     "Annual income ($)", min_value=0, max_value=1000000, value=50000, step=1000
 )
 
+
 # Marital status
 is_married = st.checkbox("Are you married?")
+
+# Add after marital status and before donation type
+num_children = st.number_input(
+    "Number of children",
+    min_value=0,
+    max_value=10,  # Setting a reasonable maximum
+    value=0,
+    step=1,
+    help="Enter the number of dependent children"
+)
 
 # Add before the reduction type selector
 donation_type = st.radio(
@@ -96,6 +107,47 @@ donation_type = st.radio(
 is_foster_care_org = st.checkbox(
     "Is this donation to a qualifying foster care organization?"
 )
+
+# Create collapsible section for itemized deductions
+with st.expander("Sources for other itemized deductions", expanded=False):
+    st.markdown("Enter your itemized deductions below:")
+    
+    mortgage_interest = st.number_input(
+        "Annual mortgage interest ($)", 
+        min_value=0, 
+        max_value=100000, 
+        value=0, 
+        step=1000,
+        help="Enter the amount of mortgage interest paid annually"
+    )
+
+    real_estate_taxes = st.number_input(
+        "Annual real estate taxes ($)", 
+        min_value=0, 
+        max_value=50000, 
+        value=0, 
+        step=500,
+        help="Enter the amount of property taxes paid annually"
+    )
+
+    medical_expenses = st.number_input(
+        "Annual medical out-of-pocket expenses ($)", 
+        min_value=0, 
+        max_value=100000, 
+        value=0, 
+        step=500,
+        help="Enter the amount of medical expenses paid out of pocket annually"
+    )
+
+    casualty_loss = st.number_input(
+        "Casualty and theft losses ($)", 
+        min_value=0, 
+        max_value=100000, 
+        value=0, 
+        step=500,
+        help="Enter the amount of casualty and theft losses from federally declared disasters"
+    )
+
 
 # Reduction type selector
 reduction_type = st.radio(
@@ -123,45 +175,65 @@ else:
     reduction_amount = (reduction_percentage / 100) * income
 
 if st.button("Calculate"):
-    # Calculate for single income point
+    # Create an evenly spaced array of donation amounts
+    max_donation = income  # Maximum donation can't exceed income
+    num_points = 100  # Number of points to simulate
+    donations = np.linspace(0, max_donation, num_points)
+    
     situation = create_situation(
         income,
         is_married=is_married,
         state_code=state,
         donation_type=donation_type.lower().replace("-", "_"),
+        num_children=num_children,
+        mortgage_interest=mortgage_interest,
+        real_estate_taxes=real_estate_taxes,
+        medical_out_of_pocket_expenses=medical_expenses,
+        casualty_loss=casualty_loss,
     )
-    simulation = Simulation(situation=situation)
-
-    net_income_by_donation = simulation.calculate("household_net_income")
+    
+    # Add axis for donations
     donation_column = (
         "charitable_cash_donations"
         if donation_type == "Cash"
         else "charitable_non_cash_donations"
     )
-    donations = simulation.calculate(donation_column)
+    
+    situation["axes"] = [[{
+        "count": num_points,
+        "name": donation_column,
+        "min": 0,
+        "max": max_donation,
+        "period": "2023"
+    }]]
+    
+    simulation = Simulation(situation=situation)
+    net_income_by_donation = simulation.calculate("household_net_income").reshape(-1)
+    
+    # Create DataFrame with calculations
+    df = pd.DataFrame({
+        donation_column: donations,
+        "net_income": net_income_by_donation,
+    })
 
-    # Create DataFrame for analysis and round values
-    df = pd.DataFrame(
-        {
-            donation_column: np.round(donations),
-            "net_income": np.round(net_income_by_donation),
-        }
-    )
-
-    df["net_income_after_donations"] = np.round(df.net_income - df[donation_column])
+    # Calculate net income changes
+    df["net_income_after_donations"] = df.net_income - df[donation_column]
     baseline_net_income = df.net_income_after_donations.iloc[0]
-
-    # Calculate change in net income (both absolute and percentage)
+    
+    # Calculate changes relative to baseline
     df["net_income_change"] = baseline_net_income - df["net_income_after_donations"]
-    df["net_income_change_pct"] = (df["net_income_change"] / baseline_net_income) * 100
+    df["net_income_change_pct"] = (df["net_income_change"] / income) * 100
 
-    target_net_income = np.round(baseline_net_income - reduction_amount)
-
-    # Find closest match to target net income
+    # Find required donation
+    target_net_income = baseline_net_income - reduction_amount
     df["distance_to_target"] = np.abs(df.net_income_after_donations - target_net_income)
-    required_donation = int(
-        np.round(df.loc[df.distance_to_target.idxmin(), donation_column])
-    )
+    closest_match_idx = df.distance_to_target.idxmin()
+    
+    # Get values for display
+    required_donation = int(np.round(df.loc[closest_match_idx, donation_column]))
+    actual_final_income = int(np.round(df.loc[closest_match_idx, "net_income_after_donations"]))
+    actual_income_change = int(np.round(df.loc[closest_match_idx, "net_income_change"]))
+    actual_income_change_pct = float(np.round(df.loc[closest_match_idx, "net_income_change_pct"], 2))
 
     # Display the reduction type and target
     reduction_percentage_calc = (reduction_amount / income) * 100
@@ -176,16 +248,6 @@ if st.button("Calculate"):
 
     # Display the required donation
     st.write(f"Required donation: ${required_donation:,}")
-
-    actual_final_income = int(
-        np.round(df.loc[df.distance_to_target.idxmin(), "net_income_after_donations"])
-    )
-    actual_income_change = int(
-        np.round(df.loc[df.distance_to_target.idxmin(), "net_income_change"])
-    )
-    actual_income_change_pct = float(
-        np.round(df.loc[df.distance_to_target.idxmin(), "net_income_change_pct"], 2)
-    )
 
     # Create graph showing net income change vs donations
     if reduction_type == "Absolute amount ($)":
@@ -209,10 +271,19 @@ if st.button("Calculate"):
         title=f"Net Income Reduction vs Donations for ${income:,} income in {state}",
     )
 
-    # Add marker point for target donation
+    # Update hover template to format both numbers consistently
+    fig.update_traces(
+        hovertemplate=(
+            "Donation Amount ($)=$%{x:,.0f}<br>" +  # Round to nearest dollar
+            "Net Income Reduction ($)=$%{y:,.0f}<br>" +  # Add $ and use same formatting
+            "<extra></extra>"
+        )
+    )
+
+    # Add marker point for target donation with rounded value
     fig.add_trace(
         go.Scatter(
-            x=[required_donation],
+            x=[int(np.round(required_donation))],  # Round to nearest dollar
             y=[actual_y],
             mode="markers",
             name="Target Donation",

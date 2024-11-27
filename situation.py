@@ -10,6 +10,11 @@ def create_situation(
     state_code="TX",
     donation_type="cash",
     is_foster_care_org=False,
+    num_children: int = 0,
+    mortgage_interest: float = 0,
+    real_estate_taxes: float = 0,
+    medical_out_of_pocket_expenses: float = 0,
+    casualty_loss: float = 0,
 ):
     """
     Creates a PolicyEngine situation with charitable donations axis.
@@ -29,11 +34,15 @@ def create_situation(
             "you": {
                 "age": {YEAR: DEFAULT_AGE},
                 "employment_income": {YEAR: employment_income},
+                "mortgage_interest": {YEAR: mortgage_interest},
+                "real_estate_taxes": {YEAR: real_estate_taxes},
+                "medical_out_of_pocket_expenses": {YEAR: medical_out_of_pocket_expenses},
+                "casualty_loss": {YEAR: casualty_loss},
             }
         }
     }
 
-    # Initialize members list
+    # Initialize members list and keep it accessible
     members = ["you"]
 
     # Add spouse if married
@@ -43,6 +52,15 @@ def create_situation(
             "employment_income": {YEAR: 0},
         }
         members.append("your spouse")
+
+    # Add children first if any
+    for i in range(num_children):
+        child_id = f"child_{i}"
+        situation["people"][child_id] = {
+            "age": {YEAR: 10},  # Default age for children
+            "employment_income": {YEAR: 0}
+        }
+        members.append(child_id)
 
     donation_name = (
         "charitable_cash_donations"
@@ -64,22 +82,23 @@ def create_situation(
         )
         ms_donation_field = None
 
+    # Now update the situation with all members included
     situation.update(
         {
-            "families": {"your family": {"members": members}},
-            "marital_units": {"your marital unit": {"members": members}},
+            "families": {"your family": {"members": members.copy()}},
+            "marital_units": {"your marital unit": {"members": members.copy()}},
             "tax_units": {
-                "your tax unit": {
-                    "members": members,
+                "tax unit": {
+                    "members": members.copy(),
                     az_donation_field: {YEAR: 0} if az_donation_field else {},
                     "ms_charitable_contributions_to_qualifying_foster_care_organizations": (
                         {YEAR: 0} if ms_donation_field else {}
                     ),
                 }
             },
-            "spm_units": {"your spm_unit": {"members": members}},
+            "spm_units": {"your spm_unit": {"members": members.copy()}},
             "households": {
-                "your household": {"members": members, "state_name": {YEAR: state_code}}
+                "your household": {"members": members.copy(), "state_name": {YEAR: state_code}}
             },
             "axes": [
                 [
