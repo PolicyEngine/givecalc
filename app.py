@@ -103,11 +103,6 @@ donation_type = st.radio(
     "Type of charitable donation", ["Cash", "Non-cash"], horizontal=True
 )
 
-# Add foster care checkbox for Arizona and Mississippi
-is_foster_care_org = st.checkbox(
-    "Is this donation to a qualifying foster care organization?"
-)
-
 # Create collapsible section for itemized deductions
 with st.expander("Sources for other itemized deductions", expanded=False):
     st.markdown("Enter your itemized deductions below:")
@@ -388,10 +383,6 @@ if st.button("Calculate"):
             ],
         }
     ).set_index("Metric")
-
-    # Display the table in a collapsible section
-    with st.expander("View detailed results"):
-        st.table(results_df)
 
 # Add collapsible section for tax program explanations
 with st.expander("Learn about state and federal tax programs for charitable giving"):
