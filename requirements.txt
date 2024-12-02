@@ -3,3 +3,4 @@ policyengine-us
 plotly
 numpy
 pandas
+openfisca-core
