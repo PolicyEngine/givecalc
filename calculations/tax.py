@@ -22,6 +22,9 @@ def calculate_donation_metrics(situation, donation_amount):
     return {
         "baseline_income_tax": baseline_simulation.calculate(
             "household_tax", CURRENT_YEAR, map_to="household"
+        )
+        - baseline_simulation.calculate(
+            "household_benefits", CURRENT_YEAR, map_to="household"
         ),
         "baseline_net_income": baseline_simulation.calculate(
             "household_net_income", CURRENT_YEAR, map_to="household"
@@ -45,7 +48,7 @@ def calculate_donation_effects(situation):
     donations = simulation.calculate(donation_column, map_to="household")
     income_tax_by_donation = simulation.calculate(
         "household_tax", map_to="household"
-    )
+    ) - simulation.calculate("household_benefits", map_to="household")
 
     return create_donation_dataframe(
         donations, income_tax_by_donation, donation_column
