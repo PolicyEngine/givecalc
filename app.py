@@ -20,7 +20,7 @@ from situation import create_situation
 
 
 def main():
-    st.set_page_config(page_title="GiveCalc", page_icon="💝", layout="wide")
+    st.set_page_config(page_title="GiveCalc", page_icon="💝")
 
     # Inject custom CSS with Roboto font
     st.markdown(
@@ -57,7 +57,7 @@ def main():
     config = load_config()
 
     # Basic information
-    state, in_nyc = render_state_selector(config["states"], config)
+    state, in_nyc = render_state_selector(config["states"])
     income = render_income_input()
     is_married, num_children = render_personal_info()
     deductions = render_itemized_deductions()

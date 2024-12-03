@@ -1,6 +1,7 @@
 import plotly.express as px
 import plotly.graph_objects as go
-from policyengine_core.charts import format_fig
+
+# from policyengine_core.charts import format_fig
 from constants import TEAL_ACCENT
 
 
@@ -194,9 +195,54 @@ def create_net_income_plot(
             xanchor="right",
             x=0.99,
             bgcolor="rgba(255, 255, 255, 0.8)",
+            itemsizing="constant",  # Added to ensure consistent marker size in legend
         ),
         plot_bgcolor="white",
         margin=dict(t=10),
     )
 
     return format_fig(fig)
+
+
+def format_fig(fig: go.Figure) -> go.Figure:
+    """Format a plotly figure to match the PolicyEngine style guide."""
+    fig.update_layout(
+        font=dict(
+            family="Roboto Serif",
+            color="black",
+        ),
+        margin=dict(
+            l=50,  # Reduced left margin since we don't need space for left logo
+            r=100,
+            t=50,
+            b=120,
+            pad=4,
+        ),
+    )
+    fig.add_layout_image(
+        dict(
+            source="https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/blue.png",
+            xref="paper",
+            yref="paper",
+            x=1.0,
+            y=-0.10,
+            sizex=0.10,
+            sizey=0.10,
+            xanchor="right",
+            yanchor="bottom",
+        )
+    )
+
+    # Rest of the layout settings remain the same
+    fig.update_layout(
+        template="plotly_white",
+        height=600,
+        width=800,
+    )
+    fig.update_layout(
+        modebar=dict(
+            bgcolor="rgba(0,0,0,0)",
+            color="rgba(0,0,0,0)",
+        )
+    )
+    return fig

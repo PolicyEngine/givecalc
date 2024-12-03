@@ -26,7 +26,7 @@ def render_tax_results(
         # Show tax impact chart with highlighted numbers
         st.markdown(
             f"""
-    <h3 style="font-family: Roboto; font-weight: normal;">
+    <h3 style="font-family: Roboto; font-weight: normal; font-size: 22px;">
         Your <span style="color: {TEAL_ACCENT}; font-weight: bold;">${donation_amount:,.0f}</span> donation 
         will lower your taxes by 
         <span style="color: {TEAL_ACCENT}; font-weight: bold;">${tax_reduction:,.0f}</span>
@@ -47,7 +47,7 @@ def render_tax_results(
         # Show marginal giving discount chart
         st.markdown(
             f"""
-    <h3 style="font-family: Roboto; font-weight: normal;">
+    <h3 style="font-family: Roboto; font-weight: normal; font-size: 22px;">
         Giving an extra <span style="color: {TEAL_ACCENT}; font-weight: bold;">$100</span> would lower your taxes by another 
         <span style="color: {TEAL_ACCENT}; font-weight: bold;">${round(marginal_savings)}</span>
     </h3>

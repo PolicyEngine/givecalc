@@ -30,22 +30,13 @@ def render_notes():
         )
 
 
-def render_state_selector(states, config):
-    """Renders the state selector dropdown with information about state programs."""
+def render_state_selector(states):
     state = st.selectbox("What state do you live in?", options=states)
-
-    # Show NYC checkbox if NY is selected
     in_nyc = False
     if state == "NY":
         in_nyc = st.checkbox(
             "Do you live in New York City?",
             help="Check this if you are subject to NYC income tax",
-        )
-
-    if state in config["state_programs"]:
-        st.info(
-            f"**{config['state_programs'][state]['title']}**\n\n"
-            f"{config['state_programs'][state]['description']}"
         )
     return state, in_nyc
 
