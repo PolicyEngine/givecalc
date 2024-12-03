@@ -57,7 +57,7 @@ def main():
     config = load_config()
 
     # Basic information
-    state = render_state_selector(config["states"], config)
+    state, in_nyc = render_state_selector(config["states"], config)
     income = render_income_input()
     is_married, num_children = render_personal_info()
     deductions = render_itemized_deductions()
@@ -68,6 +68,7 @@ def main():
         income,
         is_married=is_married,
         state_code=state,
+        in_nyc=in_nyc,
         num_children=num_children,
         **deductions,
     )

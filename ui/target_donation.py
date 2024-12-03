@@ -71,16 +71,17 @@ def render_target_donation_section(
             actual = actual_reduction
 
         # TODO: Investigate why this is happening.
-        if abs(actual - target) > (
+        show_warning = abs(actual - target) > (
             0.1 if reduction_type == "Percentage" else 1
-        ):
+        )
+        show_warning = False  # Suppress warning for now
+        if show_warning:
             st.info(
                 f"Note: This donation will actually reduce your net income by {actual_text}. "
                 "The exact target reduction may not be achievable due to tax bracket effects."
             )
 
         # Show net income plot
-        st.markdown("### Net income after taxes, transfers, and donations")
         st.plotly_chart(
             create_net_income_plot(
                 df_with_net, donation_amount, required_donation, accent_color
