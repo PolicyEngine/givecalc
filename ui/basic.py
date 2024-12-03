@@ -21,6 +21,8 @@ def render_notes():
             f"""
             **Notes:**
             - Calculations use PolicyEngine US version {PE_VERSION}
+            - Net taxes are calculated as taxes minus refundable tax credits and benefits like SNAP and SSI
+            - Tax and benefit programs at federal, state, and local levels are included (e.g., NYC income tax)
 
             **Assumptions:**
             - All income comes from the primary taxpayer's wages, salaries, and tips

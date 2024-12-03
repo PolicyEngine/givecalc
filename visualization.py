@@ -21,7 +21,7 @@ def create_tax_plot(
         y=y_col,
         labels={
             donation_column: "Donations",
-            y_col: "Income tax (federal, state, and local)",
+            y_col: "Net taxes (taxes minus benefits)",
         },
     )
 
@@ -29,7 +29,7 @@ def create_tax_plot(
     fig.update_traces(
         line_color="rgb(180, 180, 180)",  # Light gray line
         showlegend=False,
-        hovertemplate="Donations=$%{x:,.0f}<br>Income tax=$%{y:,.0f}<br><extra></extra>",
+        hovertemplate="Donations=$%{x:,.0f}<br>Net taxes=$%{y:,.0f}<br><extra></extra>",
     )
 
     # Add semi-transparent marker for current donation
@@ -42,7 +42,7 @@ def create_tax_plot(
                 color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"
             ),
             showlegend=False,
-            hovertemplate="Your donation: $%{x:,.0f}<br>Income tax: $%{y:,.0f}<br><extra></extra>",
+            hovertemplate="Your donation: $%{x:,.0f}<br>Net taxes: $%{y:,.0f}<br><extra></extra>",
         )
     )
 
@@ -76,8 +76,8 @@ def create_marginal_savings_plot(
         x=donation_column,
         y="marginal_savings",
         labels={
-            donation_column: "Donations ($)",
-            "marginal_savings": "Marginal donation savings",
+            donation_column: "Donations",
+            "marginal_savings": "Marginal giving discount",
         },
     )
 
@@ -87,7 +87,7 @@ def create_marginal_savings_plot(
         showlegend=False,
         hovertemplate=(
             "Donations=$%{x:,.0f}<br>"
-            "Tax savings: $%{y:.2f} per dollar<br>"
+            "Marginal giving discount: $%{y:.2f}<br>"
             "<extra></extra>"
         ),
     )
@@ -104,7 +104,7 @@ def create_marginal_savings_plot(
             showlegend=False,
             hovertemplate=(
                 "Your donation: $%{x:,.0f}<br>"
-                "Tax savings: $%{y:.2f} per dollar<br>"
+                "Marginal giving discount: $%{y:.2f}<br>"
                 "<extra></extra>"
             ),
         )
