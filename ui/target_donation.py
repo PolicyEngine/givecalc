@@ -27,7 +27,9 @@ def render_target_donation_section(
         min_value=0.0 if reduction_type == "Percentage" else 0,
         max_value=100.0 if reduction_type == "Percentage" else income,
         value=10.0 if reduction_type == "Percentage" else min(5000, income),
-        step=0.1 if reduction_type == "Percentage" else 1000,  # Back to 0.1 for percentage
+        step=(
+            0.1 if reduction_type == "Percentage" else 1000
+        ),  # Back to 0.1 for percentage
         format="%.1f",  # Changed to show one decimal point
         help=f"Enter the reduction in {'percentage' if reduction_type == 'Percentage' else 'dollars'}.",
     )

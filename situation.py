@@ -65,8 +65,6 @@ def create_situation(
         }
         members.append(child_id)
 
-
-
     # Now update the situation with all members included
     situation.update(
         {
