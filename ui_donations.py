@@ -1,10 +1,10 @@
 # ui_donations.py
 import streamlit as st
-
-TEAL_ACCENT = "#39C6C0"
+from constants import TEAL_ACCENT
 
 
 def render_initial_donation(income):
+    """Renders the initial donation input field."""
     return st.number_input(
         "How much would you like to donate? ($)",
         min_value=0,
@@ -15,13 +15,10 @@ def render_initial_donation(income):
     )
 
 
-def render_reduction_inputs():
-    st.markdown(
-        "### Would you like to calculate how much to give in order to reduce your net income by a certain amount?"
-    )
-
+def render_reduction_goal():
+    """Renders inputs for the desired reduction in net income."""
     reduction_type = st.radio(
-        "Choose reduction type:",
+        "How would you like to reduce your net income?",
         ["Percentage", "Dollar amount"],
         horizontal=True,
     )
@@ -33,6 +30,7 @@ def render_reduction_inputs():
             max_value=100.0,
             value=10.0,
             step=0.1,
+            help="Enter the percentage by which you'd like to reduce your net income",
         )
     else:
         reduction = st.number_input(
@@ -41,6 +39,20 @@ def render_reduction_inputs():
             max_value=1000000,
             value=10000,
             step=1000,
+            help="Enter the dollar amount by which you'd like to reduce your net income",
         )
 
     return reduction_type, reduction
+
+
+def render_policyengine_donate():
+    """Renders the PolicyEngine donation footer."""
+    st.divider()
+    st.markdown(
+        f"<div style='text-align: center; padding: 20px;'>"
+        f"<p><em>GiveCalc is a free tool from PolicyEngine.<br>"
+        f"<a href='https://policyengine.org/us/donate' target='_blank' style='color: {TEAL_ACCENT};'>"
+        f"Support our work with a tax-deductible donation</a>.</em></p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
