@@ -360,7 +360,7 @@ if st.button("Calculate"):
     # Display net income values
     st.write(f"Household net income with no donations: ${int(baseline_net_income):,}")
     st.write(
-        f"Household net income with \${donation_amount:,} donation: ${int(actual_net_income):,}"
+        f"Household net income with \${donation_amount:,} donation: ${int(actual_net_income - donation_amount):,}"
     )
 
     # Update the results table to include marginal cost
