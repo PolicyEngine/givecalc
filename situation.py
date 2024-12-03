@@ -11,6 +11,7 @@ def create_situation(
     real_estate_taxes: float = 0,
     medical_out_of_pocket_expenses: float = 0,
     casualty_loss: float = 0,
+    in_nyc: bool = False,
 ):
     """
     Creates a PolicyEngine situation with charitable donations axis.
@@ -24,7 +25,7 @@ def create_situation(
         real_estate_taxes (float): Annual real estate taxes paid
         medical_out_of_pocket_expenses (float): Annual medical expenses paid out of pocket
         casualty_loss (float): Casualty and theft losses from federally declared disasters
-
+        in_nyc (bool): Whether the person lives in NYC
     Returns:
         dict: Complete situation dictionary for PolicyEngine
     """
@@ -89,6 +90,7 @@ def create_situation(
                 "your household": {
                     "members": members.copy(),
                     "state_name": {CURRENT_YEAR: state_code},
+                    "in_nyc": {CURRENT_YEAR: in_nyc},
                 }
             },
             "axes": [
