@@ -74,14 +74,26 @@ def main():
     )
     baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
     current_donation_metrics = calculate_donation_metrics(situation, donation_amount)
-    current_donation_plus100_metrics = calculate_donation_metrics(situation, donation_amount + MARGIN)
+    current_donation_plus100_metrics = calculate_donation_metrics(
+        situation, donation_amount + MARGIN
+    )
     df = calculate_donation_effects(situation)
     # Render main sections
     render_tax_results(
-        df, baseline_metrics, income, donation_amount, current_donation_metrics, current_donation_plus100_metrics
+        df,
+        baseline_metrics,
+        income,
+        donation_amount,
+        current_donation_metrics,
+        current_donation_plus100_metrics,
     )
     render_target_donation_section(
-        df, baseline_metrics, income, donation_amount
+        df,
+        baseline_metrics,
+        income,
+        donation_amount,
+        current_donation_metrics,
+        situation,
     )
 
     # Display tax program information

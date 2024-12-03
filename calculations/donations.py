@@ -1,17 +1,16 @@
-import numpy as np
-import pandas as pd
-from policyengine_us import Simulation
+from scipy.interpolate import interp1d
+from calculations.tax import calculate_donation_metrics
 
 
 def calculate_target_donation(
-    df, baseline_metrics, target_reduction, is_percentage=False
+    situation, df, baseline_metrics, target_reduction, is_percentage=False
 ):
     """
     Calculate the donation required to achieve a target reduction in net income.
 
     Args:
         df (pandas.DataFrame): DataFrame with donation effects
-        baseline_metrics (dict): Dictionary containing baseline metrics
+        baseline_metrics (dict): Dictionary containing baseline metrics (with $0 donations)
         target_reduction (float): Target reduction in net income (or percentage if is_percentage=True)
         is_percentage (bool): Whether target_reduction is a percentage
 
@@ -31,19 +30,48 @@ def calculate_target_donation(
     df = df.copy()
     df["tax_savings"] = baseline_tax - df["income_tax_after_donations"]
     df["net_income"] = (
-        baseline_net_income
-        - df["charitable_cash_donations"]
-        + df["tax_savings"]
+        baseline_net_income - df["charitable_cash_donations"] + df["tax_savings"]
     )
     df["net_income_reduction"] = baseline_net_income - df["net_income"]
     df["reduction_percentage"] = (
         df["net_income_reduction"] / baseline_net_income
     ) * 100
 
-    # Find closest donation amount that achieves target reduction
-    idx = (df["net_income_reduction"] - target_amount).abs().idxmin()
-    required_donation = df.loc[idx, "charitable_cash_donations"]
-    actual_reduction = df.loc[idx, "net_income_reduction"]
-    actual_percentage = df.loc[idx, "reduction_percentage"]
+    # Create interpolation functions
+    f_donation = interp1d(
+        df["net_income_reduction"],
+        df["charitable_cash_donations"],
+        kind="linear",
+        bounds_error=False,
+        fill_value=(
+            df["charitable_cash_donations"].min(),
+            df["charitable_cash_donations"].max(),
+        ),
+    )
 
-    return required_donation, actual_reduction, actual_percentage
+    f_percentage = interp1d(
+        df["net_income_reduction"],
+        df["reduction_percentage"],
+        kind="linear",
+        bounds_error=False,
+        fill_value=(df["reduction_percentage"].min(), df["reduction_percentage"].max()),
+    )
+
+    # Calculate interpolated values
+    required_donation = float(f_donation(target_amount))
+    required_donation_metrics = calculate_donation_metrics(situation, required_donation)
+    required_donation_net_income = (
+        required_donation_metrics["baseline_net_income"][0] - required_donation
+    )
+
+    actual_reduction = (
+        target_amount  # Since we're interpolating, we can achieve the exact target
+    )
+    actual_percentage = float(f_percentage(target_amount))
+
+    return (
+        required_donation,
+        required_donation_net_income,
+        actual_reduction,
+        actual_percentage,
+    )

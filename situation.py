@@ -74,15 +74,11 @@ def create_situation(
     situation.update(
         {
             "families": {"your family": {"members": members.copy()}},
-            "marital_units": {
-                "your marital unit": {"members": members.copy()}
-            },
+            "marital_units": {"your marital unit": {"members": members.copy()}},
             "tax_units": {
                 "tax unit": {
                     "members": members.copy(),
-                    az_donation_field: (
-                        {CURRENT_YEAR: 0} if az_donation_field else {}
-                    ),
+                    az_donation_field: ({CURRENT_YEAR: 0} if az_donation_field else {}),
                 }
             },
             "spm_units": {"your spm_unit": {"members": members.copy()}},

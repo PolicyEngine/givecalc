@@ -2,11 +2,12 @@ import streamlit as st
 from visualization import create_net_income_plot
 from calculations.net_income import add_net_income_columns
 from calculations.donations import calculate_target_donation
+from calculations.tax import calculate_donation_metrics
 from constants import TEAL_ACCENT
 
 
 def render_target_donation_section(
-    df, baseline_metrics, income, donation_amount
+    df, baseline_metrics, income, donation_amount, current_donation_metrics, situation
 ):
     """Render the target donation calculator section."""
     st.divider()
@@ -34,13 +35,17 @@ def render_target_donation_section(
         # Add net income calculations to DataFrame
         df_with_net = add_net_income_columns(df, baseline_metrics)
 
-        required_donation, actual_reduction, actual_percentage = (
-            calculate_target_donation(
-                df_with_net,
-                baseline_metrics,
-                reduction_amount,
-                is_percentage=(reduction_type == "Percentage"),
-            )
+        (
+            required_donation,
+            required_donation_net_income,
+            actual_reduction,
+            actual_percentage,
+        ) = calculate_target_donation(
+            situation,
+            df_with_net,
+            baseline_metrics,
+            reduction_amount,
+            is_percentage=(reduction_type == "Percentage"),
         )
 
         # Display results
@@ -83,9 +88,16 @@ def render_target_donation_section(
             )
 
         # Show net income plot
+        donation_net_income = (
+            current_donation_metrics["baseline_net_income"][0] - donation_amount
+        )
         st.plotly_chart(
             create_net_income_plot(
-                df_with_net, donation_amount, required_donation,
+                df_with_net,
+                donation_amount,
+                donation_net_income,
+                required_donation,
+                required_donation_net_income,
             ),
             use_container_width=True,
         )
