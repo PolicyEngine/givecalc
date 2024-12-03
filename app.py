@@ -81,7 +81,12 @@ state = st.selectbox("Select your state", options=STATES)
 
 # Input for income
 income = st.number_input(
-    "Annual income ($)", min_value=0, max_value=1000000, value=50000, step=1000
+    "Annual income ($)",
+    min_value=0,
+    max_value=1000000,
+    value=50000,
+    step=1000,
+    help="Enter your total employment income (wages and salaries) before taxes",
 )
 
 
@@ -95,7 +100,7 @@ num_children = st.number_input(
     max_value=10,  # Setting a reasonable maximum
     value=0,
     step=1,
-    help="Enter the number of dependent children",
+    help="Enter the number of dependent children under 17",
 )
 
 # Create collapsible section for itemized deductions
@@ -108,7 +113,6 @@ with st.expander("Sources for other itemized deductions", expanded=False):
         max_value=100000,
         value=0,
         step=1000,
-        help="Enter the amount of mortgage interest paid annually",
     )
 
     real_estate_taxes = st.number_input(
@@ -117,7 +121,6 @@ with st.expander("Sources for other itemized deductions", expanded=False):
         max_value=50000,
         value=0,
         step=500,
-        help="Enter the amount of property taxes paid annually",
     )
 
     medical_expenses = st.number_input(
@@ -126,7 +129,6 @@ with st.expander("Sources for other itemized deductions", expanded=False):
         max_value=100000,
         value=0,
         step=500,
-        help="Enter the amount of medical expenses paid out of pocket annually",
     )
 
     casualty_loss = st.number_input(
@@ -135,7 +137,6 @@ with st.expander("Sources for other itemized deductions", expanded=False):
         max_value=100000,
         value=0,
         step=500,
-        help="Enter the amount of casualty and theft losses from federally declared disasters",
     )
 
 
@@ -146,6 +147,7 @@ donation_amount = st.number_input(
     max_value=income,
     value=min(10000, income),
     step=1000,
+    help="Enter the amount of cash donations you plan to make to charity",
 )
 
 if st.button("Calculate"):
@@ -197,7 +199,9 @@ if st.button("Calculate"):
     ]
 
     simulation = Simulation(situation=situation)
-    income_tax_by_donation = simulation.calculate("federal_state_income_tax").reshape(-1)
+    income_tax_by_donation = simulation.calculate("federal_state_income_tax").reshape(
+        -1
+    )
 
     # Create DataFrame with calculations
     df = pd.DataFrame(
@@ -216,7 +220,9 @@ if st.button("Calculate"):
     tax_at_zero_donation = df.loc[0, "income_tax_after_donations"]
     donation_idx = np.abs(df[donation_column] - donation_amount).idxmin()
     tax_at_target = df.loc[donation_idx, "income_tax_after_donations"]
-    tax_reduction_pct = ((tax_at_zero_donation - tax_at_target) / tax_at_zero_donation) * 100
+    tax_reduction_pct = (
+        (tax_at_zero_donation - tax_at_target) / tax_at_zero_donation
+    ) * 100
 
     # Create graph showing taxes after donations
     y_col = "income_tax_after_donations"
@@ -258,7 +264,7 @@ if st.button("Calculate"):
     fig.update_layout(
         xaxis_tickformat="$,",
         yaxis_tickformat=y_tickformat,
-        xaxis_range=[0, income], 
+        xaxis_range=[0, income],
         yaxis_range=[0, max(df[y_col])],
         xaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
         yaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
@@ -289,7 +295,7 @@ if st.button("Calculate"):
     # Add marker point using interpolated marginal cost
     fig2.add_trace(
         go.Scatter(
-            x=[donation_amount], 
+            x=[donation_amount],
             y=[marginal_cost],  # Now using interpolated value
             mode="markers",
             name="Target Donation",
@@ -315,10 +321,12 @@ if st.button("Calculate"):
         yaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
     )
     fig2 = format_fig(fig2)
-    
+
     # Add explanatory text about marginal cost
-    st.markdown(f"If you donate an extra \$1, it will lower your taxes by ${marginal_cost:.2f}")
-    
+    st.markdown(
+        f"If you donate an extra \$1, it will lower your taxes by ${marginal_cost:.2f}"
+    )
+
     # Display the chart
     st.plotly_chart(fig2)
 
@@ -338,18 +346,22 @@ if st.button("Calculate"):
         medical_out_of_pocket_expenses=medical_expenses,
         casualty_loss=casualty_loss,
     )
-    
-    donation_situation["people"]["you"]["charitable_cash_donations"] = {2024: donation_amount}
-    
+
+    donation_situation["people"]["you"]["charitable_cash_donations"] = {
+        2024: donation_amount
+    }
+
     if "axes" in donation_situation:
         del donation_situation["axes"]
-    
+
     donation_simulation = Simulation(situation=donation_situation)
     actual_net_income = donation_simulation.calculate("household_net_income", 2024)[0]
 
     # Display net income values
     st.write(f"Household net income with no donations: ${int(baseline_net_income):,}")
-    st.write(f"Household net income with \${donation_amount:,} donation: ${int(actual_net_income):,}")
+    st.write(
+        f"Household net income with \${donation_amount:,} donation: ${int(actual_net_income):,}"
+    )
 
     # Update the results table to include marginal cost
     results_df = pd.DataFrame(
@@ -376,7 +388,7 @@ with st.expander("Learn about state and federal tax programs for charitable givi
         The federal charitable deduction allows you to deduct charitable contributions from your taxable income if you itemize deductions on your tax return. The deduction is limited to 60% of your adjusted gross income for cash donations.
         """
     )
-    
+
     # State-specific information dictionary
     state_programs = {
         "AZ": """
@@ -398,9 +410,9 @@ with st.expander("Learn about state and federal tax programs for charitable givi
         "NH": """
         ### New Hampshire Education Tax Credit
         New Hampshire provides a tax credit of up to 85% of contributions made to approved scholarship organizations. This credit can be used against business profits tax, business enterprise tax, or interest and dividends tax.
-        """
+        """,
     }
-    
+
     # Display state-specific information if available
     if state in state_programs:
         st.markdown(state_programs[state])
