@@ -149,7 +149,7 @@ donation_amount = st.number_input(
 )
 
 if st.button("Calculate"):
-    # Create baseline simulation with zero donations
+    # Create baseline simulation with zero donations - we only need to do this once
     baseline_situation = create_situation(
         income,
         is_married=is_married,
@@ -162,6 +162,7 @@ if st.button("Calculate"):
     )
     baseline_simulation = Simulation(situation=baseline_situation)
     baseline_income_tax = baseline_simulation.calculate("income_tax")[0]
+    baseline_net_income = baseline_simulation.calculate("household_net_income", 2024)[0]
 
     # Define simulation parameters
     num_points = 100  # Number of points to calculate
@@ -211,34 +212,17 @@ if st.button("Calculate"):
     df["income_tax_change"] = baseline_income_tax - df["income_tax_after_donations"]
     df["income_tax_change_pct"] = (df["income_tax_change"] / income) * 100
 
-    # Find required donation
-    target_income_tax = baseline_income_tax - donation_amount
-    df["distance_to_target"] = np.abs(df.income_tax_after_donations - target_income_tax)
-    closest_match_idx = df.distance_to_target.idxmin()
-
-    # Get values for display
-    required_donation = int(np.round(df.loc[closest_match_idx, donation_column]))
-    actual_final_income = int(
-        np.round(df.loc[closest_match_idx, "income_tax_after_donations"])
-    )
-    actual_income_change = int(np.round(df.loc[closest_match_idx, "income_tax_change"]))
-    actual_income_change_pct = float(
-        np.round(df.loc[closest_match_idx, "income_tax_change_pct"], 2)
-    )
-
-    # Calculate and display the tax reduction percentage
-    tax_at_zero_donation = df.loc[0, "income_tax_after_donations"]  # Tax amount with no donations
-    donation_idx = np.abs(df[donation_column] - donation_amount).idxmin()  # Find closest index to donation amount
-    tax_at_target = df.loc[donation_idx, "income_tax_after_donations"]  # Tax amount at target donation
+    # Calculate tax reduction percentage - move this before the graphs since we use it multiple times
+    tax_at_zero_donation = df.loc[0, "income_tax_after_donations"]
+    donation_idx = np.abs(df[donation_column] - donation_amount).idxmin()
+    tax_at_target = df.loc[donation_idx, "income_tax_after_donations"]
     tax_reduction_pct = ((tax_at_zero_donation - tax_at_target) / tax_at_zero_donation) * 100
-    st.write(f"Your ${donation_amount:,} donation reduces your taxes by {tax_reduction_pct:.1f}%")
 
     # Create graph showing taxes after donations
     y_col = "income_tax_after_donations"
     y_label = "Income Tax After Donations ($)"
     y_tickformat = "$,"
-    actual_y = actual_final_income
-    y_range = [0, baseline_income_tax]  # Changed to start at 0 and end at baseline
+    y_range = [0, baseline_income_tax]
     hover_template = (
         "Donation Amount ($)=$%{x:,.0f}<br>"
         + "Income Tax ($)=$%{y:,.0f}<br>"
@@ -343,21 +327,7 @@ if st.button("Calculate"):
         "Another way of looking at this is net income after taxes, transfers, and donations. Here's how that changes depending on much you give."
     )
 
-    # Calculate baseline net income (no donations)
-    baseline_situation = create_situation(
-        income,
-        is_married=is_married,
-        state_code=state,
-        num_children=num_children,
-        mortgage_interest=mortgage_interest,
-        real_estate_taxes=real_estate_taxes,
-        medical_out_of_pocket_expenses=medical_expenses,
-        casualty_loss=casualty_loss,
-    )
-    baseline_simulation = Simulation(situation=baseline_situation)
-    baseline_net_income = baseline_simulation.calculate("household_net_income", 2024)[0]
-
-    # Calculate net income with donation
+    # For the final net income calculation, we can reuse the donation_situation creation
     donation_situation = create_situation(
         income,
         is_married=is_married,
@@ -369,15 +339,12 @@ if st.button("Calculate"):
         casualty_loss=casualty_loss,
     )
     
-    # Set the specific donation amount at person level
     donation_situation["people"]["you"]["charitable_cash_donations"] = {2024: donation_amount}
     
-    # Ensure no axes are present
     if "axes" in donation_situation:
         del donation_situation["axes"]
     
     donation_simulation = Simulation(situation=donation_situation)
-    
     actual_net_income = donation_simulation.calculate("household_net_income", 2024)[0]
 
     # Display net income values
@@ -393,8 +360,8 @@ if st.button("Calculate"):
                 "Marginal cost of giving at target donation",
             ],
             "Amount": [
-                f"${int(baseline_income_tax):,}",
-                f"${int(actual_final_income):,}",
+                f"${int(baseline_net_income):,}",
+                f"${int(actual_net_income):,}",
                 f"${marginal_cost:.2f}",
             ],
         }
@@ -402,27 +369,41 @@ if st.button("Calculate"):
 
 # Add collapsible section for tax program explanations
 with st.expander("Learn about state and federal tax programs for charitable giving"):
+    # Always show federal information
     st.markdown(
         """
         ### Federal Charitable Deduction
         The federal charitable deduction allows you to deduct charitable contributions from your taxable income if you itemize deductions on your tax return. The deduction is limited to 60% of your adjusted gross income for cash donations.
-
+        """
+    )
+    
+    # State-specific information dictionary
+    state_programs = {
+        "AZ": """
         ### Arizona Charitable Contributions Credit
-        Arizona offers a dollar-for-dollar tax credit for contributions to Qualifying Charitable Organizations. Single filers can claim up to \$400 (\$500 if donating to foster care organizations), and married filing jointly can claim up to \$800 ($1,000). These donations help organizations that serve low-income residents, children with chronic illness, or foster care.
-
+        Arizona offers a dollar-for-dollar tax credit for contributions to Qualifying Charitable Organizations. Single filers can claim up to \$400 (\$500 if donating to foster care organizations), and married filing jointly can claim up to \$800 (\$1,000). These donations help organizations that serve low-income residents, children with chronic illness, or foster care.
+        """,
+        "MS": """
         ### Mississippi Foster Care Charitable Tax Credit
-        Mississippi provides a tax credit for donations to eligible charitable organizations that provide foster care, adoption, and services to children in foster care. The credit is dollar-for-dollar up to \$500 for single filers and \$1,000 for joint filers.                
-        
+        Mississippi provides a tax credit for donations to eligible charitable organizations that provide foster care, adoption, and services to children in foster care. The credit is dollar-for-dollar up to \$500 for single filers and \$1,000 for joint filers.
+        """,
+        "VT": """
         ### Vermont Charitable Contributions Credit
         Vermont offers a tax credit of 5% of the first $20,000 in eligible charitable contributions when claiming the federal charitable contribution deduction.
-        
+        """,
+        "CO": """
         ### Colorado Charitable Contribution Subtraction
         Colorado allows taxpayers to subtract charitable contributions over $500 from their state taxable income when they claim the federal standard deduction, effectively extending the benefit of charitable giving to non-itemizers.
-        
+        """,
+        "NH": """
         ### New Hampshire Education Tax Credit
         New Hampshire provides a tax credit of up to 85% of contributions made to approved scholarship organizations. This credit can be used against business profits tax, business enterprise tax, or interest and dividends tax.
-    """
-    )
+        """
+    }
+    
+    # Display state-specific information if available
+    if state in state_programs:
+        st.markdown(state_programs[state])
 
 # Add a visual separator
 st.divider()
