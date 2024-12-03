@@ -146,7 +146,7 @@ state_programs:
   MN:
     title: "Minnesota Reduced Itemized Deductions"
     description: |
-      Minnesota reduces the federal itemized deduction amount by 3% for income over $220k and by 10% for income over $300k.
+      Minnesota reduces the federal itemized deduction amount by 3% for income over \$220k and by 10% for income over \$300k.
 
   MO:
     title: "Missouri Itemized Deduction Match"
@@ -187,4 +187,76 @@ state_programs:
   VA:
     title: "Virginia Reduced Itemized Deductions"
     description: |
-      Virginia applies a reduced federal itemized deductions for income over $368,900 if jointly or qualifying widow(er)/qualifying surviving spouse, $338,150 if head of household, $307,400 if single, or $184,450.
+      Virginia applies a reduced federal itemized deductions for income over \$368,900 if jointly or qualifying widow(er)/qualifying surviving spouse, \$338,150 if head of household, \$307,400 if single, or \$184,450.
+
+  SD:
+    title: "South Dakota Deduction"
+    description: "South Dakota does not provide a state specific deduction amount for charitable contributions."
+
+  AK:
+    title: "Alaska Deduction"
+    description: "Alaska does not provide a state specific deduction amount for charitable contributions."
+
+  FL:
+    title: "Florida Deduction"
+    description: "Florida does not provide a state specific deduction amount for charitable contributions."
+
+  IL:
+    title: "Illinois Deduction"
+    description: "Illinois does not provide a state specific deduction amount for charitable contributions."
+
+  IN:
+    title: "Indiana Deduction"
+    description: "Indiana does not provide a state specific deduction amount for charitable contributions."
+
+  LA:
+    title: "Louisiana Deduction"
+    description: "Louisiana does not provide a state specific deduction amount for charitable contributions."
+
+  MA:
+    title: "Massachusetts Deduction"
+    description: "Massachusetts does not provide a state specific deduction amount for charitable contributions."
+
+  MI:
+    title: "Michigan Deduction"
+    description: "Michigan does not provide a state specific deduction amount for charitable contributions."
+
+  OK:
+    title: "Oklahoma Deduction"
+    description: "Oklahoma does not provide a state specific deduction amount for charitable contributions."
+
+  SC:
+    title: "South Carolina Deduction"
+    description: "South Carolina does not provide a state specific deduction amount for charitable contributions."
+
+  TN:
+    title: "Tennessee Deduction"
+    description: "Tennessee does not provide a state specific deduction amount for charitable contributions."
+
+  TX:
+    title: "Texas Deduction"
+    description: "Texas does not provide a state specific deduction amount for charitable contributions."
+
+  UT:
+    title: "Utah Deduction"
+    description: "Utah does not provide a state specific deduction amount for charitable contributions."
+
+  WV:
+    title: "West Virginia Deduction"
+    description: "West Virginia does not provide a state specific deduction amount for charitable contributions."
+
+  WY:
+    title: "Wyoming Deduction"
+    description: "Wyoming does not provide a state specific deduction amount for charitable contributions."
+
+  RI:
+    title: "Rhode Island Deduction"
+    description: "Rhode Island does not provide a state specific deduction amount for charitable contributions."
+
+  WI:
+    title: "Wisconsin Deduction"
+    description: "Wisconsin does not provide a state specific deduction amount for charitable contributions."
+
+  WA:
+    title: "Washington Deduction"
+    description: "Washington does not provide a state specific deduction amount for charitable contributions."
