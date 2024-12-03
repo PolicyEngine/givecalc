@@ -3,6 +3,5 @@ policyengine-us>=1.155.0
 plotly
 numpy
 pandas
-openfisca-core
 pyyaml
 scipy
