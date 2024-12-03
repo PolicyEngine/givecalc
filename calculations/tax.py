@@ -21,10 +21,10 @@ def calculate_donation_metrics(situation, donation_amount):
     )
     return {
         "baseline_income_tax": baseline_simulation.calculate(
-            "federal_state_income_tax", CURRENT_YEAR
+            "federal_state_income_tax", CURRENT_YEAR, map_to="household"
         ),
         "baseline_net_income": baseline_simulation.calculate(
-            "household_net_income", CURRENT_YEAR
+            "household_net_income", CURRENT_YEAR, map_to="household"
         ),
     }
 
@@ -42,10 +42,10 @@ def calculate_donation_effects(situation):
     simulation = Simulation(situation=situation)
     # Note: We add this as a column to enable non-cash donations in the future.
     donation_column = "charitable_cash_donations"
-    donations = simulation.calculate(donation_column)
-    income_tax_by_donation = simulation.calculate("federal_state_income_tax").reshape(
-        -1
-    )
+    donations = simulation.calculate(donation_column, map_to="household")
+    income_tax_by_donation = simulation.calculate(
+        "federal_state_income_tax", map_to="household"
+    ).reshape(-1)
 
     return create_donation_dataframe(donations, income_tax_by_donation, donation_column)
 
