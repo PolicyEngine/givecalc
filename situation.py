@@ -1,13 +1,11 @@
 from policyengine_us import Simulation
-
-YEAR = 2024
-DEFAULT_AGE = 30
+from constants import CURRENT_YEAR, DEFAULT_AGE
 
 
 def create_situation(
     employment_income,
     is_married=False,
-    state_code="TX",
+    state_code="CA",
     num_children: int = 0,
     mortgage_interest: float = 0,
     real_estate_taxes: float = 0,
@@ -34,14 +32,14 @@ def create_situation(
     situation = {
         "people": {
             "you": {
-                "age": {YEAR: DEFAULT_AGE},
-                "employment_income": {YEAR: employment_income},
-                "mortgage_interest": {YEAR: mortgage_interest},
-                "real_estate_taxes": {YEAR: real_estate_taxes},
+                "age": {CURRENT_YEAR: DEFAULT_AGE},
+                "employment_income": {CURRENT_YEAR: employment_income},
+                "mortgage_interest": {CURRENT_YEAR: mortgage_interest},
+                "real_estate_taxes": {CURRENT_YEAR: real_estate_taxes},
                 "medical_out_of_pocket_expenses": {
-                    YEAR: medical_out_of_pocket_expenses
+                    CURRENT_YEAR: medical_out_of_pocket_expenses
                 },
-                "casualty_loss": {YEAR: casualty_loss},
+                "casualty_loss": {CURRENT_YEAR: casualty_loss},
             }
         }
     }
@@ -52,8 +50,8 @@ def create_situation(
     # Add spouse if married
     if is_married:
         situation["people"]["your spouse"] = {
-            "age": {YEAR: DEFAULT_AGE},
-            "employment_income": {YEAR: 0},
+            "age": {CURRENT_YEAR: DEFAULT_AGE},
+            "employment_income": {CURRENT_YEAR: 0},
         }
         members.append("your spouse")
 
@@ -61,8 +59,8 @@ def create_situation(
     for i in range(num_children):
         child_id = f"child_{i}"
         situation["people"][child_id] = {
-            "age": {YEAR: 10},  # Default age for children
-            "employment_income": {YEAR: 0},
+            "age": {CURRENT_YEAR: 10},  # Default age for children
+            "employment_income": {CURRENT_YEAR: 0},
         }
         members.append(child_id)
 
@@ -75,18 +73,22 @@ def create_situation(
     situation.update(
         {
             "families": {"your family": {"members": members.copy()}},
-            "marital_units": {"your marital unit": {"members": members.copy()}},
+            "marital_units": {
+                "your marital unit": {"members": members.copy()}
+            },
             "tax_units": {
                 "tax unit": {
                     "members": members.copy(),
-                    az_donation_field: {YEAR: 0} if az_donation_field else {},
+                    az_donation_field: (
+                        {CURRENT_YEAR: 0} if az_donation_field else {}
+                    ),
                 }
             },
             "spm_units": {"your spm_unit": {"members": members.copy()}},
             "households": {
                 "your household": {
                     "members": members.copy(),
-                    "state_name": {YEAR: state_code},
+                    "state_name": {CURRENT_YEAR: state_code},
                 }
             },
             "axes": [
@@ -96,7 +98,7 @@ def create_situation(
                         "count": 1001,
                         "min": 0,
                         "max": employment_income,
-                        "period": YEAR,
+                        "period": CURRENT_YEAR,
                     }
                 ]
             ],

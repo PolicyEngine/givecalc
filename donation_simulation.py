@@ -1,4 +1,5 @@
 from policyengine_us import Simulation
+from constants import CURRENT_YEAR
 
 
 def create_donation_simulation(situation, donation_amount):
@@ -17,7 +18,7 @@ def create_donation_simulation(situation, donation_amount):
 
     # Add the donation amount
     donation_situation["people"]["you"]["charitable_cash_donations"] = {
-        2024: donation_amount
+        CURRENT_YEAR: donation_amount
     }
 
     # Remove any axes if they exist
