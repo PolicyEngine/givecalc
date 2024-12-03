@@ -2,10 +2,11 @@ import streamlit as st
 from visualization import create_net_income_plot
 from calculations.net_income import add_net_income_columns
 from calculations.donations import calculate_target_donation
+from constants import TEAL_ACCENT
 
 
 def render_target_donation_section(
-    df, baseline_metrics, income, donation_amount, accent_color
+    df, baseline_metrics, income, donation_amount
 ):
     """Render the target donation calculator section."""
     st.divider()
@@ -53,9 +54,9 @@ def render_target_donation_section(
             f"""
     <h4 style="font-family: Roboto; font-weight: normal;">
         To reduce your net income by 
-        <span style="color: {accent_color}; font-weight: bold;">{target_text}</span>, 
+        <span style="color: {TEAL_ACCENT}; font-weight: bold;">{target_text}</span>, 
         donate 
-        <span style="color: {accent_color}; font-weight: bold;">${required_donation:,.0f}</span>
+        <span style="color: {TEAL_ACCENT}; font-weight: bold;">${required_donation:,.0f}</span>
     </h4>
     """,
             unsafe_allow_html=True,
@@ -84,7 +85,7 @@ def render_target_donation_section(
         # Show net income plot
         st.plotly_chart(
             create_net_income_plot(
-                df_with_net, donation_amount, required_donation, accent_color
+                df_with_net, donation_amount, required_donation,
             ),
             use_container_width=True,
         )

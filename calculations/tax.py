@@ -1,60 +1,44 @@
-# calculations.py
 import numpy as np
 import pandas as pd
 from policyengine_us import Simulation
 from constants import CURRENT_YEAR
+from donation_simulation import create_donation_simulation
 
-
-def calculate_baseline_metrics(situation):
+def calculate_donation_metrics(situation, donation_amount):
     """
-    Calculate baseline metrics without any donations.
+    Calculate baseline metrics with specified donation.
 
     Args:
         situation (dict): Base situation dictionary
+        donation_amount (float): Donation amount
 
     Returns:
         dict: Dictionary containing baseline metrics
     """
-    baseline_simulation = Simulation(situation=situation)
+    baseline_simulation = create_donation_simulation(situation=situation, donation_amount=donation_amount)
     return {
         "baseline_income_tax": baseline_simulation.calculate(
-            "federal_state_income_tax"
-        )[0],
+            "federal_state_income_tax", CURRENT_YEAR
+        ),
         "baseline_net_income": baseline_simulation.calculate(
             "household_net_income", CURRENT_YEAR
-        )[0],
+        ),
     }
 
-
-def calculate_donation_effects(situation, income, num_points=1001):
+def calculate_donation_effects(situation):
     """
     Calculate the effects of varying donation amounts.
 
     Args:
         situation (dict): Base situation dictionary
-        income (float): Annual income
-        num_points (int): Number of points to calculate
 
     Returns:
         pandas.DataFrame: DataFrame containing donation effects
     """
-    max_donation = income
-    donations = np.linspace(0, max_donation, num_points)
-    donation_column = "charitable_cash_donations"
-
-    situation["axes"] = [
-        [
-            {
-                "count": num_points,
-                "name": donation_column,
-                "min": 0,
-                "max": max_donation,
-                "period": CURRENT_YEAR,
-            }
-        ]
-    ]
-
     simulation = Simulation(situation=situation)
+    # Note: We add this as a column to enable non-cash donations in the future.
+    donation_column = "charitable_cash_donations"
+    donations = simulation.calculate(donation_column)
     income_tax_by_donation = simulation.calculate(
         "federal_state_income_tax"
     ).reshape(-1)

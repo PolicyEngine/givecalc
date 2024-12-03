@@ -1,15 +1,14 @@
-# visualization.py
 import plotly.express as px
 import plotly.graph_objects as go
 from policyengine_core.charts import format_fig
+from constants import TEAL_ACCENT
 
 
 def create_tax_plot(
     df,
     income,
-    state,
     donation_amount,
-    accent_color,
+    tax_at_donation,
     donation_column="charitable_cash_donations",
 ):
     """Creates a plot showing taxes vs donation amount."""
@@ -32,10 +31,6 @@ def create_tax_plot(
         hovertemplate="Donations=$%{x:,.0f}<br>Income tax=$%{y:,.0f}<br><extra></extra>",
     )
 
-    # Find tax at donation amount
-    donation_idx = (df[donation_column] - donation_amount).abs().idxmin()
-    tax_at_donation = df.loc[donation_idx, "income_tax_after_donations"]
-
     # Add semi-transparent marker for current donation
     fig.add_trace(
         go.Scatter(
@@ -43,7 +38,7 @@ def create_tax_plot(
             y=[tax_at_donation],
             mode="markers",
             marker=dict(
-                color=accent_color, size=8, opacity=0.7, symbol="circle"
+                color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"
             ),
             showlegend=False,
             hovertemplate="Your donation: $%{x:,.0f}<br>Income tax: $%{y:,.0f}<br><extra></extra>",
@@ -65,10 +60,10 @@ def create_tax_plot(
     return format_fig(fig)
 
 
-def create_marginal_cost_plot(
+def create_marginal_savings_plot(
     df,
     donation_amount,
-    accent_color,
+    marginal_savings,
     donation_column="charitable_cash_donations",
 ):
     """Creates a plot showing the marginal giving discount."""
@@ -93,18 +88,14 @@ def create_marginal_cost_plot(
         ),
     )
 
-    # Get marginal cost at donation amount
-    donation_idx = (df[donation_column] - donation_amount).abs().idxmin()
-    marginal_cost = df.loc[donation_idx, "marginal_cost"]
-
     # Add semi-transparent marker for current donation
     fig.add_trace(
         go.Scatter(
             x=[donation_amount],
-            y=[marginal_cost],
+            y=[marginal_savings],
             mode="markers",
             marker=dict(
-                color=accent_color, size=8, opacity=0.7, symbol="circle"
+                color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"
             ),
             showlegend=False,
             hovertemplate=(
@@ -134,7 +125,6 @@ def create_net_income_plot(
     df,
     initial_donation,
     required_donation,
-    accent_color,
     donation_column="charitable_cash_donations",
 ):
     """Creates a plot showing net income vs donation amount."""
@@ -162,7 +152,7 @@ def create_net_income_plot(
     # Add markers for initial and required donations
     points = [
         (initial_donation, "rgb(120, 120, 120)", "Initial donation"),  # Gray
-        (required_donation, accent_color, "Required donation"),  # Teal
+        (required_donation, TEAL_ACCENT, "Required donation"),  # Teal
     ]
 
     for donation, color, name in points:

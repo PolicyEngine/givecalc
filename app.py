@@ -1,6 +1,6 @@
 import streamlit as st
 from config import load_config
-from constants import TEAL_ACCENT
+from constants import TEAL_ACCENT, MARGIN
 from ui.basic import (
     render_state_selector,
     render_income_input,
@@ -12,7 +12,7 @@ from ui.donations import render_initial_donation, render_policyengine_donate
 from ui.tax_results import render_tax_results
 from ui.target_donation import render_target_donation_section
 from calculations.tax import (
-    calculate_baseline_metrics,
+    calculate_donation_metrics,
     calculate_donation_effects,
 )
 from tax_info import display_tax_programs
@@ -72,15 +72,16 @@ def main():
         num_children=num_children,
         **deductions,
     )
-    baseline_metrics = calculate_baseline_metrics(situation)
-    df = calculate_donation_effects(situation, income)
-
+    baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
+    current_donation_metrics = calculate_donation_metrics(situation, donation_amount)
+    current_donation_plus100_metrics = calculate_donation_metrics(situation, donation_amount + MARGIN)
+    df = calculate_donation_effects(situation)
     # Render main sections
     render_tax_results(
-        df, baseline_metrics, income, state, donation_amount, TEAL_ACCENT
+        df, baseline_metrics, income, donation_amount, current_donation_metrics, current_donation_plus100_metrics
     )
     render_target_donation_section(
-        df, baseline_metrics, income, donation_amount, TEAL_ACCENT
+        df, baseline_metrics, income, donation_amount
     )
 
     # Display tax program information
