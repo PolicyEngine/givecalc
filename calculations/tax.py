@@ -26,7 +26,7 @@ def calculate_baseline_metrics(situation):
     }
 
 
-def calculate_donation_effects(situation, income, num_points=100):
+def calculate_donation_effects(situation, income, num_points=1001):
     """
     Calculate the effects of varying donation amounts.
 
