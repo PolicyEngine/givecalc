@@ -58,7 +58,7 @@ def render_target_donation_section(
 
         st.markdown(
             f"""
-    <h4 style="font-family: Roboto; font-weight: normal;">
+    <h4 style="font-family: Roboto; font-weight: normal; font-size: 22px;">
         To reduce your net income by 
         <span style="color: {TEAL_ACCENT}; font-weight: bold;">{target_text}</span>, 
         donate 

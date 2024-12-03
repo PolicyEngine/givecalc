@@ -65,10 +65,7 @@ def create_situation(
         }
         members.append(child_id)
 
-    # Determine which charitable contribution field to use based on state and organization type
-    az_donation_field = (
-        "az_charitable_contributions_to_qualifying_charitable_organizations"
-    )
+
 
     # Now update the situation with all members included
     situation.update(
@@ -78,7 +75,6 @@ def create_situation(
             "tax_units": {
                 "tax unit": {
                     "members": members.copy(),
-                    az_donation_field: ({CURRENT_YEAR: 0} if az_donation_field else {}),
                 }
             },
             "spm_units": {"your spm_unit": {"members": members.copy()}},

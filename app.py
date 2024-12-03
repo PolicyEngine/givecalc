@@ -20,7 +20,7 @@ from situation import create_situation
 
 
 def main():
-    st.set_page_config(page_title="GiveCalc", page_icon="💝", layout="wide")
+    st.set_page_config(page_title="GiveCalc", page_icon="💝")
 
     # Inject custom CSS with Roboto font
     st.markdown(
