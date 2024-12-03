@@ -8,7 +8,6 @@ def create_situation(
     employment_income,
     is_married=False,
     state_code="TX",
-    donation_type="cash",
     num_children: int = 0,
     mortgage_interest: float = 0,
     real_estate_taxes: float = 0,
@@ -22,7 +21,11 @@ def create_situation(
         employment_income (float): Primary person's employment income
         is_married (bool): Whether the person is married
         state_code (str): Two-letter state code (default: "TX")
-        donation_type (str): Type of donation - "cash" or "non_cash" (default: "cash")
+        num_children (int): Number of dependent children (default: 0)
+        mortgage_interest (float): Annual mortgage interest paid
+        real_estate_taxes (float): Annual real estate taxes paid
+        medical_out_of_pocket_expenses (float): Annual medical expenses paid out of pocket
+        casualty_loss (float): Casualty and theft losses from federally declared disasters
 
     Returns:
         dict: Complete situation dictionary for PolicyEngine
@@ -63,12 +66,6 @@ def create_situation(
         }
         members.append(child_id)
 
-    donation_name = (
-        "charitable_cash_donations"
-        if donation_type == "cash"
-        else "charitable_non_cash_donations"
-    )
-
     # Determine which charitable contribution field to use based on state and organization type
     az_donation_field = (
         "az_charitable_contributions_to_qualifying_charitable_organizations"
@@ -95,7 +92,7 @@ def create_situation(
             "axes": [
                 [
                     {
-                        "name": donation_name,
+                        "name": "charitable_cash_donations",
                         "count": 1001,
                         "min": 0,
                         "max": employment_income,
