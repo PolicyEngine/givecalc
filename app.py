@@ -227,8 +227,11 @@ if st.button("Calculate"):
     )
 
     # Calculate and display the tax reduction percentage
-    tax_reduction_pct = ((baseline_income_tax - actual_final_income) / baseline_income_tax) * 100
-    st.write(f"Your ${donation_amount:,} donation reduces your taxes by {actual_income_change_pct:.1f}%")
+    tax_at_zero_donation = df.loc[0, "income_tax_after_donations"]  # Tax amount with no donations
+    donation_idx = np.abs(df[donation_column] - donation_amount).idxmin()  # Find closest index to donation amount
+    tax_at_target = df.loc[donation_idx, "income_tax_after_donations"]  # Tax amount at target donation
+    tax_reduction_pct = ((tax_at_zero_donation - tax_at_target) / tax_at_zero_donation) * 100
+    st.write(f"Your ${donation_amount:,} donation reduces your taxes by {tax_reduction_pct:.1f}%")
 
     # Create graph showing taxes after donations
     y_col = "income_tax_after_donations"
@@ -261,10 +264,11 @@ if st.button("Calculate"):
     fig.add_trace(
         go.Scatter(
             x=[donation_amount],
-            y=[tax_at_donation],  # Changed from actual_y to tax_at_donation
+            y=[tax_at_donation],
             mode="markers",
             name="Target Donation",
             marker=dict(color="rgb(99, 110, 250)", size=12, symbol="circle"),
+            hovertemplate="Donation Amount ($)=$%{x:,.0f}<br>Income Tax ($)=$%{y:,.0f}<br><extra></extra>",
         )
     )
     fig.update_layout(
@@ -365,25 +369,20 @@ if st.button("Calculate"):
         casualty_loss=casualty_loss,
     )
     
-    # Add axes for donations in 2024
-    donation_situation["axes"] = [
-        [
-            {
-                "count": num_points,
-                "name": "charitable_cash_donations",
-                "min": 0,
-                "max": max_donation,
-                "period": "2024",
-            }
-        ]
-    ]
+    # Set the specific donation amount at person level
+    donation_situation["people"]["you"]["charitable_cash_donations"] = {2024: donation_amount}
+    
+    # Ensure no axes are present
+    if "axes" in donation_situation:
+        del donation_situation["axes"]
     
     donation_simulation = Simulation(situation=donation_situation)
+    
     actual_net_income = donation_simulation.calculate("household_net_income", 2024)[0]
 
     # Display net income values
     st.write(f"Household net income with no donations: ${int(baseline_net_income):,}")
-    st.write(f"Household net income with ${donation_amount:,} donation: ${int(actual_net_income):,}")
+    st.write(f"Household net income with \${donation_amount:,} donation: ${int(actual_net_income):,}")
 
     # Update the results table to include marginal cost
     results_df = pd.DataFrame(
