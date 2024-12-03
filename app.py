@@ -45,7 +45,7 @@ def main():
         f"""
     <h1 style="font-family: Roboto;">
         <span style="color: {TEAL_ACCENT}; font-weight: bold;">Give</span><span style="color: {TEAL_ACCENT}; font-weight: normal;">Calc</span>
-        <span style="color: gray; font-weight: normal;"> by PolicyEngine</span>
+        <span style="color: #BDBDBD; font-weight: normal;"> by PolicyEngine</span>
     </h1>
     """,
         unsafe_allow_html=True,
@@ -73,7 +73,9 @@ def main():
         **deductions,
     )
     baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
-    current_donation_metrics = calculate_donation_metrics(situation, donation_amount)
+    current_donation_metrics = calculate_donation_metrics(
+        situation, donation_amount
+    )
     current_donation_plus100_metrics = calculate_donation_metrics(
         situation, donation_amount + MARGIN
     )

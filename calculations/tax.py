@@ -45,12 +45,16 @@ def calculate_donation_effects(situation):
     donations = simulation.calculate(donation_column, map_to="household")
     income_tax_by_donation = simulation.calculate(
         "federal_state_income_tax", map_to="household"
-    ).reshape(-1)
+    )
 
-    return create_donation_dataframe(donations, income_tax_by_donation, donation_column)
+    return create_donation_dataframe(
+        donations, income_tax_by_donation, donation_column
+    )
 
 
-def create_donation_dataframe(donations, income_tax_by_donation, donation_column):
+def create_donation_dataframe(
+    donations, income_tax_by_donation, donation_column
+):
     """
     Create a DataFrame with donation effects analysis.
 
@@ -70,8 +74,8 @@ def create_donation_dataframe(donations, income_tax_by_donation, donation_column
     )
 
     df["income_tax_after_donations"] = df.income_tax
-    df["marginal_cost"] = -np.gradient(df.income_tax_after_donations) / np.gradient(
-        df[donation_column]
-    )
+    df["marginal_savings"] = -np.gradient(
+        df.income_tax_after_donations
+    ) / np.gradient(df[donation_column])
 
     return df

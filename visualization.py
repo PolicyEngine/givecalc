@@ -38,7 +38,9 @@ def create_tax_plot(
             x=[donation_amount],
             y=[tax_at_donation],
             mode="markers",
-            marker=dict(color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"),
+            marker=dict(
+                color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"
+            ),
             showlegend=False,
             hovertemplate="Your donation: $%{x:,.0f}<br>Income tax: $%{y:,.0f}<br><extra></extra>",
         )
@@ -48,7 +50,10 @@ def create_tax_plot(
         xaxis_tickformat="$,",
         yaxis_tickformat="$,",
         xaxis_range=[0, income],
-        yaxis_range=[min(min(df[y_col]) * 1.05, 0), max(max(df[y_col]) * 1.05, 0)],
+        yaxis_range=[
+            min(min(df[y_col]) * 1.05, 0),
+            max(max(df[y_col]) * 1.05, 0),
+        ],
         xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         yaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         showlegend=False,
@@ -69,10 +74,10 @@ def create_marginal_savings_plot(
     fig = px.line(
         df,
         x=donation_column,
-        y="marginal_cost",
+        y="marginal_savings",
         labels={
             donation_column: "Donations ($)",
-            "marginal_cost": "Tax savings per dollar ($)",
+            "marginal_savings": "Marginal donation savings",
         },
     )
 
@@ -93,7 +98,9 @@ def create_marginal_savings_plot(
             x=[donation_amount],
             y=[marginal_savings],
             mode="markers",
-            marker=dict(color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"),
+            marker=dict(
+                color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"
+            ),
             showlegend=False,
             hovertemplate=(
                 "Your donation: $%{x:,.0f}<br>"
@@ -105,7 +112,7 @@ def create_marginal_savings_plot(
 
     fig.update_layout(
         xaxis_tickformat="$,",
-        yaxis_tickformat="%d%%",
+        yaxis_tickformat=".0%",
         xaxis_range=[0, max(df[donation_column])],
         yaxis_range=[0, 1],
         xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
@@ -142,7 +149,9 @@ def create_net_income_plot(
         line_color="rgb(180, 180, 180)",  # Light gray line
         showlegend=False,
         hovertemplate=(
-            "Donations=$%{x:,.0f}<br>" "Net income=$%{y:,.0f}<br>" "<extra></extra>"
+            "Donations=$%{x:,.0f}<br>"
+            "Net income=$%{y:,.0f}<br>"
+            "<extra></extra>"
         ),
     )
 
@@ -185,7 +194,10 @@ def create_net_income_plot(
         xaxis_tickformat="$,",
         yaxis_tickformat="$,",
         xaxis_range=[0, max(df[donation_column])],
-        yaxis_range=[min(df["net_income"]) * 0.95, max(df["net_income"]) * 1.05],
+        yaxis_range=[
+            min(df["net_income"]) * 0.95,
+            max(df["net_income"]) * 1.05,
+        ],
         xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         yaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         showlegend=True,
