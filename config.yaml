@@ -63,15 +63,15 @@ state_programs:
     title: "Arizona Charitable Contributions Credit"
     description: |
       Arizona offers a dollar-for-dollar tax credit for contributions to Qualifying Charitable Organizations. 
-      Single filers can claim up to $400 ($500 if donating to foster care organizations), and married filing 
-      jointly can claim up to $800 ($1,000).
+      Single filers can claim up to \$400 (\$500 if donating to foster care organizations), and married filing 
+      jointly can claim up to \$800 (\$1,000).
 
   MS:
     title: "Mississippi Foster Care Charitable Tax Credit"
     description: |
       Mississippi provides a tax credit for donations to eligible charitable organizations that provide foster care, 
-      adoption, and services to children in foster care. The credit is dollar-for-dollar up to $500 for single 
-      filers and $1,000 for joint filers.
+      adoption, and services to children in foster care. The credit is dollar-for-dollar up to \$500 for single 
+      filers and \$1,000 for joint filers.
 
   VT:
     title: "Vermont Charitable Contributions Credit"
@@ -151,10 +151,6 @@ state_programs:
   MO:
     title: "Missouri Itemized Deduction Match"
     description: "Missouri matches the federal itemized deduction amount."
-
-  MS:
-    title: "Mississippi Itemized Deduction Match"
-    description: "Mississippi matches the federal itemized deduction amount."
 
   MT:
     title: "Montana Itemized Deduction Match"
