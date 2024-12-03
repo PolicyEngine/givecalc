@@ -1,0 +1,92 @@
+states:
+  - AL
+  - AK
+  - AZ
+  - AR
+  - CA
+  - CO
+  - CT
+  - DE
+  - FL
+  - GA
+  - HI
+  - ID
+  - IL
+  - IN
+  - IA
+  - KS
+  - KY
+  - LA
+  - ME
+  - MD
+  - MA
+  - MI
+  - MN
+  - MS
+  - MO
+  - MT
+  - NE
+  - NV
+  - NH
+  - NJ
+  - NM
+  - NY
+  - NC
+  - ND
+  - OH
+  - OK
+  - OR
+  - PA
+  - RI
+  - SC
+  - SD
+  - TN
+  - TX
+  - UT
+  - VT
+  - VA
+  - WA
+  - WV
+  - WI
+  - WY
+  - DC
+
+federal_info:
+  title: "Federal Charitable Deduction"
+  description: |
+    The federal charitable deduction allows you to deduct charitable contributions from your taxable income 
+    if you itemize deductions on your tax return. The deduction is limited to 60% of your adjusted gross 
+    income for cash donations.
+
+state_programs:
+  AZ:
+    title: "Arizona Charitable Contributions Credit"
+    description: |
+      Arizona offers a dollar-for-dollar tax credit for contributions to Qualifying Charitable Organizations. 
+      Single filers can claim up to $400 ($500 if donating to foster care organizations), and married filing 
+      jointly can claim up to $800 ($1,000).
+
+  MS:
+    title: "Mississippi Foster Care Charitable Tax Credit"
+    description: |
+      Mississippi provides a tax credit for donations to eligible charitable organizations that provide foster care, 
+      adoption, and services to children in foster care. The credit is dollar-for-dollar up to $500 for single 
+      filers and $1,000 for joint filers.
+
+  VT:
+    title: "Vermont Charitable Contributions Credit"
+    description: |
+      Vermont offers a tax credit of 5% of the first $20,000 in eligible charitable contributions when claiming 
+      the federal charitable contribution deduction.
+
+  CO:
+    title: "Colorado Charitable Contribution Subtraction"
+    description: |
+      Colorado allows taxpayers to subtract charitable contributions over $500 from their state taxable income 
+      when they claim the federal standard deduction.
+
+  NH:
+    title: "New Hampshire Education Tax Credit"
+    description: |
+      New Hampshire provides a tax credit of up to 85% of contributions made to approved scholarship organizations. 
+      This credit can be used against business profits tax, business enterprise tax, or interest and dividends tax.
