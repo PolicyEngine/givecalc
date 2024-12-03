@@ -194,6 +194,7 @@ def create_net_income_plot(
             xanchor="right",
             x=0.99,
             bgcolor="rgba(255, 255, 255, 0.8)",
+            itemsizing='constant',  # Added to ensure consistent marker size in legend
         ),
         plot_bgcolor="white",
         margin=dict(t=10),
@@ -224,8 +225,8 @@ def format_fig(fig: go.Figure) -> go.Figure:
             yref="paper",
             x=1.0,   
             y=-0.10, 
-            sizex=0.15,
-            sizey=0.15,
+            sizex=0.10,
+            sizey=0.10,
             xanchor="right",
             yanchor="bottom",
         )
