@@ -90,3 +90,101 @@ state_programs:
     description: |
       New Hampshire provides a tax credit of up to 85% of contributions made to approved scholarship organizations. 
       This credit can be used against business profits tax, business enterprise tax, or interest and dividends tax.
+
+  AL:
+    title: "Alabama Itemized Deduction"
+    description: "Alabama matches the federal itemized deduction amount."
+
+  AR:
+    title: "Arkansas Itemized Deduction Match"
+    description: "Arkansas matches the federal itemized deduction amount."
+
+  CA:
+    title: "California Itemized Deduction Match"
+    description: "California matches the federal itemized deduction amount."
+
+  DC:
+    title: "DC Itemized Deduction Match"
+    description: "DC matches the federal itemized deduction amount."
+
+  DE:
+    title: "Delaware Itemized Deduction Match"
+    description: "Delaware matches the federal itemized deduction amount."
+
+  GA:
+    title: "Georgia Itemized Deduction Match"
+    description: "Georgia matches the federal itemized deduction amount."
+
+  HI:
+    title: "Hawaii Itemized Deduction Match"
+    description: "Hawaii matches the federal itemized deduction amount."
+
+  IA:
+    title: "Iowa Itemized Deduction Match"
+    description: "Iowa matches the federal itemized deduction amount."
+
+  ID:
+    title: "Idaho Itemized Deduction Match"
+    description: "Idaho matches the federal itemized deduction amount."
+
+  KS:
+    title: "Kansas Itemized Deduction Match"
+    description: "Kansas matches the federal itemized deduction amount."
+
+  KY:
+    title: "Kentucky Itemized Deduction Match"
+    description: "Kentucky matches the federal itemized deduction amount."
+
+  MD:
+    title: "Maryland Itemized Deduction Match"
+    description: "Maryland matches the federal itemized deduction amount."
+
+  ME:
+    title: "Maine Itemized Deduction Match"
+    description: "Maine matches the federal itemized deduction amount."
+
+  MN:
+    title: "Minnesota Reduced Itemized Deductions"
+    description: |
+      Minnesota reduces the federal itemized deduction amount by 3% for income over $220k and by 10% for income over $300k.
+
+  MO:
+    title: "Missouri Itemized Deduction Match"
+    description: "Missouri matches the federal itemized deduction amount."
+
+  MS:
+    title: "Mississippi Itemized Deduction Match"
+    description: "Mississippi matches the federal itemized deduction amount."
+
+  MT:
+    title: "Montana Itemized Deduction Match"
+    description: "Montana matches the federal itemized deduction amount."
+
+  NC:
+    title: "North Carolina Itemized Deduction Match"
+    description: "North Carolina matches the federal itemized deduction amount."
+
+  ND:
+    title: "North Dakota Itemized Deduction Match"
+    description: "North Dakota matches the federal itemized deduction amount."
+
+  NE:
+    title: "Nebraska Itemized Deduction Match"
+    description: "Nebraska matches the federal itemized deduction amount."
+
+  NM:
+    title: "New Mexico Itemized Deduction Match"
+    description: "New Mexico matches the federal itemized deduction amount and is reduced by the standard deduction amount."
+
+  NY:
+    title: "New York Itemized Deduction Match"
+    description: "New York matches the federal itemized deduction amount."
+
+  OR:
+    title: "Oregon Itemized Deduction Match"
+    description: "Oregon matches the federal itemized deduction amount."
+
+  VA:
+    title: "Virginia Reduced Itemized Deductions"
+    description: |
+      Virginia applies a reduced federal itemized deductions for income over $368,900 if jointly or qualifying widow(er)/qualifying surviving spouse, $338,150 if head of household, $307,400 if single, or $184,450.
