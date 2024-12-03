@@ -128,3 +128,80 @@ def create_marginal_cost_plot(
     )
 
     return format_fig(fig)
+
+
+def create_net_income_plot(
+    df,
+    initial_donation,
+    required_donation,
+    accent_color,
+    donation_column="charitable_cash_donations",
+):
+    """Creates a plot showing net income vs donation amount."""
+    fig = px.line(
+        df,
+        x=donation_column,
+        y="net_income",
+        labels={
+            donation_column: "Donation Amount ($)",
+            "net_income": "Net Income ($)",
+        },
+    )
+
+    # Update line style
+    fig.update_traces(
+        line_color="rgb(180, 180, 180)",  # Light gray line
+        showlegend=False,
+        hovertemplate=(
+            "Donation Amount ($)=$%{x:,.0f}<br>"
+            "Net Income ($)=$%{y:,.0f}<br>"
+            "<extra></extra>"
+        ),
+    )
+
+    # Add markers for initial and required donations
+    points = [
+        (initial_donation, "rgb(120, 120, 120)", "Initial donation"),  # Gray
+        (required_donation, accent_color, "Required donation"),  # Teal
+    ]
+
+    for donation, color, name in points:
+        donation_idx = (df[donation_column] - donation).abs().idxmin()
+        net_income = df.loc[donation_idx, "net_income"]
+
+        fig.add_trace(
+            go.Scatter(
+                x=[donation],
+                y=[net_income],
+                mode="markers",
+                name=name,
+                marker=dict(color=color, size=8, opacity=0.7, symbol="circle"),
+                hovertemplate=(
+                    f"{name}:<br>"
+                    "Donation Amount ($)=$%{x:,.0f}<br>"
+                    "Net Income ($)=$%{y:,.0f}<br>"
+                    "<extra></extra>"
+                ),
+            )
+        )
+
+    fig.update_layout(
+        xaxis_tickformat="$,",
+        yaxis_tickformat="$,",
+        xaxis_range=[0, max(df[donation_column])],
+        yaxis_range=[min(df["net_income"]), max(df["net_income"])],
+        xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
+        yaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
+        showlegend=True,
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="right",
+            x=0.99,
+            bgcolor="rgba(255, 255, 255, 0.8)",
+        ),
+        plot_bgcolor="white",
+        margin=dict(t=10),
+    )
+
+    return format_fig(fig)

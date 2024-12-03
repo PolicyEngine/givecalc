@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 from policyengine_us import Simulation
+from constants import CURRENT_YEAR
 
 
 def calculate_baseline_metrics(situation):
@@ -20,7 +21,7 @@ def calculate_baseline_metrics(situation):
             "federal_state_income_tax"
         )[0],
         "baseline_net_income": baseline_simulation.calculate(
-            "household_net_income", 2024
+            "household_net_income", CURRENT_YEAR
         )[0],
     }
 
@@ -48,7 +49,7 @@ def calculate_donation_effects(situation, income, num_points=100):
                 "name": donation_column,
                 "min": 0,
                 "max": max_donation,
-                "period": "2024",
+                "period": CURRENT_YEAR,
             }
         ]
     ]
@@ -90,60 +91,3 @@ def create_donation_dataframe(
     ) / np.gradient(df[donation_column])
 
     return df
-
-
-def calculate_required_donation(
-    df, baseline_net_income, reduction, reduction_type="Dollar amount"
-):
-    """
-    Calculate the donation required to achieve a desired reduction in net income.
-
-    Args:
-        df (pandas.DataFrame): DataFrame with donation effects
-        baseline_net_income (float): Net income without donations
-        reduction (float): Desired reduction amount
-        reduction_type (str): Type of reduction ('Percentage' or 'Dollar amount')
-
-    Returns:
-        float: Required donation amount
-    """
-    # Print input values for debugging
-    print(f"Baseline net income: ${baseline_net_income:,.2f}")
-    print(f"Desired reduction: ${reduction:,.2f}")
-
-    # Calculate net income after taxes and donations for each donation amount
-    df = df.copy()
-    initial_tax = df.loc[0, "income_tax_after_donations"]
-
-    df["net_income"] = (
-        baseline_net_income
-        - df["charitable_cash_donations"]
-        + (initial_tax - df["income_tax_after_donations"])  # Tax savings
-    )
-
-    df["net_income_reduction"] = baseline_net_income - df["net_income"]
-
-    # Print first few rows for debugging
-    print("\nFirst few rows of calculation:")
-    print(
-        df[
-            [
-                "charitable_cash_donations",
-                "income_tax_after_donations",
-                "net_income",
-                "net_income_reduction",
-            ]
-        ].head()
-    )
-
-    # Find where net income reduction meets target
-    mask = df["net_income_reduction"] >= reduction
-    if mask.any():
-        required_donation = df[mask]["charitable_cash_donations"].iloc[0]
-    else:
-        required_donation = max(df["charitable_cash_donations"])
-
-    # Print result
-    print(f"\nRequired donation: ${required_donation:,.2f}")
-
-    return required_donation

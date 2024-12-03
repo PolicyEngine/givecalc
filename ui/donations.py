@@ -9,8 +9,8 @@ def render_initial_donation(income):
         "How much would you like to donate? ($)",
         min_value=0,
         max_value=income,
-        value=min(10000, income),
-        step=1000,
+        value=min(1000, income),
+        step=100,
         help="Enter the amount of cash donations you plan to make to charity",
     )
 

@@ -16,22 +16,23 @@ def render_intro():
 
 
 def render_notes():
-    st.markdown(
-        f"""
-        **Assumptions:**
-        - All income comes from the primary taxpayer's wages, salaries, and tips
-        - All children are under 17
-        - All donations are cash
+    with st.expander("See notes and assumptions", expanded=False):
+        st.markdown(
+            f"""
+            **Notes:**
+            - Calculations use PolicyEngine US version {PE_VERSION}
 
-        **Notes:**
-        - Calculations use PolicyEngine US version {PE_VERSION}
-        """
-    )
+            **Assumptions:**
+            - All income comes from the primary taxpayer's wages, salaries, and tips
+            - All children are under 17
+            - All donations are cash
+            """
+        )
 
 
 def render_state_selector(states, config):
     """Renders the state selector dropdown with information about state programs."""
-    state = st.selectbox("Select your state", options=states)
+    state = st.selectbox("What state do you live in?", options=states)
     if state in config["state_programs"]:
         st.info(
             f"**{config['state_programs'][state]['title']}**\n\n"
@@ -42,11 +43,11 @@ def render_state_selector(states, config):
 
 def render_income_input():
     return st.number_input(
-        f"{CURRENT_YEAR} annual employment income ($)",
+        f"How much did you earn in {CURRENT_YEAR}?",
         min_value=0,
-        max_value=1000000,
-        value=50000,
-        step=1000,
+        max_value=1_000_000,
+        value=50_000,
+        step=1_000,
         help="Enter your total employment income (wages and salaries) before taxes",
     )
 
@@ -54,7 +55,7 @@ def render_income_input():
 def render_personal_info():
     is_married = st.checkbox("Are you married?")
     num_children = st.number_input(
-        "Number of children under 17",
+        "How many children under 17 do you have?",
         min_value=0,
         max_value=10,
         value=0,
@@ -66,11 +67,9 @@ def render_personal_info():
 
 def render_itemized_deductions():
     with st.expander("Sources for other itemized deductions", expanded=False):
-        st.markdown("Enter your itemized deductions below:")
-
         deductions = {
             "mortgage_interest": st.number_input(
-                "Annual mortgage interest ($)",
+                "Mortgage interest ($)",
                 min_value=0,
                 max_value=100000,
                 value=0,
@@ -78,7 +77,7 @@ def render_itemized_deductions():
                 help="Interest paid on your primary residence mortgage",
             ),
             "real_estate_taxes": st.number_input(
-                "Annual real estate taxes ($)",
+                "Real estate taxes ($)",
                 min_value=0,
                 max_value=50000,
                 value=0,
@@ -86,7 +85,7 @@ def render_itemized_deductions():
                 help="Property taxes paid on your residence",
             ),
             "medical_out_of_pocket_expenses": st.number_input(
-                "Annual medical out-of-pocket expenses ($)",
+                "Medical out-of-pocket expenses ($)",
                 min_value=0,
                 max_value=100000,
                 value=0,
