@@ -30,7 +30,7 @@ def create_donation_simulation(situation, donation_amount):
 
 
 def display_results(
-    baseline_net_income, actual_net_income, donation_amount, marginal_cost
+    baseline_net_income, actual_net_income, donation_amount, marginal_savings
 ):
     """
     Displays the results of the donation simulation.
@@ -39,13 +39,15 @@ def display_results(
         baseline_net_income (float): Net income without donations
         actual_net_income (float): Net income with donations
         donation_amount (float): Amount donated
-        marginal_cost (float): Marginal cost of giving at target donation
+        marginal_savings (float): Marginal cost of giving at target donation
     """
     import pandas as pd
     import streamlit as st
 
     # Display net income values
-    st.write(f"Household net income with no donations: ${int(baseline_net_income):,}")
+    st.write(
+        f"Household net income with no donations: ${int(baseline_net_income):,}"
+    )
     st.write(
         f"Household net income with ${donation_amount:,} donation: "
         f"${int(actual_net_income - donation_amount):,}"
@@ -62,7 +64,7 @@ def display_results(
             "Amount": [
                 f"${int(baseline_net_income):,}",
                 f"${int(actual_net_income):,}",
-                f"${marginal_cost:.2f}",
+                f"${marginal_savings:.2f}",
             ],
         }
     ).set_index("Metric")
