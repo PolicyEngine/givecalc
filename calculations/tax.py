@@ -4,50 +4,6 @@ from policyengine_us import Simulation
 from constants import CURRENT_YEAR
 from donation_simulation import create_donation_simulation
 
-import sys
-from io import StringIO
-
-
-def write_debug_trace(
-    simulation, year, variable, output_file="debug_trace.txt"
-):
-    """
-    Writes the computation trace to a file for debugging.
-
-    Parameters:
-    simulation: PolicyEngine simulation object
-    year: int, year to compute for
-    variable: str, variable to compute
-    output_file: str, path to output file
-    """
-    # Enable tracing
-    simulation.trace = True
-
-    # Calculate the variable
-    simulation.calculate(variable, year)
-
-    # Capture stdout during print_computation_log
-    old_stdout = sys.stdout
-    string_buffer = StringIO()
-    sys.stdout = string_buffer
-
-    # Print to our captured buffer
-    simulation.tracer.print_computation_log()
-
-    # Restore stdout
-    sys.stdout = old_stdout
-
-    # Get the captured output
-    trace_output = string_buffer.getvalue()
-
-    # Write to file
-    with open(output_file, "w") as f:
-        f.write(f"Debug trace for {variable} in {year}\n")
-        f.write("=" * 80 + "\n\n")
-        f.write(trace_output)
-
-    print(f"Debug trace written to {output_file}")
-
 
 def calculate_donation_metrics(situation, donation_amount):
     """
@@ -63,14 +19,6 @@ def calculate_donation_metrics(situation, donation_amount):
     baseline_simulation = create_donation_simulation(
         situation=situation, donation_amount=donation_amount
     )
-    DEBUG = True
-    if DEBUG and donation_amount == 60_000:
-        write_debug_trace(
-            baseline_simulation,
-            2024,
-            "federal_state_income_tax",
-            "ctc_debug_trace.txt",
-        )
     return {
         "baseline_income_tax": baseline_simulation.calculate(
             "federal_state_income_tax", CURRENT_YEAR, map_to="household"
