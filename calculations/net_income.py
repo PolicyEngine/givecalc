@@ -7,9 +7,7 @@ def add_net_income_columns(df, baseline_metrics):
     # Calculate net income and related metrics
     df["tax_savings"] = baseline_tax - df["income_tax_after_donations"]
     df["net_income"] = (
-        baseline_net_income
-        - df["charitable_cash_donations"]
-        + df["tax_savings"]
+        baseline_net_income - df["charitable_cash_donations"] + df["tax_savings"]
     )
     df["net_income_reduction"] = baseline_net_income - df["net_income"]
     df["reduction_percentage"] = (
