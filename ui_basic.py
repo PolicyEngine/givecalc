@@ -1,33 +1,36 @@
 # ui_basic.py
 import streamlit as st
-from constants import PE_VERSION, CURRENT_YEAR
+from constants import PE_VERSION, CURRENT_YEAR, TEAL_ACCENT
 
 
 def render_intro():
-    st.title("Charity Donation Calculator")
+    st.title("GiveCalc")
+    st.markdown("*by [PolicyEngine](https://policyengine.org)*")
     st.markdown(
         f"""
-    This calculator shows how charitable giving affects your taxes and net income in {CURRENT_YEAR}. 
-    It estimates both your immediate tax savings and the impact on your overall financial position.
-    """
+        Calculate how charitable giving affects your taxes in {CURRENT_YEAR}. 
+        Enter your information below to see your tax savings and the cost of giving more.
+        """
     )
     st.divider()
 
 
 def render_notes():
-    st.divider()
     st.markdown(
         f"""
-    **Notes:**
-    - All income is assumed to be from employment (wages and salaries)
-    - All children are assumed to be under 17
-    - All donations are assumed to be cash donations to qualified charities
-    - Calculations use PolicyEngine US version {PE_VERSION}
-    """
+        **Assumptions:**
+        - All income comes from the primary taxpayer's wages, salaries, and tips
+        - All children are under 17
+        - All donations are cash
+
+        **Notes:**
+        - Calculations use PolicyEngine US version {PE_VERSION}
+        """
     )
 
 
 def render_state_selector(states, config):
+    """Renders the state selector dropdown with information about state programs."""
     state = st.selectbox("Select your state", options=states)
     if state in config["state_programs"]:
         st.info(

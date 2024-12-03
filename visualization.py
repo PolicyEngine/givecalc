@@ -1,7 +1,7 @@
+# visualization.py
 import plotly.express as px
 import plotly.graph_objects as go
 from policyengine_core.charts import format_fig
-from constants import BLUE_PRIMARY
 
 
 def create_tax_plot(
@@ -9,6 +9,7 @@ def create_tax_plot(
     income,
     state,
     donation_amount,
+    accent_color,
     donation_column="charitable_cash_donations",
 ):
     """Creates a plot showing taxes vs donation amount."""
@@ -24,25 +25,28 @@ def create_tax_plot(
         },
     )
 
-    # Update line color and remove legend
+    # Update line style
     fig.update_traces(
-        line_color=BLUE_PRIMARY,
+        line_color="rgb(180, 180, 180)",  # Light gray line
         showlegend=False,
         hovertemplate="Donation Amount ($)=$%{x:,.0f}<br>Income Tax ($)=$%{y:,.0f}<br><extra></extra>",
     )
 
+    # Find tax at donation amount
     donation_idx = (df[donation_column] - donation_amount).abs().idxmin()
     tax_at_donation = df.loc[donation_idx, "income_tax_after_donations"]
 
-    # Add marker point for target donation
+    # Add semi-transparent marker for current donation
     fig.add_trace(
         go.Scatter(
             x=[donation_amount],
             y=[tax_at_donation],
             mode="markers",
-            marker=dict(color=BLUE_PRIMARY, size=12, symbol="circle"),
+            marker=dict(
+                color=accent_color, size=8, opacity=0.7, symbol="circle"
+            ),
             showlegend=False,
-            hovertemplate="Donation Amount ($)=$%{x:,.0f}<br>Income Tax ($)=$%{y:,.0f}<br><extra></extra>",
+            hovertemplate="Your donation: $%{x:,.0f}<br>Income tax: $%{y:,.0f}<br><extra></extra>",
         )
     )
 
@@ -51,128 +55,61 @@ def create_tax_plot(
         yaxis_tickformat="$,",
         xaxis_range=[0, income],
         yaxis_range=[0, max(df[y_col])],
-        xaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
-        yaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
+        xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
+        yaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         showlegend=False,
+        plot_bgcolor="white",
+        margin=dict(t=10),  # Reduce top margin since title is in markdown
     )
 
     return format_fig(fig)
 
 
 def create_marginal_cost_plot(
-    df, donation_amount, donation_column="charitable_cash_donations"
-):
-    """Creates a plot showing the marginal giving discount."""
-    # Convert marginal cost to percentage
-    df = df.copy()
-    df["marginal_cost_pct"] = df["marginal_cost"] * 100
-
-    fig = px.line(
-        df,
-        x=donation_column,
-        y="marginal_cost_pct",
-        labels={
-            donation_column: "Donation Amount ($)",
-            "marginal_cost_pct": "Tax Savings per Dollar Donated (%)",
-        },
-        title=f"If you donate an extra $1, it will lower your taxes by ${df.loc[df[donation_column].sub(donation_amount).abs().idxmin(), 'marginal_cost']:.2f}",
-    )
-
-    # Update line color and remove legend
-    fig.update_traces(
-        line_color=BLUE_PRIMARY,
-        showlegend=False,
-        hovertemplate=(
-            "Donation Amount ($)=$%{x:,.0f}<br>"
-            "Tax Savings: %{y:.1f}%<br>"
-            "<extra></extra>"
-        ),
-    )
-
-    # Get marginal cost at the donation point by interpolation
-    donation_idx = (df[donation_column] - donation_amount).abs().idxmin()
-    marginal_cost = df.loc[donation_idx, "marginal_cost"]
-    marginal_cost_pct = marginal_cost * 100
-
-    # Add marker point
-    fig.add_trace(
-        go.Scatter(
-            x=[donation_amount],
-            y=[marginal_cost_pct],
-            mode="markers",
-            marker=dict(color=BLUE_PRIMARY, size=12, symbol="circle"),
-            showlegend=False,
-            hovertemplate=(
-                "Donation Amount ($)=$%{x:,.0f}<br>"
-                "Tax Savings: %{y:.1f}%<br>"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.update_layout(
-        xaxis_tickformat="$,",
-        yaxis_tickformat=".1f",
-        xaxis_range=[0, max(df[donation_column])],
-        yaxis_range=[0, max(df["marginal_cost_pct"])],
-        xaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
-        yaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
-        showlegend=False,
-    )
-
-    return format_fig(fig), marginal_cost
-
-
-def create_net_income_plot(
-    baseline_net_income,
     df,
     donation_amount,
+    accent_color,
     donation_column="charitable_cash_donations",
 ):
-    """Creates a plot showing net income after taxes, transfers, and donations."""
-    df = df.copy()
-    df["net_income"] = (
-        baseline_net_income
-        - df[donation_column]
-        - df["income_tax_after_donations"]
-    )
-
+    """Creates a plot showing the marginal giving discount."""
     fig = px.line(
         df,
         x=donation_column,
-        y="net_income",
+        y="marginal_cost",
         labels={
             donation_column: "Donation Amount ($)",
-            "net_income": "Net Income ($)",
+            "marginal_cost": "Tax Savings per Dollar ($)",
         },
-        title="Net Income After Taxes, Transfers, and Donations",
     )
 
-    # Update line color and remove legend
+    # Update line style
     fig.update_traces(
-        line_color=BLUE_PRIMARY,
+        line_color="rgb(180, 180, 180)",  # Light gray line
         showlegend=False,
         hovertemplate=(
             "Donation Amount ($)=$%{x:,.0f}<br>"
-            "Net Income ($)=$%{y:,.0f}<br>"
+            "Tax Savings: $%{y:.2f} per dollar<br>"
             "<extra></extra>"
         ),
     )
 
-    # Add marker point
+    # Get marginal cost at donation amount
     donation_idx = (df[donation_column] - donation_amount).abs().idxmin()
-    net_income_at_donation = df.loc[donation_idx, "net_income"]
+    marginal_cost = df.loc[donation_idx, "marginal_cost"]
 
+    # Add semi-transparent marker for current donation
     fig.add_trace(
         go.Scatter(
             x=[donation_amount],
-            y=[net_income_at_donation],
+            y=[marginal_cost],
             mode="markers",
-            marker=dict(color=BLUE_PRIMARY, size=12, symbol="circle"),
+            marker=dict(
+                color=accent_color, size=8, opacity=0.7, symbol="circle"
+            ),
             showlegend=False,
             hovertemplate=(
-                "Donation Amount ($)=$%{x:,.0f}<br>"
-                "Net Income ($)=$%{y:,.0f}<br>"
+                "Your donation: $%{x:,.0f}<br>"
+                "Tax savings: $%{y:.2f} per dollar<br>"
                 "<extra></extra>"
             ),
         )
@@ -180,12 +117,14 @@ def create_net_income_plot(
 
     fig.update_layout(
         xaxis_tickformat="$,",
-        yaxis_tickformat="$,",
+        yaxis_tickformat=".2f",
         xaxis_range=[0, max(df[donation_column])],
-        yaxis_range=[0, max(df["net_income"])],
-        xaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
-        yaxis=dict(zeroline=True, zerolinewidth=2, zerolinecolor="black"),
+        yaxis_range=[0, 1],
+        xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
+        yaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         showlegend=False,
+        plot_bgcolor="white",
+        margin=dict(t=10),  # Reduce top margin since title is in markdown
     )
 
     return format_fig(fig)

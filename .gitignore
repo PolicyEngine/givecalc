@@ -13,9 +13,6 @@ bin-release/
 *.ipa
 *.apk
 
-# Streamlit
-.streamlit
-
 __pycache__/
 
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
