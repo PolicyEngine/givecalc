@@ -45,9 +45,7 @@ def display_results(
     import streamlit as st
 
     # Display net income values
-    st.write(
-        f"Household net income with no donations: ${int(baseline_net_income):,}"
-    )
+    st.write(f"Household net income with no donations: ${int(baseline_net_income):,}")
     st.write(
         f"Household net income with ${donation_amount:,} donation: "
         f"${int(actual_net_income - donation_amount):,}"

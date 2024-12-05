@@ -62,10 +62,10 @@ def main():
     is_married, num_children = render_personal_info()
     deductions = render_itemized_deductions()
     donation_amount = render_initial_donation(income)
-    
+
     donation_in_mind = st.checkbox("Do you have a specific donation in mind?")
-    
-    if donation_in_mind: 
+
+    if donation_in_mind:
         st.expander("Calculate a target donation")
         # Add radio button for percentage vs dollar amount
         reduction_type = st.radio(
@@ -79,11 +79,17 @@ def main():
         reduction_amount = st.number_input(
             f"Enter reduction amount ({'%' if reduction_type == 'Percentage' else '$'}):",
             min_value=0.0,  # Always use float for min_value
-            max_value=100.0 if reduction_type == "Percentage" else float(income),  # Convert income to float
-            value=10.0 if reduction_type == "Percentage" else float(min(1000, income)),  # Convert to float
-            step=0.1 if reduction_type == "Percentage" else 100.0,  # Use float for step values
+            max_value=(
+                100.0 if reduction_type == "Percentage" else float(income)
+            ),  # Convert income to float
+            value=(
+                10.0 if reduction_type == "Percentage" else float(min(1000, income))
+            ),  # Convert to float
+            step=(
+                0.1 if reduction_type == "Percentage" else 100.0
+            ),  # Use float for step values
             format="%.1f",  # Consistent format for both cases
-            help=f"Enter the reduction in {'percentage' if reduction_type == 'Percentage' else 'dollars'}."
+            help=f"Enter the reduction in {'percentage' if reduction_type == 'Percentage' else 'dollars'}.",
         )
 
     if st.button("Calculate tax implications", type="primary"):
@@ -114,7 +120,7 @@ def main():
             current_donation_metrics,
             current_donation_plus100_metrics,
         )
-        if donation_in_mind: 
+        if donation_in_mind:
             render_target_donation_section(
                 df,
                 baseline_metrics,
@@ -123,7 +129,7 @@ def main():
                 current_donation_metrics,
                 situation,
                 reduction_amount,
-                reduction_type
+                reduction_type,
             )
 
         # Display tax program information

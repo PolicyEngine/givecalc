@@ -7,7 +7,14 @@ from constants import TEAL_ACCENT
 
 
 def render_target_donation_section(
-    df, baseline_metrics, income, donation_amount, current_donation_metrics, situation, reduction_amount, reduction_type
+    df,
+    baseline_metrics,
+    income,
+    donation_amount,
+    current_donation_metrics,
+    situation,
+    reduction_amount,
+    reduction_type,
 ):
     """Render the target donation calculator section."""
     st.divider()
@@ -80,9 +87,7 @@ def render_target_donation_section(
         actual = actual_reduction
 
     # TODO: Investigate why this is happening.
-    show_warning = abs(actual - target) > (
-        0.1 if reduction_type == "Percentage" else 1
-    )
+    show_warning = abs(actual - target) > (0.1 if reduction_type == "Percentage" else 1)
     show_warning = False  # Suppress warning for now
     if show_warning:
         st.info(

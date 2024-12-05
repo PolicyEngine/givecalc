@@ -54,8 +54,6 @@ def render_tax_results(
         unsafe_allow_html=True,
     )
     st.plotly_chart(
-        create_marginal_savings_plot(
-            df, donation_amount, marginal_savings / MARGIN
-        ),
+        create_marginal_savings_plot(df, donation_amount, marginal_savings / MARGIN),
         use_container_width=True,
     )
