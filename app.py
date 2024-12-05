@@ -50,7 +50,9 @@ def main():
     """,
         unsafe_allow_html=True,
     )
-    st.markdown(f"Calculate how charitable giving affects your taxes.")
+    st.markdown(
+        f"Calculate how charitable giving affects your taxes. [Read our explainer to learn more.](https://policyengine.org/us/research/givecalc)"
+    )
     st.divider()
 
     # Load configuration
