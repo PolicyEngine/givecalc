@@ -38,9 +38,7 @@ def create_tax_plot(
             x=[donation_amount],
             y=[tax_at_donation],
             mode="markers",
-            marker=dict(
-                color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"
-            ),
+            marker=dict(color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"),
             showlegend=False,
             hovertemplate="Your donation: $%{x:,.0f}<br>Net taxes: $%{y:,.0f}<br><extra></extra>",
         )
@@ -98,9 +96,7 @@ def create_marginal_savings_plot(
             x=[donation_amount],
             y=[marginal_savings],
             mode="markers",
-            marker=dict(
-                color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"
-            ),
+            marker=dict(color=TEAL_ACCENT, size=8, opacity=0.7, symbol="circle"),
             showlegend=False,
             hovertemplate=(
                 "Your donation: $%{x:,.0f}<br>"
@@ -149,9 +145,7 @@ def create_net_income_plot(
         line_color="rgb(180, 180, 180)",  # Light gray line
         showlegend=False,
         hovertemplate=(
-            "Donations=$%{x:,.0f}<br>"
-            "Net income=$%{y:,.0f}<br>"
-            "<extra></extra>"
+            "Donations=$%{x:,.0f}<br>" "Net income=$%{y:,.0f}<br>" "<extra></extra>"
         ),
     )
 
