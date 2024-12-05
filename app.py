@@ -63,7 +63,9 @@ def main():
     deductions = render_itemized_deductions()
     donation_amount = render_initial_donation(income)
 
-    donation_in_mind = st.checkbox("Do you have a specific donation in mind?")
+    donation_in_mind = st.checkbox(
+        "Would you like to target a donation level based on net income reduction?"
+    )
 
     if donation_in_mind:
         st.expander("Calculate a target donation")
