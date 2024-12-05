@@ -63,48 +63,50 @@ def main():
     deductions = render_itemized_deductions()
     donation_amount = render_initial_donation(income)
 
-    # Calculate baseline metrics once
-    situation = create_situation(
-        income,
-        is_married=is_married,
-        state_code=state,
-        in_nyc=in_nyc,
-        num_children=num_children,
-        **deductions,
-    )
-    baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
-    current_donation_metrics = calculate_donation_metrics(
-        situation, donation_amount
-    )
-    current_donation_plus100_metrics = calculate_donation_metrics(
-        situation, donation_amount + MARGIN
-    )
-    df = calculate_donation_effects(situation)
-    # Render main sections
-    render_tax_results(
-        df,
-        baseline_metrics,
-        income,
-        donation_amount,
-        current_donation_metrics,
-        current_donation_plus100_metrics,
-    )
-    render_target_donation_section(
-        df,
-        baseline_metrics,
-        income,
-        donation_amount,
-        current_donation_metrics,
-        situation,
-    )
+    if st.button("Calculate tax implications", type="primary"):
 
-    # Display tax program information
-    st.divider()
-    display_tax_programs(config, state)
+        # Calculate baseline metrics once
+        situation = create_situation(
+            income,
+            is_married=is_married,
+            state_code=state,
+            in_nyc=in_nyc,
+            num_children=num_children,
+            **deductions,
+        )
+        baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
+        current_donation_metrics = calculate_donation_metrics(
+            situation, donation_amount
+        )
+        current_donation_plus100_metrics = calculate_donation_metrics(
+            situation, donation_amount + MARGIN
+        )
+        df = calculate_donation_effects(situation)
+        # Render main sections
+        render_tax_results(
+            df,
+            baseline_metrics,
+            income,
+            donation_amount,
+            current_donation_metrics,
+            current_donation_plus100_metrics,
+        )
+        render_target_donation_section(
+            df,
+            baseline_metrics,
+            income,
+            donation_amount,
+            current_donation_metrics,
+            situation,
+        )
 
-    # Display notes
-    render_notes()
-    render_policyengine_donate()
+        # Display tax program information
+        st.divider()
+        display_tax_programs(config, state)
+
+        # Display notes
+        render_notes()
+        render_policyengine_donate()
 
 
 if __name__ == "__main__":
