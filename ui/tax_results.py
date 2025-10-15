@@ -1,6 +1,6 @@
 import streamlit as st
-from visualization import create_tax_plot, create_marginal_savings_plot
-from constants import TEAL_ACCENT, MARGIN
+from givecalc import TEAL_ACCENT, MARGIN
+from ui.visualization import create_tax_plot, create_marginal_savings_plot
 
 
 def render_tax_results(

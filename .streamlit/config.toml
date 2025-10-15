@@ -23,6 +23,3 @@ showErrorDetails = true
 
 [browser]
 gatherUsageStats = true
-
-[theme.button]
-backgroundColor = "#39C6C0"

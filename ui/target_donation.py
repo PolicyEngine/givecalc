@@ -1,9 +1,11 @@
 import streamlit as st
-from visualization import create_net_income_plot
-from calculations.net_income import add_net_income_columns
-from calculations.donations import calculate_target_donation
-from calculations.tax import calculate_donation_metrics
-from constants import TEAL_ACCENT
+from givecalc import (
+    add_net_income_columns,
+    calculate_target_donation,
+    calculate_donation_metrics,
+    TEAL_ACCENT,
+)
+from ui.visualization import create_net_income_plot
 
 
 def render_target_donation_section(

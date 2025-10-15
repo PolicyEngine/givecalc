@@ -1,6 +1,6 @@
 # ui_donations.py
 import streamlit as st
-from constants import TEAL_ACCENT
+from givecalc.constants import TEAL_ACCENT
 
 
 def render_initial_donation(income):

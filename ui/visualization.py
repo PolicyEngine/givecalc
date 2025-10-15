@@ -2,7 +2,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # from policyengine_core.charts import format_fig
-from constants import TEAL_ACCENT
+from givecalc.constants import TEAL_ACCENT
 
 
 def create_tax_plot(
@@ -44,14 +44,15 @@ def create_tax_plot(
         )
     )
 
+    # Set y-axis to start at 0 for taxes
+    y_max = df[y_col].max()
+    y_padding = y_max * 0.1  # 10% padding on top
+
     fig.update_layout(
         xaxis_tickformat="$,",
         yaxis_tickformat="$,",
         xaxis_range=[0, income],
-        yaxis_range=[
-            min(min(df[y_col]) * 1.05, 0),
-            max(max(df[y_col]) * 1.05, 0),
-        ],
+        yaxis_range=[0, y_max + y_padding],
         xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         yaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         showlegend=False,
@@ -106,11 +107,15 @@ def create_marginal_savings_plot(
         )
     )
 
+    # Get actual max for better range
+    max_marginal = df["marginal_savings"].max()
+    y_max = min(max_marginal * 1.1, 1.0)  # Cap at 100% but add 10% padding
+
     fig.update_layout(
         xaxis_tickformat="$,",
         yaxis_tickformat=".0%",
         xaxis_range=[0, max(df[donation_column])],
-        yaxis_range=[0, 1],
+        yaxis_range=[0, y_max],
         xaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         yaxis=dict(zeroline=True, zerolinewidth=1, zerolinecolor="gray"),
         showlegend=False,

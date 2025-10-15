@@ -1,5 +1,5 @@
 from policyengine_us import Simulation
-from constants import CURRENT_YEAR
+from givecalc.constants import CURRENT_YEAR
 
 
 def create_donation_simulation(situation, donation_amount):

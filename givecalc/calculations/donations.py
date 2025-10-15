@@ -1,5 +1,5 @@
 from scipy.interpolate import interp1d
-from calculations.tax import calculate_donation_metrics
+from givecalc.calculations.tax import calculate_donation_metrics
 
 
 def calculate_target_donation(
@@ -57,8 +57,8 @@ def calculate_target_donation(
         fill_value=(df["reduction_percentage"].min(), df["reduction_percentage"].max()),
     )
 
-    # Calculate interpolated values
-    required_donation = float(f_donation(target_amount))
+    # Calculate interpolated values (use .item() to avoid numpy deprecation warning)
+    required_donation = float(f_donation(target_amount).item() if hasattr(f_donation(target_amount), 'item') else f_donation(target_amount))
     required_donation_metrics = calculate_donation_metrics(situation, required_donation)
     required_donation_net_income = (
         required_donation_metrics["baseline_net_income"][0] - required_donation
@@ -67,7 +67,7 @@ def calculate_target_donation(
     actual_reduction = (
         target_amount  # Since we're interpolating, we can achieve the exact target
     )
-    actual_percentage = float(f_percentage(target_amount))
+    actual_percentage = float(f_percentage(target_amount).item() if hasattr(f_percentage(target_amount), 'item') else f_percentage(target_amount))
 
     return (
         required_donation,

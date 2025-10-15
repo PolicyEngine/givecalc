@@ -1,6 +1,6 @@
 # ui_basic.py
 import streamlit as st
-from constants import PE_VERSION, CURRENT_YEAR, TEAL_ACCENT
+from givecalc.constants import PE_VERSION, CURRENT_YEAR, TEAL_ACCENT
 
 
 def render_intro():
@@ -33,7 +33,10 @@ def render_notes():
 
 
 def render_state_selector(states):
-    state = st.selectbox("What state do you live in?", options=states)
+    state = st.selectbox(
+        "What state do you live in?",
+        options=states,
+    )
     in_nyc = False
     if state == "NY":
         in_nyc = st.checkbox(
