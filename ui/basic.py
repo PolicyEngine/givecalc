@@ -37,6 +37,7 @@ def render_state_selector(states):
     state = st.selectbox(
         "What state do you live in?",
         options=states,
+        help="We use your state to calculate the effect of charitable giving on state taxes",
     )
     in_nyc = False
     if state == "NY":
