@@ -1,6 +1,7 @@
 """Tests for situation creation."""
 
 import pytest
+
 from givecalc import CURRENT_YEAR, DEFAULT_AGE, create_situation
 
 
@@ -29,13 +30,13 @@ def test_create_situation_single():
 
 def test_create_situation_married():
     """Test creating a situation for a married couple."""
-    situation = create_situation(
-        employment_income=150000, is_married=True
-    )
+    situation = create_situation(employment_income=150000, is_married=True)
 
     # Check spouse exists
     assert "your spouse" in situation["people"]
-    assert situation["people"]["your spouse"]["age"][CURRENT_YEAR] == DEFAULT_AGE
+    assert (
+        situation["people"]["your spouse"]["age"][CURRENT_YEAR] == DEFAULT_AGE
+    )
 
     # Check spouse in all entities
     members = situation["families"]["your family"]["members"]

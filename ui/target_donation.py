@@ -1,9 +1,10 @@
 import streamlit as st
+
 from givecalc import (
-    add_net_income_columns,
-    calculate_target_donation,
-    calculate_donation_metrics,
     TEAL_ACCENT,
+    add_net_income_columns,
+    calculate_donation_metrics,
+    calculate_target_donation,
 )
 from ui.visualization import create_net_income_plot
 
@@ -65,7 +66,9 @@ def render_target_donation_section(
         actual = actual_reduction
 
     # TODO: Investigate why this is happening.
-    show_warning = abs(actual - target) > (0.1 if reduction_type == "Percentage" else 1)
+    show_warning = abs(actual - target) > (
+        0.1 if reduction_type == "Percentage" else 1
+    )
     show_warning = False  # Suppress warning for now
     if show_warning:
         st.info(

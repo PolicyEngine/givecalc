@@ -1,11 +1,12 @@
 """Tests for realistic user scenarios."""
 
-import pytest
 import pandas as pd
+import pytest
+
 from givecalc import (
-    create_situation,
-    calculate_donation_metrics,
     calculate_donation_effects,
+    calculate_donation_metrics,
+    create_situation,
 )
 
 
@@ -99,4 +100,6 @@ def test_single_high_earner():
     )
 
     print(f"\nSingle high earner tax range: ${tax_range:,.0f}")
-    assert tax_range > 30000, f"Expected >$30k variation, got ${tax_range:,.0f}"
+    assert (
+        tax_range > 30000
+    ), f"Expected >$30k variation, got ${tax_range:,.0f}"

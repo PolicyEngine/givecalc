@@ -1,7 +1,8 @@
 """Test that axes work correctly."""
 
 from policyengine_us import Simulation
-from givecalc import create_situation, CURRENT_YEAR
+
+from givecalc import CURRENT_YEAR, create_situation
 
 
 def test_axes_generate_donation_range():
@@ -17,10 +18,14 @@ def test_axes_generate_donation_range():
     donations_person = sim.calculate("charitable_cash_donations", CURRENT_YEAR)
     print(f"\nDonations (person level):")
     print(f"  Shape: {donations_person.shape}")
-    print(f"  Min: ${donations_person.min():,.0f}, Max: ${donations_person.max():,.0f}")
+    print(
+        f"  Min: ${donations_person.min():,.0f}, Max: ${donations_person.max():,.0f}"
+    )
 
     # Calculate on tax_unit level
-    donations = sim.calculate("charitable_cash_donations", CURRENT_YEAR, map_to="tax_unit")
+    donations = sim.calculate(
+        "charitable_cash_donations", CURRENT_YEAR, map_to="tax_unit"
+    )
     print(f"\nDonations (tax_unit level):")
     print(f"  Shape: {donations.shape}")
     print(f"  Min: ${donations.min():,.0f}, Max: ${donations.max():,.0f}")
@@ -29,5 +34,9 @@ def test_axes_generate_donation_range():
 
     # Donations should range from 0 to 100000
     assert donations.min() == 0, f"Min should be 0, got {donations.min()}"
-    assert donations.max() == 100000, f"Max should be 100000, got {donations.max()}"
-    assert len(donations) == 1001, f"Should have 1001 values, got {len(donations)}"
+    assert (
+        donations.max() == 100000
+    ), f"Max should be 100000, got {donations.max()}"
+    assert (
+        len(donations) == 1001
+    ), f"Should have 1001 values, got {len(donations)}"

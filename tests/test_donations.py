@@ -1,15 +1,16 @@
 """Tests for donation calculation functions."""
 
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+
 from givecalc import (
     CURRENT_YEAR,
-    create_situation,
-    calculate_donation_metrics,
-    calculate_donation_effects,
-    calculate_target_donation,
     add_net_income_columns,
+    calculate_donation_effects,
+    calculate_donation_metrics,
+    calculate_target_donation,
+    create_situation,
 )
 
 
@@ -96,8 +97,7 @@ def test_add_net_income_columns():
 
     # Check that net income decreases as donations increase
     assert (
-        df_with_net["net_income"].iloc[0]
-        > df_with_net["net_income"].iloc[-1]
+        df_with_net["net_income"].iloc[0] > df_with_net["net_income"].iloc[-1]
     )
 
 

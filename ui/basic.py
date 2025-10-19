@@ -1,6 +1,7 @@
 # ui_basic.py
 import streamlit as st
-from givecalc.constants import PE_VERSION, CURRENT_YEAR, TEAL_ACCENT
+
+from givecalc.constants import CURRENT_YEAR, PE_VERSION, TEAL_ACCENT
 
 
 def render_intro():

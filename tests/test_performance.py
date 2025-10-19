@@ -1,7 +1,8 @@
 """Performance tests for calculation speed."""
 
 import time
-from givecalc import create_situation, calculate_donation_effects
+
+from givecalc import calculate_donation_effects, create_situation
 
 
 def test_calculation_speed():
@@ -17,7 +18,9 @@ def test_calculation_speed():
     df = calculate_donation_effects(situation)
     elapsed = time.time() - start
 
-    print(f"\n⏱️  Calculated {len(df)} donation points in {elapsed:.2f} seconds")
+    print(
+        f"\n⏱️  Calculated {len(df)} donation points in {elapsed:.2f} seconds"
+    )
     print(f"   ({len(df)/elapsed:.0f} points/second)")
 
     # Should complete in under 10 seconds for 1001 points

@@ -1,6 +1,7 @@
 import streamlit as st
-from givecalc import TEAL_ACCENT, MARGIN
-from ui.visualization import create_tax_plot, create_marginal_savings_plot
+
+from givecalc import MARGIN, TEAL_ACCENT
+from ui.visualization import create_marginal_savings_plot, create_tax_plot
 
 
 def render_tax_results(
@@ -54,6 +55,8 @@ def render_tax_results(
         unsafe_allow_html=True,
     )
     st.plotly_chart(
-        create_marginal_savings_plot(df, donation_amount, marginal_savings / MARGIN),
+        create_marginal_savings_plot(
+            df, donation_amount, marginal_savings / MARGIN
+        ),
         use_container_width=True,
     )

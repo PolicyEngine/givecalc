@@ -1,14 +1,15 @@
 """Tests for tax calculation functions."""
 
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+
 from givecalc import (
     CURRENT_YEAR,
-    create_situation,
-    calculate_donation_metrics,
     calculate_donation_effects,
+    calculate_donation_metrics,
     create_donation_dataframe,
+    create_situation,
 )
 
 
@@ -37,7 +38,9 @@ def test_calculate_donation_metrics_zero_donation():
 def test_calculate_donation_metrics_with_donation():
     """Test that donations affect tax calculation correctly."""
     situation = create_situation(employment_income=100000)
-    metrics_no_donation = calculate_donation_metrics(situation, donation_amount=0)
+    metrics_no_donation = calculate_donation_metrics(
+        situation, donation_amount=0
+    )
     metrics_with_donation = calculate_donation_metrics(
         situation, donation_amount=10000
     )

@@ -2,7 +2,8 @@
 
 import pytest
 from policyengine_us import Simulation
-from givecalc import CURRENT_YEAR, create_situation, create_donation_simulation
+
+from givecalc import CURRENT_YEAR, create_donation_simulation, create_situation
 
 
 def test_create_donation_simulation():

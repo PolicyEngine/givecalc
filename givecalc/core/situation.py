@@ -1,4 +1,5 @@
 from policyengine_us import Simulation
+
 from givecalc.constants import CURRENT_YEAR, DEFAULT_AGE
 
 
@@ -35,7 +36,9 @@ def create_situation(
             "you": {
                 "age": {CURRENT_YEAR: DEFAULT_AGE},
                 "employment_income": {CURRENT_YEAR: employment_income},
-                "charitable_cash_donations": {CURRENT_YEAR: 0},  # Initialize for axes
+                "charitable_cash_donations": {
+                    CURRENT_YEAR: 0
+                },  # Initialize for axes
                 "mortgage_interest": {CURRENT_YEAR: mortgage_interest},
                 "real_estate_taxes": {CURRENT_YEAR: real_estate_taxes},
                 "medical_out_of_pocket_expenses": {
@@ -70,7 +73,9 @@ def create_situation(
     situation.update(
         {
             "families": {"your family": {"members": members.copy()}},
-            "marital_units": {"your marital unit": {"members": members.copy()}},
+            "marital_units": {
+                "your marital unit": {"members": members.copy()}
+            },
             "tax_units": {
                 "tax unit": {
                     "members": members.copy(),

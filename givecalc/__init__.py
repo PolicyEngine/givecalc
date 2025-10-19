@@ -4,23 +4,23 @@ This package provides the core calculation logic for the GiveCalc application,
 separated from the Streamlit UI layer.
 """
 
-from givecalc.constants import (
-    CURRENT_YEAR,
-    BLUE_PRIMARY,
-    TEAL_ACCENT,
-    DEFAULT_AGE,
-    MARGIN,
-)
-from givecalc.core.situation import create_situation
-from givecalc.core.simulation import create_donation_simulation
-from givecalc.calculations.tax import (
-    calculate_donation_metrics,
-    calculate_donation_effects,
-    create_donation_dataframe,
-)
 from givecalc.calculations.donations import calculate_target_donation
 from givecalc.calculations.net_income import add_net_income_columns
+from givecalc.calculations.tax import (
+    calculate_donation_effects,
+    calculate_donation_metrics,
+    create_donation_dataframe,
+)
 from givecalc.config import load_config
+from givecalc.constants import (
+    BLUE_PRIMARY,
+    CURRENT_YEAR,
+    DEFAULT_AGE,
+    MARGIN,
+    TEAL_ACCENT,
+)
+from givecalc.core.simulation import create_donation_simulation
+from givecalc.core.situation import create_situation
 
 __version__ = "0.1.0"
 
