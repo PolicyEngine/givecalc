@@ -1,5 +1,6 @@
 from scipy.interpolate import interp1d
-from calculations.tax import calculate_donation_metrics
+
+from givecalc.calculations.tax import calculate_donation_metrics
 
 
 def calculate_target_donation(
@@ -30,7 +31,9 @@ def calculate_target_donation(
     df = df.copy()
     df["tax_savings"] = baseline_tax - df["income_tax_after_donations"]
     df["net_income"] = (
-        baseline_net_income - df["charitable_cash_donations"] + df["tax_savings"]
+        baseline_net_income
+        - df["charitable_cash_donations"]
+        + df["tax_savings"]
     )
     df["net_income_reduction"] = baseline_net_income - df["net_income"]
     df["reduction_percentage"] = (
@@ -54,20 +57,31 @@ def calculate_target_donation(
         df["reduction_percentage"],
         kind="linear",
         bounds_error=False,
-        fill_value=(df["reduction_percentage"].min(), df["reduction_percentage"].max()),
+        fill_value=(
+            df["reduction_percentage"].min(),
+            df["reduction_percentage"].max(),
+        ),
     )
 
-    # Calculate interpolated values
-    required_donation = float(f_donation(target_amount))
-    required_donation_metrics = calculate_donation_metrics(situation, required_donation)
+    # Calculate interpolated values (use .item() to avoid numpy deprecation warning)
+    required_donation = float(
+        f_donation(target_amount).item()
+        if hasattr(f_donation(target_amount), "item")
+        else f_donation(target_amount)
+    )
+    required_donation_metrics = calculate_donation_metrics(
+        situation, required_donation
+    )
     required_donation_net_income = (
         required_donation_metrics["baseline_net_income"][0] - required_donation
     )
 
-    actual_reduction = (
-        target_amount  # Since we're interpolating, we can achieve the exact target
+    actual_reduction = target_amount  # Since we're interpolating, we can achieve the exact target
+    actual_percentage = float(
+        f_percentage(target_amount).item()
+        if hasattr(f_percentage(target_amount), "item")
+        else f_percentage(target_amount)
     )
-    actual_percentage = float(f_percentage(target_amount))
 
     return (
         required_donation,

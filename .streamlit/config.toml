@@ -2,17 +2,17 @@
 # Use light as base since we're customizing most colors
 base = "light"
 
-# Primary accent color - using our teal for interactive elements
-primaryColor = "#39C6C0"
+# Primary accent color - matching PolicyEngine v2 teal (primary/500)
+primaryColor = "#319795"
 
 # Main background color - clean white
 backgroundColor = "#FFFFFF"
 
-# Secondary background (sidebar and widgets)
-secondaryBackgroundColor = "#F7FDFC"
+# Secondary background (sidebar and widgets) - matching PolicyEngine v2
+secondaryBackgroundColor = "#F5F9FF"
 
-# Main text color - using a dark gray for better readability
-textColor = "#616161"
+# Main text color - matching PolicyEngine v2 (black)
+textColor = "#000000"
 
 # Set font family
 font = "sans serif"
@@ -23,6 +23,3 @@ showErrorDetails = true
 
 [browser]
 gatherUsageStats = true
-
-[theme.button]
-backgroundColor = "#39C6C0"

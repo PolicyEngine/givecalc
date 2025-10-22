@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 from policyengine_us import Simulation
-from constants import CURRENT_YEAR
-from donation_simulation import create_donation_simulation
+
+from givecalc.constants import CURRENT_YEAR
+from givecalc.core.simulation import create_donation_simulation
 
 
 def calculate_donation_metrics(situation, donation_amount):
@@ -45,15 +46,26 @@ def calculate_donation_effects(situation):
     simulation = Simulation(situation=situation)
     # Note: We add this as a column to enable non-cash donations in the future.
     donation_column = "charitable_cash_donations"
-    donations = simulation.calculate(donation_column, map_to="household")
+    # Use tax_unit for donations (where deductions are claimed) instead of household
+    # Person-level variable without aggregation formula doesn't map properly to household
+    donations = simulation.calculate(
+        donation_column, period=CURRENT_YEAR, map_to="tax_unit"
+    )
+
     income_tax_by_donation = simulation.calculate(
-        "household_tax", map_to="household"
-    ) - simulation.calculate("household_benefits", map_to="household")
+        "household_tax", period=CURRENT_YEAR, map_to="household"
+    ) - simulation.calculate(
+        "household_benefits", period=CURRENT_YEAR, map_to="household"
+    )
 
-    return create_donation_dataframe(donations, income_tax_by_donation, donation_column)
+    return create_donation_dataframe(
+        donations, income_tax_by_donation, donation_column
+    )
 
 
-def create_donation_dataframe(donations, income_tax_by_donation, donation_column):
+def create_donation_dataframe(
+    donations, income_tax_by_donation, donation_column
+):
     """
     Create a DataFrame with donation effects analysis.
 
@@ -73,8 +85,8 @@ def create_donation_dataframe(donations, income_tax_by_donation, donation_column
     )
 
     df["income_tax_after_donations"] = df.income_tax
-    df["marginal_savings"] = -np.gradient(df.income_tax_after_donations) / np.gradient(
-        df[donation_column]
-    )
+    df["marginal_savings"] = -np.gradient(
+        df.income_tax_after_donations
+    ) / np.gradient(df[donation_column])
 
     return df

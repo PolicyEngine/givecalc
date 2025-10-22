@@ -1,5 +1,6 @@
 from policyengine_us import Simulation
-from constants import CURRENT_YEAR
+
+from givecalc.constants import CURRENT_YEAR
 
 
 def create_donation_simulation(situation, donation_amount):
@@ -45,7 +46,9 @@ def display_results(
     import streamlit as st
 
     # Display net income values
-    st.write(f"Household net income with no donations: ${int(baseline_net_income):,}")
+    st.write(
+        f"Household net income with no donations: ${int(baseline_net_income):,}"
+    )
     st.write(
         f"Household net income with ${donation_amount:,} donation: "
         f"${int(actual_net_income - donation_amount):,}"
