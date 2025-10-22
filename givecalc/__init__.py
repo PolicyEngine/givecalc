@@ -13,11 +13,15 @@ from givecalc.calculations.tax import (
 )
 from givecalc.config import load_config
 from givecalc.constants import (
+    BACKGROUND_SIDEBAR,
     BLUE_PRIMARY,
+    BORDER_LIGHT,
     CURRENT_YEAR,
     DEFAULT_AGE,
     MARGIN,
     TEAL_ACCENT,
+    TEAL_PRIMARY,
+    TEXT_PRIMARY,
 )
 from givecalc.core.simulation import create_donation_simulation
 from givecalc.core.situation import create_situation
@@ -29,6 +33,10 @@ __all__ = [
     "CURRENT_YEAR",
     "BLUE_PRIMARY",
     "TEAL_ACCENT",
+    "TEAL_PRIMARY",
+    "BACKGROUND_SIDEBAR",
+    "BORDER_LIGHT",
+    "TEXT_PRIMARY",
     "DEFAULT_AGE",
     "MARGIN",
     # Core functions

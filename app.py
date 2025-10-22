@@ -1,10 +1,15 @@
 import streamlit as st
 
 from givecalc import (
+    BACKGROUND_SIDEBAR,
+    BORDER_LIGHT,
     MARGIN,
     TEAL_ACCENT,
+    TEAL_PRIMARY,
+    add_net_income_columns,
     calculate_donation_effects,
     calculate_donation_metrics,
+    calculate_target_donation,
     create_situation,
     load_config,
 )
@@ -82,8 +87,8 @@ def main():
     st.markdown(
         f"""
     <h1 style="font-family: Roboto;">
-        <span style="color: {TEAL_ACCENT}; font-weight: bold;">Give</span><span style="color: {TEAL_ACCENT}; font-weight: normal;">Calc</span>
-        <span style="color: #BDBDBD; font-weight: normal;"> by PolicyEngine</span>
+        <span style="color: {TEAL_PRIMARY}; font-weight: bold;">Give</span><span style="color: {TEAL_PRIMARY}; font-weight: normal;">Calc</span>
+        <span style="color: #9CA3AF; font-weight: normal;"> by PolicyEngine</span>
     </h1>
     """,
         unsafe_allow_html=True,
@@ -205,18 +210,35 @@ def main():
                 donation_amount,
             )
 
-        # Render main sections
-        render_tax_results(
-            df,
-            baseline_metrics,
-            income,
-            donation_amount,
-            current_donation_metrics,
-            current_donation_plus100_metrics,
-        )
-
+        # If in target mode, calculate the required donation first
         if donation_in_mind and reduction_amount is not None:
             with st.spinner("🎯 Finding your target donation amount..."):
+                df_with_net = add_net_income_columns(df, baseline_metrics)
+                (
+                    required_donation,
+                    required_donation_net_income,
+                    actual_reduction,
+                    actual_percentage,
+                ) = calculate_target_donation(
+                    situation,
+                    df_with_net,
+                    baseline_metrics,
+                    reduction_amount,
+                    is_percentage=(reduction_type == "Percentage"),
+                )
+
+                # Use the target donation as the main donation amount
+                donation_amount = required_donation
+
+                # Recalculate metrics for the target donation
+                current_donation_metrics = calculate_donation_metrics(
+                    situation, donation_amount
+                )
+                current_donation_plus100_metrics = calculate_donation_metrics(
+                    situation, donation_amount + MARGIN
+                )
+
+                # Show target donation section at the top
                 render_target_donation_section(
                     df,
                     baseline_metrics,
@@ -226,7 +248,21 @@ def main():
                     situation,
                     reduction_amount,
                     reduction_type,
+                    required_donation,
+                    required_donation_net_income,
+                    actual_reduction,
+                    actual_percentage,
                 )
+
+        # Render tax results
+        render_tax_results(
+            df,
+            baseline_metrics,
+            income,
+            donation_amount,
+            current_donation_metrics,
+            current_donation_plus100_metrics,
+        )
 
         # Display tax program information
         st.divider()

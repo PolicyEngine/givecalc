@@ -1,7 +1,7 @@
 # ui_donations.py
 import streamlit as st
 
-from givecalc.constants import TEAL_ACCENT
+from givecalc.constants import TEAL_PRIMARY
 
 
 def render_initial_donation(income):
@@ -52,7 +52,7 @@ def render_policyengine_donate():
     st.markdown(
         f"<div style='text-align: center; padding: 20px;'>"
         f"<p><em>GiveCalc is a free tool from PolicyEngine.<br>"
-        f"<a href='https://policyengine.org/us/donate' target='_blank' style='color: {TEAL_ACCENT};'>"
+        f"<a href='https://policyengine.org/us/donate' target='_blank' style='color: {TEAL_PRIMARY};'>"
         f"Support our work with a tax-deductible donation</a>.</em></p>"
         "</div>",
         unsafe_allow_html=True,

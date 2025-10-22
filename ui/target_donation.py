@@ -1,11 +1,6 @@
 import streamlit as st
 
-from givecalc import (
-    TEAL_ACCENT,
-    add_net_income_columns,
-    calculate_donation_metrics,
-    calculate_target_donation,
-)
+from givecalc import TEAL_PRIMARY, add_net_income_columns
 from ui.visualization import create_net_income_plot
 
 
@@ -18,24 +13,14 @@ def render_target_donation_section(
     situation,
     reduction_amount,
     reduction_type,
+    required_donation,
+    required_donation_net_income,
+    actual_reduction,
+    actual_percentage,
 ):
-    """Render the target donation calculator section."""
-    st.divider()
-    # Add net income calculations to DataFrame
+    """Render the target donation calculator section with pre-calculated values."""
+    # Add net income calculations to DataFrame for the chart
     df_with_net = add_net_income_columns(df, baseline_metrics)
-
-    (
-        required_donation,
-        required_donation_net_income,
-        actual_reduction,
-        actual_percentage,
-    ) = calculate_target_donation(
-        situation,
-        df_with_net,
-        baseline_metrics,
-        reduction_amount,
-        is_percentage=(reduction_type == "Percentage"),
-    )
 
     # Display results
     target_text = (
@@ -47,10 +32,10 @@ def render_target_donation_section(
     st.markdown(
         f"""
 <h4 style="font-family: Roboto; font-weight: normal; font-size: 22px;">
-    To reduce your net income by 
-    <span style="color: {TEAL_ACCENT}; font-weight: bold;">{target_text}</span>, 
-    donate 
-    <span style="color: {TEAL_ACCENT}; font-weight: bold;">${required_donation:,.0f}</span>
+    To reduce your net income by
+    <span style="color: {TEAL_PRIMARY}; font-weight: bold;">{target_text}</span>,
+    donate
+    <span style="color: {TEAL_PRIMARY}; font-weight: bold;">${required_donation:,.0f}</span>
 </h4>
 """,
         unsafe_allow_html=True,
@@ -77,14 +62,9 @@ def render_target_donation_section(
         )
 
     # Show net income plot
-    donation_net_income = (
-        current_donation_metrics["baseline_net_income"][0] - donation_amount
-    )
     st.plotly_chart(
         create_net_income_plot(
             df_with_net,
-            donation_amount,
-            donation_net_income,
             required_donation,
             required_donation_net_income,
         ),

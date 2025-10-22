@@ -1,6 +1,6 @@
 import streamlit as st
 
-from givecalc import MARGIN, TEAL_ACCENT
+from givecalc import MARGIN, TEAL_PRIMARY
 from ui.visualization import create_marginal_savings_plot, create_tax_plot
 
 
@@ -27,9 +27,9 @@ def render_tax_results(
     st.markdown(
         f"""
 <h3 style="font-family: Roboto; font-weight: normal; font-size: 22px;">
-    Your <span style="color: {TEAL_ACCENT}; font-weight: bold;">${donation_amount:,.0f}</span> donation 
-    will lower your taxes by 
-    <span style="color: {TEAL_ACCENT}; font-weight: bold;">${tax_reduction:,.0f}</span>
+    Your <span style="color: {TEAL_PRIMARY}; font-weight: bold;">${donation_amount:,.0f}</span> donation
+    will lower your taxes by
+    <span style="color: {TEAL_PRIMARY}; font-weight: bold;">${tax_reduction:,.0f}</span>
 </h3>
 """,
         unsafe_allow_html=True,
@@ -48,8 +48,8 @@ def render_tax_results(
     st.markdown(
         f"""
 <h3 style="font-family: Roboto; font-weight: normal; font-size: 22px;">
-    Giving an extra <span style="color: {TEAL_ACCENT}; font-weight: bold;">$100</span> would lower your taxes by another 
-    <span style="color: {TEAL_ACCENT}; font-weight: bold;">${round(marginal_savings)}</span>
+    Giving an extra <span style="color: {TEAL_PRIMARY}; font-weight: bold;">$100</span> would lower your taxes by another
+    <span style="color: {TEAL_PRIMARY}; font-weight: bold;">${round(marginal_savings)}</span>
 </h3>
 """,
         unsafe_allow_html=True,
