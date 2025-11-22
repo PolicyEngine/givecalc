@@ -65,13 +65,13 @@ def cached_calculate_effects(
 def main():
     st.set_page_config(page_title="GiveCalc", page_icon="💝")
 
-    # Inject custom CSS with Roboto font
+    # Inject custom CSS with Inter font (PolicyEngine standard)
     st.markdown(
         """
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
         html, body, [class*="css"] {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
         div[data-testid="stToolbar"] {
             visibility: hidden;
@@ -86,7 +86,7 @@ def main():
 
     st.markdown(
         f"""
-    <h1 style="font-family: Roboto;">
+    <h1 style="font-family: Inter;">
         <span style="color: {TEAL_PRIMARY}; font-weight: bold;">Give</span><span style="color: {TEAL_PRIMARY}; font-weight: normal;">Calc</span>
         <span style="color: #9CA3AF; font-weight: normal;"> by PolicyEngine</span>
     </h1>
