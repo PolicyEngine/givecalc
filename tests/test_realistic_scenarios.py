@@ -14,7 +14,7 @@ def test_high_income_nyc_scenario():
     """Test with realistic high-income NYC scenario: $500k income, $30k donation."""
     # Create situation matching user's scenario
     situation = create_situation(
-        employment_income=500000,
+        wages_and_salaries=500000,
         is_married=True,
         state_code="NY",
         in_nyc=True,
@@ -55,7 +55,7 @@ def test_high_income_nyc_scenario():
 def test_moderate_income_scenario():
     """Test with moderate income scenario that might have negative net taxes."""
     situation = create_situation(
-        employment_income=50000,
+        wages_and_salaries=50000,
         is_married=True,
         state_code="CA",
         num_children=2,
@@ -82,7 +82,7 @@ def test_moderate_income_scenario():
 def test_single_high_earner():
     """Test single high earner in high-tax state."""
     situation = create_situation(
-        employment_income=300000,
+        wages_and_salaries=300000,
         is_married=False,
         state_code="CA",
         num_children=0,
