@@ -27,7 +27,7 @@ GiveCalc uses PolicyEngine's comprehensive tax model—the same open-source micr
 Today we're launching **GiveCalc v2** with major improvements:
 
 ✅ Support for multiple income sources (wages, dividends, capital gains, self-employment)
-✅ Multi-year tax planning (2024, 2025, or 2026)
+✅ Multi-year tax planning (2024, 2025, or 2026) — including new OBBBA provisions for 2026 (0.5% AGI floor, restored non-itemizer deduction, Pease limitation)
 ✅ Transparency into all the federal and state charitable policies we model
 ✅ A faster, more responsive interface
 

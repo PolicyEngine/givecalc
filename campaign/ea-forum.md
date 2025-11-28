@@ -43,11 +43,15 @@ This matters because different income types are taxed differently, affecting you
 
 ### 2. Multi-Year Tax Planning
 
-You can now calculate for **2024, 2025, or 2026** tax years. This is useful for:
+You can now calculate for **2024, 2025, or 2026** tax years. This is particularly relevant given recent tax law changes.
 
-- Planning this year's giving vs. next year's
-- Understanding how tax law changes (like TCJA expiration) affect your giving
-- [Future: donation bunching optimization across years]
+**2026 brings significant changes** from the [One Big Beautiful Bill Act](https://www.congress.gov/bill/119th-congress/house-bill/1/text) (OBBBA), which we've implemented in [PolicyEngine-US](https://github.com/PolicyEngine/policyengine-us):
+
+- **0.5% AGI floor on charitable deductions** — Only donations above 0.5% of your AGI are deductible ([Tax Foundation analysis](https://taxfoundation.org/blog/charitable-deduction-big-beautiful-bill/))
+- **Non-itemizer charitable deduction restored** — $1,000 for individuals, $2,000 for married couples filing jointly
+- **Itemized deduction limitation** — Deductions capped at 80% of their value for high-income taxpayers (the "Pease limitation" returns)
+
+GiveCalc models all of these provisions, allowing you to compare your tax savings across years and plan accordingly.
 
 ### 3. Policy Transparency
 

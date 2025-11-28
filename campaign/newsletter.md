@@ -20,7 +20,7 @@ But that calculation misses several important factors.
 ### What's New
 
 - **Multiple income sources** — Enter wages, dividends, capital gains, self-employment, and more
-- **Multi-year planning** — Calculate for 2024, 2025, or 2026 tax years
+- **Multi-year planning** — Calculate for 2024, 2025, or 2026 tax years, including new OBBBA provisions for 2026
 - **See all modeled policies** — Explore the federal and state charitable tax provisions we calculate
 - **Faster, modern interface** — Rebuilt from the ground up with React
 

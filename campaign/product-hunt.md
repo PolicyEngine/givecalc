@@ -27,7 +27,7 @@ GiveCalc models all of this using PolicyEngine's open-source microsimulation—t
 **Key features:**
 
 ✅ Multiple income sources (wages, dividends, capital gains, self-employment)
-✅ Multi-year tax planning (2024, 2025, 2026)
+✅ Multi-year tax planning (2024, 2025, 2026) — including new 2026 OBBBA provisions
 ✅ "Marginal giving discount" shows savings rate at each donation level
 ✅ All 50 states + DC + NYC
 ✅ Free, no signup, open source

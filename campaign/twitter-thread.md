@@ -44,7 +44,7 @@ GiveCalc models all of this for all 50 states + DC + NYC.
 What's new in v2:
 
 ✅ Multiple income sources (wages, dividends, capital gains, etc.)
-✅ Multi-year planning (2024, 2025, 2026)
+✅ Multi-year planning (2024, 2025, 2026) — including new OBBBA provisions
 ✅ See all federal & state charitable tax policies we model
 ✅ Faster, modern interface
 
