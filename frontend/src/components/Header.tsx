@@ -2,7 +2,8 @@
  * GiveCalc Header component with branding
  */
 
-const LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.png";
+const LOGO_URL =
+  "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/white.png";
 
 export default function Header() {
   return (
@@ -19,14 +20,8 @@ export default function Header() {
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
             >
-              <span className="text-sm text-white/90 font-medium">
-                By
-              </span>
-              <img
-                src={LOGO_URL}
-                alt="PolicyEngine"
-                className="h-5"
-              />
+              <span className="text-sm text-white/90 font-medium">By</span>
+              <img src={LOGO_URL} alt="PolicyEngine" className="h-5" />
             </a>
           </div>
           <p className="text-sm text-white/80 hidden sm:block">

@@ -99,7 +99,7 @@ export interface FormState {
   in_nyc: boolean;
   donation_amount: number;
   deductions: Deductions;
-  mode: 'amount' | 'target';
+  mode: "amount" | "target";
   target_reduction: number;
   is_percentage: boolean;
   year: number;
@@ -118,7 +118,7 @@ export const DEFAULT_INCOME: Income = {
 
 export const DEFAULT_FORM_STATE: FormState = {
   income: DEFAULT_INCOME,
-  state_code: 'CA',
+  state_code: "CA",
   is_married: false,
   num_children: 0,
   in_nyc: false,
@@ -129,7 +129,7 @@ export const DEFAULT_FORM_STATE: FormState = {
     medical_expenses: 0,
     casualty_loss: 0,
   },
-  mode: 'amount',
+  mode: "amount",
   target_reduction: 10,
   is_percentage: true,
   year: 2025,

@@ -2,9 +2,9 @@
  * Main input form for GiveCalc
  */
 
-import { useState } from 'react';
-import type { FormState, StateInfo, Income } from '../lib/types';
-import { formatCurrency } from '../lib/format';
+import { useState } from "react";
+import type { FormState, StateInfo, Income } from "../lib/types";
+import { formatCurrency } from "../lib/format";
 
 interface Props {
   formState: FormState;
@@ -24,7 +24,10 @@ export default function InputForm({
   const [showDeductions, setShowDeductions] = useState(false);
   const [showOtherIncome, setShowOtherIncome] = useState(false);
 
-  const updateField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+  const updateField = <K extends keyof FormState>(
+    field: K,
+    value: FormState[K],
+  ) => {
     setFormState({ ...formState, [field]: value });
   };
 
@@ -35,7 +38,10 @@ export default function InputForm({
     });
   };
 
-  const updateDeduction = (field: keyof FormState['deductions'], value: number) => {
+  const updateDeduction = (
+    field: keyof FormState["deductions"],
+    value: number,
+  ) => {
     setFormState({
       ...formState,
       deductions: { ...formState.deductions, [field]: value },
@@ -43,7 +49,10 @@ export default function InputForm({
   };
 
   // Calculate total income for display
-  const totalIncome = Object.values(formState.income).reduce((a, b) => a + b, 0);
+  const totalIncome = Object.values(formState.income).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
@@ -59,13 +68,13 @@ export default function InputForm({
             <button
               key={year}
               type="button"
-              onClick={() => updateField('year', year)}
+              onClick={() => updateField("year", year)}
               className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
-                year !== 2024 ? 'border-l border-gray-300' : ''
+                year !== 2024 ? "border-l border-gray-300" : ""
               } ${
                 formState.year === year
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? "bg-teal-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
               {year}
@@ -84,22 +93,24 @@ export default function InputForm({
         </label>
         <select
           value={formState.state_code}
-          onChange={(e) => updateField('state_code', e.target.value)}
+          onChange={(e) => updateField("state_code", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
         >
-          <option value="" disabled>Select a state...</option>
+          <option value="" disabled>
+            Select a state...
+          </option>
           {states.map((state) => (
             <option key={state.code} value={state.code}>
               {state.name}
             </option>
           ))}
         </select>
-        {formState.state_code === 'NY' && (
+        {formState.state_code === "NY" && (
           <label className="flex items-center mt-2 text-sm">
             <input
               type="checkbox"
               checked={formState.in_nyc}
-              onChange={(e) => updateField('in_nyc', e.target.checked)}
+              onChange={(e) => updateField("in_nyc", e.target.checked)}
               className="mr-2 h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
             />
             I live in New York City
@@ -115,7 +126,9 @@ export default function InputForm({
         <input
           type="number"
           value={formState.income.wages_and_salaries}
-          onChange={(e) => updateIncome('wages_and_salaries', Number(e.target.value))}
+          onChange={(e) =>
+            updateIncome("wages_and_salaries", Number(e.target.value))
+          }
           min={0}
           max={10000000}
           step={1000}
@@ -135,19 +148,17 @@ export default function InputForm({
           <span className="text-sm font-medium text-gray-700">
             Other income (optional)
           </span>
-          <span className="text-gray-400">{showOtherIncome ? '−' : '+'}</span>
+          <span className="text-gray-400">{showOtherIncome ? "−" : "+"}</span>
         </button>
 
         {showOtherIncome && (
           <div className="mt-4 space-y-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Tips
-              </label>
+              <label className="block text-sm text-gray-600 mb-1">Tips</label>
               <input
                 type="number"
                 value={formState.income.tips}
-                onChange={(e) => updateIncome('tips', Number(e.target.value))}
+                onChange={(e) => updateIncome("tips", Number(e.target.value))}
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
@@ -159,7 +170,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.income.self_employment_income}
-                onChange={(e) => updateIncome('self_employment_income', Number(e.target.value))}
+                onChange={(e) =>
+                  updateIncome("self_employment_income", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
@@ -171,7 +184,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.income.interest_income}
-                onChange={(e) => updateIncome('interest_income', Number(e.target.value))}
+                onChange={(e) =>
+                  updateIncome("interest_income", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
@@ -183,7 +198,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.income.dividends}
-                onChange={(e) => updateIncome('dividends', Number(e.target.value))}
+                onChange={(e) =>
+                  updateIncome("dividends", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
@@ -195,7 +212,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.income.qualified_dividends}
-                onChange={(e) => updateIncome('qualified_dividends', Number(e.target.value))}
+                onChange={(e) =>
+                  updateIncome("qualified_dividends", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
@@ -207,7 +226,12 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.income.short_term_capital_gains}
-                onChange={(e) => updateIncome('short_term_capital_gains', Number(e.target.value))}
+                onChange={(e) =>
+                  updateIncome(
+                    "short_term_capital_gains",
+                    Number(e.target.value),
+                  )
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
@@ -219,7 +243,12 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.income.long_term_capital_gains}
-                onChange={(e) => updateIncome('long_term_capital_gains', Number(e.target.value))}
+                onChange={(e) =>
+                  updateIncome(
+                    "long_term_capital_gains",
+                    Number(e.target.value),
+                  )
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
@@ -242,22 +271,22 @@ export default function InputForm({
         <div className="flex rounded-lg border border-gray-300 overflow-hidden">
           <button
             type="button"
-            onClick={() => updateField('is_married', false)}
+            onClick={() => updateField("is_married", false)}
             className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
               !formState.is_married
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+                ? "bg-teal-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
             Single
           </button>
           <button
             type="button"
-            onClick={() => updateField('is_married', true)}
+            onClick={() => updateField("is_married", true)}
             className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors ${
               formState.is_married
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+                ? "bg-teal-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
             Married
@@ -273,7 +302,12 @@ export default function InputForm({
         <input
           type="number"
           value={formState.num_children}
-          onChange={(e) => updateField('num_children', Math.max(0, Math.min(10, Number(e.target.value))))}
+          onChange={(e) =>
+            updateField(
+              "num_children",
+              Math.max(0, Math.min(10, Number(e.target.value))),
+            )
+          }
           min={0}
           max={10}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
@@ -289,7 +323,7 @@ export default function InputForm({
           <span className="text-sm font-medium text-gray-700">
             Itemized deductions (optional)
           </span>
-          <span className="text-gray-400">{showDeductions ? '−' : '+'}</span>
+          <span className="text-gray-400">{showDeductions ? "−" : "+"}</span>
         </button>
 
         {showDeductions && (
@@ -301,7 +335,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.deductions.mortgage_interest}
-                onChange={(e) => updateDeduction('mortgage_interest', Number(e.target.value))}
+                onChange={(e) =>
+                  updateDeduction("mortgage_interest", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
               />
@@ -313,7 +349,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.deductions.real_estate_taxes}
-                onChange={(e) => updateDeduction('real_estate_taxes', Number(e.target.value))}
+                onChange={(e) =>
+                  updateDeduction("real_estate_taxes", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
               />
@@ -325,7 +363,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.deductions.medical_expenses}
-                onChange={(e) => updateDeduction('medical_expenses', Number(e.target.value))}
+                onChange={(e) =>
+                  updateDeduction("medical_expenses", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
               />
@@ -337,7 +377,9 @@ export default function InputForm({
               <input
                 type="number"
                 value={formState.deductions.casualty_loss}
-                onChange={(e) => updateDeduction('casualty_loss', Number(e.target.value))}
+                onChange={(e) =>
+                  updateDeduction("casualty_loss", Number(e.target.value))
+                }
                 min={0}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
               />
@@ -354,29 +396,29 @@ export default function InputForm({
         <div className="flex rounded-lg border border-gray-300 overflow-hidden mb-4">
           <button
             type="button"
-            onClick={() => updateField('mode', 'amount')}
+            onClick={() => updateField("mode", "amount")}
             className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
-              formState.mode === 'amount'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+              formState.mode === "amount"
+                ? "bg-teal-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
             Specific amount
           </button>
           <button
             type="button"
-            onClick={() => updateField('mode', 'target')}
+            onClick={() => updateField("mode", "target")}
             className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors ${
-              formState.mode === 'target'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+              formState.mode === "target"
+                ? "bg-teal-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
             Target reduction
           </button>
         </div>
 
-        {formState.mode === 'amount' ? (
+        {formState.mode === "amount" ? (
           <div>
             <label className="block text-sm text-gray-600 mb-1">
               Donation amount
@@ -384,7 +426,9 @@ export default function InputForm({
             <input
               type="number"
               value={formState.donation_amount}
-              onChange={(e) => updateField('donation_amount', Number(e.target.value))}
+              onChange={(e) =>
+                updateField("donation_amount", Number(e.target.value))
+              }
               min={0}
               max={totalIncome}
               step={100}
@@ -399,22 +443,22 @@ export default function InputForm({
             <div className="flex rounded-lg border border-gray-300 overflow-hidden">
               <button
                 type="button"
-                onClick={() => updateField('is_percentage', true)}
+                onClick={() => updateField("is_percentage", true)}
                 className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
                   formState.is_percentage
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                    ? "bg-teal-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Percentage
               </button>
               <button
                 type="button"
-                onClick={() => updateField('is_percentage', false)}
+                onClick={() => updateField("is_percentage", false)}
                 className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors ${
                   !formState.is_percentage
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                    ? "bg-teal-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Dollar amount
@@ -428,13 +472,15 @@ export default function InputForm({
                 <input
                   type="number"
                   value={formState.target_reduction}
-                  onChange={(e) => updateField('target_reduction', Number(e.target.value))}
+                  onChange={(e) =>
+                    updateField("target_reduction", Number(e.target.value))
+                  }
                   min={0}
                   step={formState.is_percentage ? 1 : 100}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                 />
                 <span className="text-gray-500">
-                  {formState.is_percentage ? '%' : '$'}
+                  {formState.is_percentage ? "%" : "$"}
                 </span>
               </div>
             </div>
@@ -448,11 +494,11 @@ export default function InputForm({
         disabled={isCalculating}
         className={`w-full py-3 px-4 rounded-md font-semibold text-white transition-colors ${
           isCalculating
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-primary-500 hover:bg-primary-600'
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-primary-500 hover:bg-primary-600"
         }`}
       >
-        {isCalculating ? 'Calculating...' : 'Calculate tax impact'}
+        {isCalculating ? "Calculating..." : "Calculate tax impact"}
       </button>
     </div>
   );
