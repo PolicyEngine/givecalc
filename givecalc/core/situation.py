@@ -71,7 +71,9 @@ def create_situation(
                 "non_qualified_dividend_income": {
                     tax_year: max(0, dividends - qualified_dividends)
                 },
-                "short_term_capital_gains": {tax_year: short_term_capital_gains},
+                "short_term_capital_gains": {
+                    tax_year: short_term_capital_gains
+                },
                 "long_term_capital_gains": {tax_year: long_term_capital_gains},
                 "self_employment_income": {tax_year: self_employment_income},
                 "charitable_cash_donations": {
@@ -133,7 +135,9 @@ def create_situation(
                         "name": "charitable_cash_donations",
                         "count": 1001,
                         "min": 0,
-                        "max": max(total_income, 1),  # Ensure at least 1 to avoid empty range
+                        "max": max(
+                            total_income, 1
+                        ),  # Ensure at least 1 to avoid empty range
                         "period": tax_year,
                     }
                 ]

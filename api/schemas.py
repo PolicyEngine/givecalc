@@ -12,7 +12,9 @@ class IncomeInput(BaseModel):
         default=0, ge=0, le=10_000_000, description="Wages and salaries"
     )
     tips: float = Field(default=0, ge=0, description="Tips")
-    dividends: float = Field(default=0, ge=0, description="Dividends (ordinary)")
+    dividends: float = Field(
+        default=0, ge=0, description="Dividends (ordinary)"
+    )
     qualified_dividends: float = Field(
         default=0, ge=0, description="Qualified dividends"
     )
@@ -50,9 +52,7 @@ class DeductionsInput(BaseModel):
 class CalculateRequest(BaseModel):
     """Request body for donation calculation."""
 
-    income: IncomeInput = Field(
-        ..., description="Income sources"
-    )
+    income: IncomeInput = Field(..., description="Income sources")
     state_code: str = Field(
         ..., min_length=2, max_length=2, description="Two-letter state code"
     )
@@ -107,9 +107,7 @@ class CalculateResponse(BaseModel):
 class TargetDonationRequest(BaseModel):
     """Request body for target donation calculation."""
 
-    income: IncomeInput = Field(
-        ..., description="Income sources"
-    )
+    income: IncomeInput = Field(..., description="Income sources")
     state_code: str = Field(
         ..., min_length=2, max_length=2, description="Two-letter state code"
     )
