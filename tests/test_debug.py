@@ -6,7 +6,7 @@ from givecalc import calculate_donation_effects, create_situation
 def test_check_dataframe_values():
     """Debug test to see what values are being generated."""
     situation = create_situation(
-        employment_income=500000,
+        wages_and_salaries=500000,
         is_married=True,
         state_code="NY",
         in_nyc=True,

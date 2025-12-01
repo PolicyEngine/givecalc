@@ -6,6 +6,15 @@ from givecalc.constants import CURRENT_YEAR
 from givecalc.core.simulation import create_donation_simulation
 
 
+def get_year_from_situation(situation):
+    """Extract the tax year from a situation dictionary."""
+    # The year is stored in the axes period
+    axes = situation.get("axes", [[]])
+    if axes and axes[0]:
+        return axes[0][0].get("period", CURRENT_YEAR)
+    return CURRENT_YEAR
+
+
 def calculate_donation_metrics(situation, donation_amount):
     """
     Calculate baseline metrics with specified donation.
@@ -17,18 +26,19 @@ def calculate_donation_metrics(situation, donation_amount):
     Returns:
         dict: Dictionary containing baseline metrics
     """
+    year = get_year_from_situation(situation)
     baseline_simulation = create_donation_simulation(
         situation=situation, donation_amount=donation_amount
     )
     return {
         "baseline_income_tax": baseline_simulation.calculate(
-            "household_tax", CURRENT_YEAR, map_to="household"
+            "household_tax", year, map_to="household"
         )
         - baseline_simulation.calculate(
-            "household_benefits", CURRENT_YEAR, map_to="household"
+            "household_benefits", year, map_to="household"
         ),
         "baseline_net_income": baseline_simulation.calculate(
-            "household_net_income", CURRENT_YEAR, map_to="household"
+            "household_net_income", year, map_to="household"
         ),
     }
 
@@ -43,19 +53,20 @@ def calculate_donation_effects(situation):
     Returns:
         pandas.DataFrame: DataFrame containing donation effects
     """
+    year = get_year_from_situation(situation)
     simulation = Simulation(situation=situation)
     # Note: We add this as a column to enable non-cash donations in the future.
     donation_column = "charitable_cash_donations"
     # Use tax_unit for donations (where deductions are claimed) instead of household
     # Person-level variable without aggregation formula doesn't map properly to household
     donations = simulation.calculate(
-        donation_column, period=CURRENT_YEAR, map_to="tax_unit"
+        donation_column, period=year, map_to="tax_unit"
     )
 
     income_tax_by_donation = simulation.calculate(
-        "household_tax", period=CURRENT_YEAR, map_to="household"
+        "household_tax", period=year, map_to="household"
     ) - simulation.calculate(
-        "household_benefits", period=CURRENT_YEAR, map_to="household"
+        "household_benefits", period=year, map_to="household"
     )
 
     return create_donation_dataframe(

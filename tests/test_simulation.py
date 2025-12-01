@@ -9,7 +9,7 @@ from givecalc import CURRENT_YEAR, create_donation_simulation, create_situation
 def test_create_donation_simulation():
     """Test creating a donation simulation."""
 
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     simulation = create_donation_simulation(situation, donation_amount=5000)
 
     assert isinstance(simulation, Simulation)
@@ -17,7 +17,7 @@ def test_create_donation_simulation():
 
 def test_create_donation_simulation_removes_axes():
     """Test that create_donation_simulation removes axes."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     assert "axes" in situation  # Original has axes
 
     simulation = create_donation_simulation(situation, donation_amount=5000)
@@ -32,7 +32,7 @@ def test_create_donation_simulation_removes_axes():
 
 def test_create_donation_simulation_applies_donation():
     """Test that the donation amount is applied."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     donation_amount = 10000
 
     simulation = create_donation_simulation(situation, donation_amount)
@@ -56,7 +56,7 @@ def test_create_donation_simulation_applies_donation():
 
 def test_create_donation_simulation_does_not_modify_original():
     """Test that create_donation_simulation doesn't modify original situation."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     original_axes = situation.get("axes")
 
     simulation = create_donation_simulation(situation, donation_amount=5000)

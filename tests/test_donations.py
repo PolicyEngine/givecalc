@@ -17,7 +17,7 @@ from givecalc import (
 def test_calculate_target_donation_by_amount():
     """Test calculating target donation by dollar amount."""
 
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
     df = calculate_donation_effects(situation)
 
@@ -41,7 +41,7 @@ def test_calculate_target_donation_by_amount():
 
 def test_calculate_target_donation_by_percentage():
     """Test calculating target donation by percentage."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
     df = calculate_donation_effects(situation)
 
@@ -63,7 +63,7 @@ def test_calculate_target_donation_by_percentage():
 
 def test_calculate_target_donation_zero_reduction():
     """Test calculating target donation with zero reduction."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
     df = calculate_donation_effects(situation)
 
@@ -83,7 +83,7 @@ def test_calculate_target_donation_zero_reduction():
 
 def test_add_net_income_columns():
     """Test adding net income columns to DataFrame."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
     df = calculate_donation_effects(situation)
 
@@ -103,7 +103,7 @@ def test_add_net_income_columns():
 
 def test_add_net_income_columns_does_not_modify_original():
     """Test that add_net_income_columns doesn't modify original DataFrame."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
     df = calculate_donation_effects(situation)
 

@@ -36,5 +36,5 @@ jobs:
         if: matrix.python-version == '3.11'
         run: |
           pip install black isort
-          black --check givecalc/ tests/ ui/ --line-length 79
-          isort --check givecalc/ tests/ ui/
+          black --check givecalc/ tests/ api/ --line-length 79
+          isort --check givecalc/ tests/ api/
