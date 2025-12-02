@@ -75,15 +75,3 @@ Donations are tax-deductible (US) and Gift Aid eligible (UK). If GiveCalc helps 
 **Need more complexity?** If your situation requires inputs we don't yet support (appreciated assets, QCDs, carryforwards, etc.), comment below or email max@policyengine.org. We can add features to GiveCalc or point you to the [policyengine-us Python package](https://github.com/PolicyEngine/policyengine-us) to run custom calculations locally.
 
 **Disclaimer:** GiveCalc provides estimates for informational purposes only. Results depend on the accuracy of inputs and model assumptions. This is not tax, legal, or financial advice—consult a qualified professional for your specific situation.
-
-## Comparison to other calculators
-
-| Calculator | Marginal rate only | State taxes | Multiple income types | Multi-year | Open source |
-|------------|-------------------|-------------|----------------------|------------|-------------|
-| **GiveCalc** | Full simulation | All 50 + DC + NYC | Yes | 2024-2026 | Yes |
-| [Charity Navigator](https://www.charitynavigator.org/donor-basics/giving-101/tax-benefits-of-giving/) | Yes | No | No | No | No |
-| [Fidelity](https://www.fidelitycharitable.org/giving-account/giving-calculator.html) | Yes | No | No | No | No |
-| [Schwab](https://www.schwabcharitable.org/maximize-your-impact/calculators/charitable-deductions-calculator) | Yes | No | No | No | No |
-| [TurboTax](https://turbotax.intuit.com/tax-tools/calculators/charitable-donation/) | Yes | No | No | No | No |
-
-Most existing calculators multiply your donation by a marginal tax rate, which misses interactions that can significantly affect actual tax savings. GiveCalc runs a full tax simulation to capture these effects.
