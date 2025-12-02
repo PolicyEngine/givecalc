@@ -70,21 +70,37 @@ make format         # Format Python and JS/TS code
 
 ## Deployment
 
-Deploy to Google Cloud Run:
+### Frontend (Vercel)
 
+The frontend is auto-deployed to Vercel on push to main.
+
+- Production: https://givecalc.org
+
+### Backend (Google Cloud Run)
+
+The backend is deployed via Cloud Build trigger in GCP Console:
+
+1. Go to [Cloud Build Triggers](https://console.cloud.google.com/cloud-build/triggers)
+2. Find the `givecalc` trigger
+3. Click "Run" to manually deploy, or push to main to auto-deploy
+
+Manual deployment:
 ```bash
-# Deploy both API and frontend
-make deploy
-
-# Or deploy individually
-make deploy-api
-make deploy-frontend
+cd api
+gcloud builds submit --tag gcr.io/PROJECT_ID/givecalc
+gcloud run deploy givecalc \
+  --image gcr.io/PROJECT_ID/givecalc \
+  --platform managed \
+  --region europe-west1 \
+  --allow-unauthenticated
 ```
+
+- Production API: https://givecalc-578039519715.europe-west1.run.app
 
 ### Environment Variables
 
 **Frontend (build-time):**
-- `VITE_API_URL`: Backend API URL (e.g., `https://givecalc-api-xxx.run.app`)
+- `VITE_API_URL`: Backend API URL
 
 **Backend:**
 - `PORT`: Server port (default: 8080, set by Cloud Run)
