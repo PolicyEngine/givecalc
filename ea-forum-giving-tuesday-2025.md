@@ -78,11 +78,11 @@ We're especially eager to apply our simulations to understand how public policie
 
 Donations to PolicyEngine are tax-deductible in the US and would enable us to:
 
-- **Expand AI economic research**: Deepen our analysis of how policies mediate AI's distributional impacts, including scenarios from labor displacement to abundance
-- **Advance simulation capabilities**: Develop uncertainty quantification to express confidence intervals on policy impacts, potentially integrating with forecasting platforms like Metaculus
-- **Build better APIs for AI systems**: Create faster, more robust interfaces so AI assistants can use economic models as tools—improving their ability to answer policy questions accurately
-- **Expand geographic and policy coverage**: Add more countries, states, and policy areas so more institutions can use rigorous analysis
-- **Sustain open infrastructure**: Keep our tools free and open-source for researchers, governments, journalists, and the public
+- Deepen our analysis of how policies mediate AI's distributional impacts, including scenarios from labor displacement to abundance
+- Develop uncertainty quantification to express confidence intervals on policy impacts, potentially integrating with forecasting platforms like Metaculus
+- Create faster, more robust APIs so AI assistants can use economic models as tools—improving their ability to answer policy questions accurately
+- Add more countries, states, and policy areas so more institutions can use rigorous analysis
+- Keep our tools free and open-source for researchers, governments, journalists, and the public
 
 See how we spend donations on [Open Collective](https://opencollective.com/policyengine).
 
