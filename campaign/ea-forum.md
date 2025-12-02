@@ -17,7 +17,7 @@
 Most charity tax calculators give you a rough estimate: take your donation, multiply by your marginal tax rate, done. This approach misses the complexity that determines your actual tax savings:
 
 **🇺🇸 US considerations:**
-- Whether your total itemized deductions exceed the standard deduction threshold
+- Whether itemizing reduces your total tax liability (not always identical to itemized > standard deduction)
 - How large donations shift your tax bracket
 - State income tax interactions (all 50 states + DC + NYC)
 - AGI-based deduction limits (60% cap for cash)
