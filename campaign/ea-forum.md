@@ -28,7 +28,7 @@ Multiplying donations by your marginal tax rate misses interactions that affect 
 - Scottish income tax rates (19%-48%)
 - Personal Allowance tapering (£100k+ income)
 
-GiveCalc uses [PolicyEngine's](https://policyengine.org) microsimulation models to estimate these interactions. The same engine powers policy research used by policymakers, government agencies, and benefit screening tools.
+GiveCalc uses [PolicyEngine's](https://policyengine.org) microsimulation models to estimate these interactions. The same engine powers policy research used by policymakers, agencies, academics, think tanks, and benefit screening tools.
 
 The key output is your **marginal giving discount**: how much tax you save on your next dollar/pound of giving at any donation level. This varies non-linearly, which matters for decisions about timing and amount.
 
