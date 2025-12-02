@@ -86,6 +86,14 @@ class DonationDataPoint(BaseModel):
     net_income: float
 
 
+class TaxBreakdown(BaseModel):
+    """Federal and state tax breakdown."""
+
+    federal: float
+    state: float
+    total: float
+
+
 class CalculateResponse(BaseModel):
     """Response from donation calculation."""
 
@@ -95,6 +103,10 @@ class CalculateResponse(BaseModel):
     net_tax_at_donation: float
     tax_savings: float
     marginal_savings_rate: float
+
+    # Tax breakdown (federal vs state)
+    baseline_tax_breakdown: TaxBreakdown
+    donation_tax_breakdown: TaxBreakdown
 
     # Net income metrics
     baseline_net_income: float

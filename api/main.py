@@ -28,6 +28,7 @@ from .schemas import (
     StatesResponse,
     TargetDonationRequest,
     TargetDonationResponse,
+    TaxBreakdown,
     TaxProgram,
     TaxProgramsResponse,
 )
@@ -222,6 +223,8 @@ async def calculate_donation(request: CalculateRequest):
         baseline_metrics = calculate_donation_metrics(situation, 0)
         baseline_net_tax = float(baseline_metrics["baseline_income_tax"][0])
         baseline_net_income = float(baseline_metrics["baseline_net_income"][0])
+        baseline_federal_tax = float(baseline_metrics["federal_income_tax"][0])
+        baseline_state_tax = float(baseline_metrics["state_income_tax"][0])
 
         # Calculate metrics at specified donation
         donation_metrics = calculate_donation_metrics(
@@ -231,6 +234,8 @@ async def calculate_donation(request: CalculateRequest):
         net_income_at_donation = float(
             donation_metrics["baseline_net_income"][0]
         )
+        donation_federal_tax = float(donation_metrics["federal_income_tax"][0])
+        donation_state_tax = float(donation_metrics["state_income_tax"][0])
 
         # Calculate full donation curve
         df = calculate_donation_effects(situation)
@@ -276,6 +281,16 @@ async def calculate_donation(request: CalculateRequest):
             net_tax_at_donation=net_tax_at_donation,
             tax_savings=baseline_net_tax - net_tax_at_donation,
             marginal_savings_rate=marginal_savings_rate,
+            baseline_tax_breakdown=TaxBreakdown(
+                federal=baseline_federal_tax,
+                state=baseline_state_tax,
+                total=baseline_federal_tax + baseline_state_tax,
+            ),
+            donation_tax_breakdown=TaxBreakdown(
+                federal=donation_federal_tax,
+                state=donation_state_tax,
+                total=donation_federal_tax + donation_state_tax,
+            ),
             baseline_net_income=baseline_net_income,
             net_income_after_donation=net_income_at_donation
             - request.donation_amount,
