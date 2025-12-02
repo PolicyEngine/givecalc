@@ -8,6 +8,8 @@
 
 ## Post Body
 
+*This is an update to our [original GiveCalc announcement](https://forum.effectivealtruism.org/posts/gRLipHaijMn4ffv3a/givecalc-a-new-tool-to-calculate-the-true-cost-of-us) from last year.*
+
 **TL;DR:** [GiveCalc](https://givecalc.org) is a free, [open-source](https://github.com/PolicyEngine/givecalc) calculator that computes how charitable donations affect your taxes. Unlike typical calculators that multiply by marginal rates, GiveCalc runs full microsimulations to account for interactions between donations, deductions, credits, and benefit phase-outs. It supports US federal/state taxes and UK Gift Aid.
 
 ## What is GiveCalc?
