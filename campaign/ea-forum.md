@@ -1,6 +1,6 @@
 # EA Forum Post: GiveCalc
 
-**Title:** How much does your next $1,000 donation actually cost you?
+**Title:** GiveCalc: Calculate your marginal giving discount
 
 **Crosspost to:** LessWrong
 
@@ -56,8 +56,6 @@ That said: **results are estimates, not tax advice.** Your actual liability depe
 ## Try it
 
 **[givecalc.org](https://givecalc.org)**
-
-I'm curious: what's your marginal giving discount? Did GiveCalc find anything surprising about your situation? Happy to discuss specific cases in the comments.
 
 ---
 
