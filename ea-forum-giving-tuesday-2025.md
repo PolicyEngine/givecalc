@@ -58,7 +58,7 @@ PolicyEngine has signed a [memorandum of understanding with NBER](https://policy
 
 ## Support PolicyEngine
 
-GiveCalc demonstrates what PolicyEngine does: we build open-source infrastructure for evidence-based policy analysis. Everything we do is micro-founded: societal impacts are built up person by person, household by household—making policy personal.
+GiveCalc demonstrates what PolicyEngine does: we build **epistemic infrastructure for economic policy**, improving institutional decision-making by making rigorous policy analysis accessible to everyone. Everything we do is micro-founded: societal impacts are built up person by person, household by household—making policy personal and verifiable.
 
 ### Real-world impact
 
@@ -74,14 +74,15 @@ PolicyEngine analysis has also informed legislation from [Rep. Tlaib's Economic 
 
 We're especially eager to apply our simulations to understand how public policies mediate the relationship between AI-powered economic growth and potential disempowerment. Our [preliminary framework](https://policyengine.github.io/ai-growth-research/) explores how different policy interventions—UBI, safety net expansions, capital taxation—would shape distributional outcomes under various AI economic scenarios.
 
-### What donations support
+### What marginal funding enables
 
-Donations to PolicyEngine are tax-deductible in the US and support:
+Donations to PolicyEngine are tax-deductible in the US and would enable us to:
 
-- **More programs**: Expanding benefit coverage so screening tools can help more families
-- **Better data**: Improving accuracy for poverty and distributional analysis
-- **Open infrastructure**: Sustaining free access for researchers, governments, and the public
-- **AI policy research**: Understanding how policies mediate AI's distributional impacts
+- **Expand AI economic research**: Deepen our analysis of how policies mediate AI's distributional impacts, including scenarios from labor displacement to abundance
+- **Advance simulation capabilities**: Develop uncertainty quantification to express confidence intervals on policy impacts, potentially integrating with forecasting platforms like Metaculus
+- **Build better APIs for AI systems**: Create faster, more robust interfaces so AI assistants can use economic models as tools—improving their ability to answer policy questions accurately
+- **Expand geographic and policy coverage**: Add more countries, states, and policy areas so more institutions can use rigorous analysis
+- **Sustain open infrastructure**: Keep our tools free and open-source for researchers, governments, journalists, and the public
 
 See how we spend donations on [Open Collective](https://opencollective.com/policyengine).
 
