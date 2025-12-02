@@ -10,10 +10,10 @@ import InputForm from "./components/InputForm";
 import Results from "./components/Results";
 import TaxInfo from "./components/TaxInfo";
 import {
-  useStates,
   useCalculateDonation,
   useCalculateTargetDonation,
 } from "./hooks/useCalculation";
+import { STATES } from "./lib/states";
 import type {
   FormState,
   CalculateResponse,
@@ -67,23 +67,6 @@ function Calculator() {
     useState<TargetDonationResponse | null>(null);
   const cacheRef = useRef<ResultCache>(new Map());
 
-  const {
-    data: statesData,
-    isLoading: statesLoading,
-    isError: statesError,
-    error: statesErrorData,
-  } = useStates();
-
-  // Debug logging
-  console.log(
-    "States loading:",
-    statesLoading,
-    "Data:",
-    statesData,
-    "Error:",
-    statesError,
-    statesErrorData,
-  );
   const calculateMutation = useCalculateDonation();
   const targetMutation = useCalculateTargetDonation();
 
@@ -156,39 +139,6 @@ function Calculator() {
   const hasError = calculateMutation.isError || targetMutation.isError;
   const error = calculateMutation.error || targetMutation.error;
 
-  if (statesLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
-      </div>
-    );
-  }
-
-  if (statesError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-          <h2 className="text-lg font-semibold text-red-700 mb-2">
-            Failed to load states
-          </h2>
-          <p className="text-red-600 text-sm">
-            {statesErrorData instanceof Error
-              ? statesErrorData.message
-              : "Could not connect to API"}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const states = statesData?.states || [];
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -200,7 +150,7 @@ function Calculator() {
             <InputForm
               formState={formState}
               setFormState={setFormState}
-              states={states}
+              states={STATES}
             />
             <TaxInfo stateCode={formState.state_code} />
             {/* Sticky Calculate Button - attached to left panel */}
