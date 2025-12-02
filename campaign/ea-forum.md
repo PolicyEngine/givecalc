@@ -26,7 +26,7 @@ Multiplying donations by your marginal tax rate misses interactions that affect 
 - Gift Aid mechanics (charity reclaims 25p per £1)
 - Higher/additional rate relief (20%-25% back for 40%/45% taxpayers)
 - Scottish income tax rates (19%-48%)
-- Personal Allowance tapering (£100k+ income)
+- Personal Allowance and Child Benefit tapering
 
 GiveCalc uses [PolicyEngine's](https://policyengine.org) microsimulation models to estimate these interactions. The same engine powers policy research used by policymakers, academics, think tanks, and benefit screening tools.
 
