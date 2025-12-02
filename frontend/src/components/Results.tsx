@@ -13,6 +13,7 @@ interface Props {
   targetResult: TargetDonationResponse | null;
   mode: "amount" | "target";
   isCalculating?: boolean;
+  currency?: "USD" | "GBP";
 }
 
 export default function Results({
@@ -20,7 +21,10 @@ export default function Results({
   targetResult,
   mode,
   isCalculating,
+  currency = "USD",
 }: Props) {
+  const fmt = (value: number) => formatCurrency(value, currency);
+  const currencySymbol = currency === "GBP" ? "£" : "$";
   if (isCalculating) {
     return (
       <div className="bg-white rounded-lg shadow-md p-8">
@@ -71,18 +75,18 @@ export default function Results({
             <>
               <MetricCard
                 label="Required donation"
-                value={formatCurrency(targetResult.required_donation)}
+                value={fmt(targetResult.required_donation)}
                 description="To achieve your target reduction"
                 highlight
               />
               <MetricCard
                 label="Net income reduction"
-                value={formatCurrency(targetResult.actual_reduction)}
+                value={fmt(targetResult.actual_reduction)}
                 description={`${formatPercent(targetResult.actual_percentage / 100)} of net income`}
               />
               <MetricCard
                 label="Net income after"
-                value={formatCurrency(targetResult.net_income_after_donation)}
+                value={fmt(targetResult.net_income_after_donation)}
                 description="Your take-home after donation"
               />
             </>
@@ -90,20 +94,18 @@ export default function Results({
             <>
               <MetricCard
                 label="Tax savings"
-                value={formatCurrency(result.tax_savings)}
+                value={fmt(result.tax_savings)}
                 description="Your total tax reduction"
                 highlight
               />
               <MetricCard
                 label="Marginal savings rate"
                 value={formatPercent(result.marginal_savings_rate)}
-                description="Tax saved per $1 donated"
+                description={`Tax saved per ${currencySymbol}1 donated`}
               />
               <MetricCard
                 label="Net cost of donation"
-                value={formatCurrency(
-                  result.donation_amount - result.tax_savings,
-                )}
+                value={fmt(result.donation_amount - result.tax_savings)}
                 description="Donation minus tax savings"
               />
             </>
@@ -153,28 +155,26 @@ export default function Results({
               <span className="text-gray-600">
                 Baseline net tax (no donation)
               </span>
-              <span className="font-medium">
-                {formatCurrency(result.baseline_net_tax)}
-              </span>
+              <span className="font-medium">{fmt(result.baseline_net_tax)}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-600">
-                Net tax at {formatCurrency(result.donation_amount)}
+                Net tax at {fmt(result.donation_amount)}
               </span>
               <span className="font-medium">
-                {formatCurrency(result.net_tax_at_donation)}
+                {fmt(result.net_tax_at_donation)}
               </span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-600">Baseline net income</span>
               <span className="font-medium">
-                {formatCurrency(result.baseline_net_income)}
+                {fmt(result.baseline_net_income)}
               </span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-600">Net income after donation</span>
               <span className="font-medium">
-                {formatCurrency(result.net_income_after_donation)}
+                {fmt(result.net_income_after_donation)}
               </span>
             </div>
           </div>

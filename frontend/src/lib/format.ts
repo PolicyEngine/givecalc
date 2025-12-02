@@ -2,10 +2,14 @@
  * Formatting utilities for GiveCalc
  */
 
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(
+  value: number,
+  currency: "USD" | "GBP" = "USD",
+): string {
+  const locale = currency === "GBP" ? "en-GB" : "en-US";
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "USD",
+    currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);

@@ -2,6 +2,9 @@
  * TypeScript types for GiveCalc API
  */
 
+export type Country = "us" | "uk";
+
+// US-specific types
 export interface Income {
   wages_and_salaries: number;
   tips: number;
@@ -132,5 +135,71 @@ export const DEFAULT_FORM_STATE: FormState = {
   mode: "amount",
   target_reduction: 10,
   is_percentage: true,
+  year: 2025,
+};
+
+// UK-specific types
+export interface UKIncome {
+  employment_income: number;
+  self_employment_income: number;
+}
+
+export interface UKRegionInfo {
+  code: string;
+  name: string;
+  nation: string;
+}
+
+export interface UKRegionsResponse {
+  regions: UKRegionInfo[];
+}
+
+export interface UKDonationDataPoint {
+  donation: number;
+  net_tax: number;
+  marginal_savings: number;
+  net_income: number;
+}
+
+export interface UKCalculateRequest {
+  income: UKIncome;
+  region: string;
+  gift_aid: number;
+  is_married: boolean;
+  num_children: number;
+  year: number;
+}
+
+export interface UKCalculateResponse {
+  gift_aid: number;
+  baseline_net_tax: number;
+  net_tax_at_donation: number;
+  tax_savings: number;
+  marginal_savings_rate: number;
+  baseline_net_income: number;
+  net_income_after_donation: number;
+  curve: UKDonationDataPoint[];
+}
+
+export interface UKFormState {
+  income: UKIncome;
+  region: string;
+  is_married: boolean;
+  num_children: number;
+  gift_aid: number;
+  year: number;
+}
+
+export const DEFAULT_UK_INCOME: UKIncome = {
+  employment_income: 60000,
+  self_employment_income: 0,
+};
+
+export const DEFAULT_UK_FORM_STATE: UKFormState = {
+  income: DEFAULT_UK_INCOME,
+  region: "LONDON",
+  is_married: false,
+  num_children: 0,
+  gift_aid: 1000,
   year: 2025,
 };
