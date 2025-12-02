@@ -197,7 +197,7 @@ export const DEFAULT_UK_INCOME: UKIncome = {
 
 export const DEFAULT_UK_FORM_STATE: UKFormState = {
   income: DEFAULT_UK_INCOME,
-  region: "LONDON",
+  region: "ENGLAND",  // Default to Rest of UK (England, Wales, NI share same tax rates)
   is_married: false,
   num_children: 0,
   gift_aid: 1000,

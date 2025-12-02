@@ -12,7 +12,6 @@ import Results from "./components/Results";
 import TaxInfo from "./components/TaxInfo";
 import {
   useStates,
-  useUKRegions,
   useCalculateDonation,
   useCalculateTargetDonation,
   useCalculateUKDonation,
@@ -89,13 +88,6 @@ function Calculator() {
     isError: statesError,
     error: statesErrorData,
   } = useStates();
-
-  const {
-    data: ukRegionsData,
-    isLoading: ukRegionsLoading,
-    isError: ukRegionsError,
-    error: ukRegionsErrorData,
-  } = useUKRegions();
 
   const calculateMutation = useCalculateDonation();
   const targetMutation = useCalculateTargetDonation();
@@ -213,11 +205,8 @@ function Calculator() {
   const error =
     calculateMutation.error || targetMutation.error || ukCalculateMutation.error;
 
-  const isLoading = country === "us" ? statesLoading : ukRegionsLoading;
-  const hasLoadError = country === "us" ? statesError : ukRegionsError;
-  const loadErrorData = country === "us" ? statesErrorData : ukRegionsErrorData;
-
-  if (isLoading) {
+  // Only show loading for US states - UK doesn't need to load regions
+  if (country === "us" && statesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
@@ -225,16 +214,16 @@ function Calculator() {
     );
   }
 
-  if (hasLoadError) {
+  if (country === "us" && statesError) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
           <h2 className="text-lg font-semibold text-red-700 mb-2">
-            Failed to load {country === "us" ? "states" : "regions"}
+            Failed to load states
           </h2>
           <p className="text-red-600 text-sm">
-            {loadErrorData instanceof Error
-              ? loadErrorData.message
+            {statesErrorData instanceof Error
+              ? statesErrorData.message
               : "Could not connect to API"}
           </p>
           <button
@@ -249,7 +238,6 @@ function Calculator() {
   }
 
   const states = statesData?.states || [];
-  const ukRegions = ukRegionsData?.regions || [];
 
   // Convert UK result to US-compatible format for Results component
   const ukResultAsUS: CalculateResponse | null = ukResult
@@ -270,37 +258,34 @@ function Calculator() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Country Selector */}
-        <div className="mb-6">
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden w-fit">
-            <button
-              type="button"
-              onClick={() => setCountry("us")}
-              className={`py-2 px-6 text-sm font-medium transition-colors flex items-center gap-2 ${
-                country === "us"
-                  ? "bg-teal-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <span>🇺🇸</span> United States
-            </button>
-            <button
-              type="button"
-              onClick={() => setCountry("uk")}
-              className={`py-2 px-6 text-sm font-medium border-l border-gray-300 transition-colors flex items-center gap-2 ${
-                country === "uk"
-                  ? "bg-teal-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <span>🇬🇧</span> United Kingdom
-            </button>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Input Form */}
           <div className="lg:col-span-1 space-y-6">
+            {/* Country Selector - full width of input column */}
+            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setCountry("us")}
+                className={`flex-1 py-2 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  country === "us"
+                    ? "bg-teal-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span>🇺🇸</span> United States
+              </button>
+              <button
+                type="button"
+                onClick={() => setCountry("uk")}
+                className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors flex items-center justify-center gap-2 ${
+                  country === "uk"
+                    ? "bg-teal-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span>🇬🇧</span> United Kingdom
+              </button>
+            </div>
             {country === "us" ? (
               <>
                 <InputForm
@@ -314,7 +299,6 @@ function Calculator() {
               <UKInputForm
                 formState={ukFormState}
                 setFormState={setUKFormState}
-                regions={ukRegions}
               />
             )}
             {/* Sticky Calculate Button - attached to left panel */}

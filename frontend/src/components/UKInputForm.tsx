@@ -3,20 +3,15 @@
  */
 
 import { useState } from "react";
-import type { UKFormState, UKRegionInfo, UKIncome } from "../lib/types";
+import type { UKFormState, UKIncome } from "../lib/types";
 import { formatCurrency } from "../lib/format";
 
 interface Props {
   formState: UKFormState;
   setFormState: (state: UKFormState) => void;
-  regions: UKRegionInfo[];
 }
 
-export default function UKInputForm({
-  formState,
-  setFormState,
-  regions,
-}: Props) {
+export default function UKInputForm({ formState, setFormState }: Props) {
   const [showOtherIncome, setShowOtherIncome] = useState(false);
 
   const updateField = <K extends keyof UKFormState>(
@@ -39,15 +34,8 @@ export default function UKInputForm({
     0,
   );
 
-  // Group regions by nation
-  const regionsByNation = regions.reduce(
-    (acc, region) => {
-      if (!acc[region.nation]) acc[region.nation] = [];
-      acc[region.nation].push(region);
-      return acc;
-    },
-    {} as Record<string, UKRegionInfo[]>,
-  );
+  // For tax purposes, only Scotland differs from rest of UK
+  const isScotland = formState.region === "SCOTLAND";
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
@@ -81,27 +69,36 @@ export default function UKInputForm({
         </p>
       </div>
 
-      {/* Region Selection */}
+      {/* Nation Selection - only Scotland has different tax rates */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Region
+          Nation
         </label>
-        <select
-          value={formState.region}
-          onChange={(e) => updateField("region", e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-        >
-          {Object.entries(regionsByNation).map(([nation, nationRegions]) => (
-            <optgroup key={nation} label={nation}>
-              {nationRegions.map((region) => (
-                <option key={region.code} value={region.code}>
-                  {region.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-        {formState.region === "SCOTLAND" && (
+        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => updateField("region", "ENGLAND")}
+            className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
+              !isScotland
+                ? "bg-teal-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            England, Wales, NI
+          </button>
+          <button
+            type="button"
+            onClick={() => updateField("region", "SCOTLAND")}
+            className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors ${
+              isScotland
+                ? "bg-teal-600 text-white"
+                : "bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Scotland
+          </button>
+        </div>
+        {isScotland && (
           <p className="text-xs text-amber-600 mt-1">
             Scottish income tax rates apply (19%-48%)
           </p>
