@@ -1,6 +1,6 @@
 # GiveCalc v2 Launch Campaign
 
-**Launch Date:** Saturday, November 30, 2024 (before Giving Tuesday)
+**Launch Date:** Giving Tuesday 2025 (December 2, 2025)
 
 ## Previous Coverage
 
@@ -9,11 +9,11 @@
 
 ## What's New in v2
 
-1. **Modern React + FastAPI architecture** - Faster, more responsive UI
-2. **Multiple income sources** - Wages, tips, dividends, capital gains, interest, self-employment
-3. **Year selection** - Calculate for 2024, 2025, or 2026 tax years
-4. **Expanded policy documentation** - See all federal and state charitable tax policies we model
-5. **Methodology explainer** - Understand why GiveCalc is more accurate than simple calculators
+1. **🇬🇧 UK Gift Aid support** - Calculate Gift Aid tax relief, including Scottish rates and Personal Allowance interactions
+2. **Modern React + FastAPI architecture** - Faster, always available (no cold starts)
+3. **Multiple income sources** - Wages, tips, dividends, capital gains, interest, self-employment
+4. **Year selection (US)** - Calculate for 2024, 2025, or 2026 tax years including HR1 changes
+5. **NBER/TAXSIM validation** - Improved accuracy through formal partnership
 6. **Result caching** - Instant results when switching between previously-calculated scenarios
 
 ## Campaign Assets
@@ -22,31 +22,31 @@
 |------|---------|--------|
 | [newsletter.md](./newsletter.md) | Email newsletter | Draft |
 | [ea-forum.md](./ea-forum.md) | EA Forum | Draft |
-| [twitter-thread.md](./twitter-thread.md) | X/Twitter | Draft |
-| [linkedin.md](./linkedin.md) | LinkedIn | Draft |
-| [reddit.md](./reddit.md) | r/personalfinance, r/tax, r/EffectiveAltruism | Draft |
+| [social-media.md](./social-media.md) | LinkedIn, X/Bluesky (US, UK, Global) | Draft |
+| [reddit.md](./reddit.md) | r/personalfinance, r/tax, r/EffectiveAltruism, r/UKPersonalFinance | Draft |
 | [product-hunt.md](./product-hunt.md) | Product Hunt | Draft |
 
 ## Launch Schedule
 
 | Time | Action |
 |------|--------|
-| **Sat Nov 30 AM** | Newsletter + EA Forum + LinkedIn |
-| **Sat Nov 30 Midday** | Twitter thread + Reddit posts |
-| **Sun Dec 1** | Product Hunt launch |
-| **Mon Dec 2** | Follow-up engagement, respond to comments |
-| **Tue Dec 3 (Giving Tuesday)** | Reminder posts across all channels |
+| **Tue Dec 2 (Giving Tuesday)** | Newsletter + EA Forum + LinkedIn + Social |
+| **Wed Dec 3** | Reddit posts, Product Hunt |
+| **Thu Dec 4** | Follow-up engagement, respond to comments |
 
 ## Key Messages
 
 ### For Everyone
 > Most donation calculators just multiply by your tax bracket. GiveCalc models the full tax code—standard vs. itemized thresholds, state taxes, benefit phase-outs, and more.
 
+### For UK Donors
+> Calculate your Gift Aid tax relief in seconds. See how higher rate relief, Scottish rates, and Personal Allowance tapering affect your true cost of giving.
+
 ### For EA/Optimizers
 > Know your true cost of giving. GiveCalc shows your marginal savings rate at every donation level, helping you optimize your giving.
 
 ### For Tech/Open Source
-> Built on PolicyEngine's open-source tax model—the same one used by congressional offices. Fully transparent calculations.
+> Built on PolicyEngine's open-source tax models—the same ones used by congressional offices. Fully transparent calculations.
 
 ## Outreach Targets
 
@@ -54,9 +54,9 @@
 - [ ] GiveWell / GiveDirectly
 - [ ] Giving What We Can
 - [ ] 80,000 Hours
-- [ ] Local EA chapters
+- [ ] Local EA chapters (UK and US)
 
 ### Media/Influencers
-- [ ] Tax/finance bloggers
+- [ ] Tax/finance bloggers (UK and US)
 - [ ] Personal finance YouTubers
 - [ ] Financial advisors with philanthropic clients

@@ -2,7 +2,7 @@
 
 **Subject line options:**
 1. Know your true cost of giving this Giving Tuesday
-2. GiveCalc v2: Calculate your real tax savings from charitable donations
+2. GiveCalc v2: Now with UK Gift Aid support
 3. How much does your donation actually cost you?
 
 ---
@@ -15,26 +15,29 @@ Most donation calculators give you a simple estimate: "You're in the 24% bracket
 
 But that calculation misses several important factors.
 
-**[GiveCalc](https://givecalc.org)** uses PolicyEngine's comprehensive tax model to calculate your actual tax savings from charitable giving. Today we're launching version 2 with major improvements:
+**[GiveCalc](https://givecalc.org)** uses PolicyEngine's comprehensive tax models to calculate your actual tax savings from charitable giving. Today we're launching version 2 with major improvements:
 
 ### What's New
 
+- **🇬🇧 UK Gift Aid support** — Calculate Gift Aid tax relief, including higher rate relief, Scottish income tax rates, and Personal Allowance interactions
+- **🇺🇸 All 50 US states** — Federal + state tax savings including 2025 HR1 changes
 - **Multiple income sources** — Enter wages, dividends, capital gains, self-employment, and more
-- **Multi-year planning** — Calculate for 2024, 2025, or 2026 tax years, including new OBBBA provisions for 2026
-- **See all modeled policies** — Explore the federal and state charitable tax provisions we calculate
-- **Faster, modern interface** — Rebuilt from the ground up with React
+- **Multi-year planning (US)** — Calculate for 2024, 2025, or 2026 tax years
+- **Always available** — No more waiting for the app to wake up
 
 ### Why It Matters
 
-Simple calculators miss important factors:
+**For US donors**, simple calculators miss:
+- Standard vs. itemized thresholds
+- State tax interactions and SALT caps
+- Benefit phase-outs (CTC, EITC)
+- AGI-based limits (60% cap)
 
-1. **Standard vs. itemized threshold** — You only benefit if itemized deductions exceed the standard deduction
-2. **Bracket changes** — Large donations can push you into lower brackets
-3. **State tax interactions** — SALT caps, state credits, and deductions all interact
-4. **Benefit phase-outs** — Donations can restore phased-out credits like the CTC and EITC
-5. **AGI-based limits** — Charitable deductions are capped at 60% of AGI
-
-GiveCalc models all of this across all 50 states, DC, and NYC.
+**For UK donors**, GiveCalc shows:
+- Gift Aid relief the charity claims (25p per £1)
+- Higher rate relief you claim back (40%/45% taxpayers)
+- Scottish rate differences (19%-48%)
+- Personal Allowance restoration (£100k+ earners)
 
 ### Try It Now
 
