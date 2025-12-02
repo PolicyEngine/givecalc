@@ -54,3 +54,35 @@ A free calculator showing how charitable donations affect your taxes.
 🇬🇧 UK Gift Aid relief (including Scotland)
 
 Know the true cost of giving → givecalc.org
+
+---
+
+## Quote-Posts from Max (@MaxGhenis)
+
+### Quote-post the @PolicyEngineUS post
+
+I originally built this as a Streamlit prototype in 2023. This year we rebuilt it from scratch with a React frontend and FastAPI backend—and added UK Gift Aid support.
+
+The marginal giving discount chart is my favorite part: it shows exactly where your tax savings drop off.
+
+### Quote-post the @PolicyEngineUK post
+
+First time we've built something specifically for UK taxpayers. Gift Aid is surprisingly complex—higher rate relief, Scottish rates, Personal Allowance tapering for £100k+ earners.
+
+GiveCalc handles all of it.
+
+### Quote-post the @PolicyEngine global post
+
+We built GiveCalc because most donation calculators just multiply by your tax bracket. That misses a lot: standard vs. itemized thresholds, state taxes, benefit phase-outs, the new HR1 provisions.
+
+PolicyEngine's tax models handle the full complexity. GiveCalc makes them accessible.
+
+### LinkedIn quote-post (personal profile)
+
+Planning your year-end giving? I rebuilt GiveCalc this year to answer a simple question: what does my donation actually cost after taxes?
+
+Most calculators say "you're in the 24% bracket, so you save 24%." But that ignores whether you itemize, state tax interactions, benefit phase-outs, and the 2025 tax changes in HR1.
+
+GiveCalc uses PolicyEngine's microsimulation models to calculate the real number. We also added UK Gift Aid support this year.
+
+Free at givecalc.org
