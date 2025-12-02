@@ -10,16 +10,12 @@ interface Props {
   formState: FormState;
   setFormState: (state: FormState) => void;
   states: StateInfo[];
-  onCalculate: () => void;
-  isCalculating: boolean;
 }
 
 export default function InputForm({
   formState,
   setFormState,
   states,
-  onCalculate,
-  isCalculating,
 }: Props) {
   const [showDeductions, setShowDeductions] = useState(false);
   const [showOtherIncome, setShowOtherIncome] = useState(false);
@@ -488,18 +484,6 @@ export default function InputForm({
         )}
       </div>
 
-      {/* Calculate Button */}
-      <button
-        onClick={onCalculate}
-        disabled={isCalculating}
-        className={`w-full py-3 px-4 rounded-md font-semibold text-white transition-colors ${
-          isCalculating
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-primary-500 hover:bg-primary-600"
-        }`}
-      >
-        {isCalculating ? "Calculating..." : "Calculate tax impact"}
-      </button>
     </div>
   );
 }
