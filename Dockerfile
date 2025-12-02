@@ -1,18 +1,25 @@
 # GiveCalc API - Build from project root
 # This Dockerfile is used for Google Cloud Run deployment
 
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies and uv
 RUN apt-get update && apt-get install -y \
     gcc \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Copy and install API requirements
-COPY api/requirements.txt ./api-requirements.txt
-RUN pip install --no-cache-dir -r api-requirements.txt
+# Add uv to PATH
+ENV PATH="/root/.local/bin:$PATH"
+
+# Copy dependency files first for better caching
+COPY pyproject.toml uv.lock ./
+
+# Install Python dependencies using uv
+RUN uv pip install --system -e . --no-cache
 
 # Copy the givecalc package and API
 COPY givecalc /app/givecalc
