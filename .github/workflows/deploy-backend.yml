@@ -15,10 +15,10 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_ID: policyengine-api
+  PROJECT_ID: uk-policy-engine
   REGION: europe-west1
   SERVICE_NAME: givecalc
-  IMAGE_NAME: gcr.io/policyengine-api/givecalc
+  IMAGE_NAME: gcr.io/uk-policy-engine/givecalc
 
 jobs:
   deploy:
