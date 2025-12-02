@@ -17,18 +17,6 @@ def get_year_from_situation(situation):
     return UK_CURRENT_YEAR
 
 
-def _fix_simulation_dataset(simulation):
-    """
-    Workaround for policyengine-uk bug where dataset attribute is missing.
-
-    This is fixed in policyengine-uk >= 2.55.0 but that requires Python 3.13+.
-    See: https://github.com/PolicyEngine/policyengine-uk/pull/1367
-    """
-    if not hasattr(simulation, "dataset"):
-        simulation.dataset = None
-    return simulation
-
-
 def create_uk_donation_simulation(situation, donation_amount):
     """
     Create a UK simulation with a specific donation amount.
@@ -52,8 +40,7 @@ def create_uk_donation_simulation(situation, donation_amount):
     # Set the donation amount
     modified_situation["people"]["you"]["gift_aid"] = {year: donation_amount}
 
-    sim = Simulation(situation=modified_situation)
-    return _fix_simulation_dataset(sim)
+    return Simulation(situation=modified_situation)
 
 
 def calculate_uk_donation_metrics(situation, donation_amount):
@@ -95,7 +82,7 @@ def calculate_uk_donation_effects(situation):
         pandas.DataFrame: DataFrame containing donation effects
     """
     year = get_year_from_situation(situation)
-    simulation = _fix_simulation_dataset(Simulation(situation=situation))
+    simulation = Simulation(situation=situation)
 
     donation_column = "gift_aid"
     # Use benunit for donations (where tax relief is claimed)
