@@ -62,6 +62,7 @@ export default function TaxChart({ curve, currentDonation }: Props) {
           title: { text: "Net taxes" },
           tickformat: "$,.0f",
           gridcolor: "#E2E8F0",
+          rangemode: "tozero",
         },
         plot_bgcolor: "white",
         paper_bgcolor: "white",

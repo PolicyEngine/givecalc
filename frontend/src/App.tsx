@@ -203,6 +203,20 @@ function Calculator() {
               states={states}
             />
             <TaxInfo stateCode={formState.state_code} />
+            {/* Sticky Calculate Button - attached to left panel */}
+            <div className="sticky bottom-4">
+              <button
+                onClick={handleCalculate}
+                disabled={isCalculating}
+                className={`w-full py-3 px-4 rounded-md font-semibold text-white transition-colors shadow-lg ${
+                  isCalculating
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-primary-500 hover:bg-primary-600"
+                }`}
+              >
+                {isCalculating ? "Calculating..." : "Calculate tax impact"}
+              </button>
+            </div>
           </div>
 
           {/* Right Column - Results */}
@@ -226,25 +240,8 @@ function Calculator() {
         </div>
       </main>
 
-      {/* Sticky Calculate Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button
-            onClick={handleCalculate}
-            disabled={isCalculating}
-            className={`w-full py-3 px-4 rounded-md font-semibold text-white transition-colors ${
-              isCalculating
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-primary-500 hover:bg-primary-600"
-            }`}
-          >
-            {isCalculating ? "Calculating..." : "Calculate tax impact"}
-          </button>
-        </div>
-      </div>
-
       {/* Footer */}
-      <footer className="border-t border-gray-200 mt-12 pb-20">
+      <footer className="border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-4">
