@@ -38,12 +38,20 @@ export interface DonationDataPoint {
   net_income: number;
 }
 
+export interface TaxBreakdown {
+  federal: number;
+  state: number;
+  total: number;
+}
+
 export interface CalculateResponse {
   donation_amount: number;
   baseline_net_tax: number;
   net_tax_at_donation: number;
   tax_savings: number;
   marginal_savings_rate: number;
+  baseline_tax_breakdown: TaxBreakdown;
+  donation_tax_breakdown: TaxBreakdown;
   baseline_net_income: number;
   net_income_after_donation: number;
   curve: DonationDataPoint[];

@@ -142,41 +142,82 @@ export default function Results({
         </div>
       </div>
 
-      {/* Detailed Breakdown */}
+      {/* Tax Breakdown Table */}
       {result && !isTarget && (
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Detailed breakdown
+            Tax breakdown
           </h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">
-                Baseline net tax (no donation)
-              </span>
-              <span className="font-medium">
-                {formatCurrency(result.baseline_net_tax)}
-              </span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">
-                Net tax at {formatCurrency(result.donation_amount)}
-              </span>
-              <span className="font-medium">
-                {formatCurrency(result.net_tax_at_donation)}
-              </span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">Baseline net income</span>
-              <span className="font-medium">
-                {formatCurrency(result.baseline_net_income)}
-              </span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">Net income after donation</span>
-              <span className="font-medium">
-                {formatCurrency(result.net_income_after_donation)}
-              </span>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700"></th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700">
+                    Without donation
+                  </th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700">
+                    With {formatCurrency(result.donation_amount)}
+                  </th>
+                  <th className="text-right py-3 px-4 font-semibold text-primary-700">
+                    Savings
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 font-medium text-gray-900">
+                    Federal income tax
+                  </td>
+                  <td className="text-right py-3 px-4 text-gray-600">
+                    {formatCurrency(result.baseline_tax_breakdown.federal)}
+                  </td>
+                  <td className="text-right py-3 px-4 text-gray-600">
+                    {formatCurrency(result.donation_tax_breakdown.federal)}
+                  </td>
+                  <td className="text-right py-3 px-4 font-medium text-primary-600">
+                    {formatCurrency(
+                      result.baseline_tax_breakdown.federal -
+                        result.donation_tax_breakdown.federal,
+                    )}
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 font-medium text-gray-900">
+                    State income tax
+                  </td>
+                  <td className="text-right py-3 px-4 text-gray-600">
+                    {formatCurrency(result.baseline_tax_breakdown.state)}
+                  </td>
+                  <td className="text-right py-3 px-4 text-gray-600">
+                    {formatCurrency(result.donation_tax_breakdown.state)}
+                  </td>
+                  <td className="text-right py-3 px-4 font-medium text-primary-600">
+                    {formatCurrency(
+                      result.baseline_tax_breakdown.state -
+                        result.donation_tax_breakdown.state,
+                    )}
+                  </td>
+                </tr>
+                <tr className="bg-primary-50">
+                  <td className="py-3 px-4 font-semibold text-gray-900">
+                    Total
+                  </td>
+                  <td className="text-right py-3 px-4 font-semibold text-gray-900">
+                    {formatCurrency(result.baseline_tax_breakdown.total)}
+                  </td>
+                  <td className="text-right py-3 px-4 font-semibold text-gray-900">
+                    {formatCurrency(result.donation_tax_breakdown.total)}
+                  </td>
+                  <td className="text-right py-3 px-4 font-bold text-primary-600">
+                    {formatCurrency(
+                      result.baseline_tax_breakdown.total -
+                        result.donation_tax_breakdown.total,
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       )}

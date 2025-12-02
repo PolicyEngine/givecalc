@@ -40,6 +40,12 @@ def calculate_donation_metrics(situation, donation_amount):
         "baseline_net_income": baseline_simulation.calculate(
             "household_net_income", year, map_to="household"
         ),
+        "federal_income_tax": baseline_simulation.calculate(
+            "income_tax", year, map_to="tax_unit"
+        ),
+        "state_income_tax": baseline_simulation.calculate(
+            "state_income_tax", year, map_to="tax_unit"
+        ),
     }
 
 
