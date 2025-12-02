@@ -15,11 +15,11 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_ID: givecalc
+  PROJECT_ID: uk-policy-engine
   REGION: europe-west1
   SERVICE_NAME: givecalc
   # Use Artifact Registry instead of deprecated Container Registry
-  IMAGE_NAME: europe-west1-docker.pkg.dev/givecalc/givecalc/api
+  IMAGE_NAME: europe-west1-docker.pkg.dev/uk-policy-engine/givecalc/api
 
 jobs:
   deploy:
