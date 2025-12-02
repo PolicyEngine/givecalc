@@ -288,8 +288,8 @@ function Calculator() {
             </div>
             <p className="text-xs text-gray-400 text-center sm:text-right">
               This calculator provides estimates and should not be considered
-              tax advice. Please consult a tax professional for your specific
-              situation.
+              tax advice. Consult a tax professional for your specific
+              situation. Your information is not stored.
             </p>
           </div>
         </div>
