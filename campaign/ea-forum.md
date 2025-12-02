@@ -19,7 +19,7 @@ Most charity tax calculators give you a rough estimate: take your donation, mult
 - How large donations shift your tax bracket
 - State income tax interactions (all 50 states + DC + NYC)
 - AGI-based deduction limits (60% cap for cash)
-- Phase-outs of credits like EITC and CTC
+- Alternative Minimum Tax interactions
 
 **🇬🇧 UK considerations:**
 - Gift Aid mechanics (charity reclaims 25p per £1)
