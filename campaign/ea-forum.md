@@ -45,7 +45,7 @@ The key output is your **marginal giving discount**: how much tax you save on yo
 
 **Multi-year planning (US):** Model 2024, 2025, or 2026. This matters given 2026 changes from HR1: a 0.5% AGI floor on charitable deductions, restored non-itemizer deduction ($1k/$2k), and 80% itemized deduction limitation for high earners.
 
-**Validated accuracy:** Calculations validated against [NBER's TAXSIM](/us/research/policyengine-nber-mou-taxsim) and the [Atlanta Fed's Policy Rules Database](https://www.atlantafed.org/economic-mobility-and-resilience/advancing-careers-for-low-income-families/policy-rules-database). The same engine powers benefit screening tools serving 100k+ Americans and policy analysis at the highest levels of UK government.
+**Validated accuracy:** Calculations validated against [NBER's TAXSIM](/us/research/policyengine-nber-mou-taxsim) and the [Atlanta Fed's Policy Rules Database](https://www.atlantafed.org/economic-mobility-and-resilience/advancing-careers-for-low-income-families/policy-rules-database). The same engine powers benefit screening tools serving 100k+ Americans and policy analysis at the highest levels of US and UK government, academia, and think tanks.
 
 **Fully open source:** The [complete source code](https://github.com/PolicyEngine/givecalc) is public. Inspect the calculations, verify against your own analysis, or contribute improvements.
 
