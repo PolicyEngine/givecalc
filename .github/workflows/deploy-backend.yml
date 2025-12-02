@@ -18,7 +18,8 @@ env:
   PROJECT_ID: givecalc
   REGION: europe-west1
   SERVICE_NAME: givecalc
-  IMAGE_NAME: gcr.io/givecalc/givecalc
+  # Use Artifact Registry instead of deprecated Container Registry
+  IMAGE_NAME: europe-west1-docker.pkg.dev/givecalc/givecalc/api
 
 jobs:
   deploy:
@@ -42,8 +43,8 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker --quiet
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
       - name: Build Docker image
         run: |
