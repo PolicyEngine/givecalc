@@ -5,11 +5,11 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   getStates,
-  getTaxPrograms,
   calculateDonation,
   calculateTargetDonation,
   STATES,
 } from "../lib/api";
+import { getTaxProgramsData } from "../lib/taxPrograms";
 import type { CalculateRequest, TargetDonationRequest } from "../lib/types";
 
 export function useStates() {
@@ -24,9 +24,10 @@ export function useStates() {
 export function useTaxPrograms(stateCode: string) {
   return useQuery({
     queryKey: ["taxPrograms", stateCode],
-    queryFn: () => getTaxPrograms(stateCode),
+    queryFn: () => getTaxProgramsData(stateCode),
     enabled: !!stateCode,
     staleTime: Infinity,
+    initialData: stateCode ? getTaxProgramsData(stateCode) : undefined,
   });
 }
 
