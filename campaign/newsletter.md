@@ -20,10 +20,9 @@ But that calculation misses several important factors.
 ### What's New
 
 - **🇬🇧 UK Gift Aid support** — Calculate Gift Aid tax relief, including higher rate relief, Scottish income tax rates, and Personal Allowance interactions
-- **🇺🇸 All 50 US states** — Federal + state tax savings including 2025 HR1 changes
+- **🇺🇸 All 50 US states, plus DC and NYC** — Federal + state tax savings including 2025 HR1 changes
 - **Multiple income sources** — Enter wages, dividends, capital gains, self-employment, and more
 - **Multi-year planning (US)** — Calculate for 2024, 2025, or 2026 tax years
-- **Always available** — No more waiting for the app to wake up
 
 ### Why It Matters
 
