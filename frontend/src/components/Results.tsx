@@ -2,7 +2,7 @@
  * Results display component
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { CalculateResponse, TargetDonationResponse } from "../lib/types";
 import { formatCurrency, formatPercent } from "../lib/format";
 import TaxChart from "./TaxChart";
@@ -16,6 +16,44 @@ interface Props {
   currency?: "USD" | "GBP";
 }
 
+// Progress bar with elapsed time for calculating state
+function CalculatingProgress() {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Show different messages based on elapsed time
+  const getMessage = () => {
+    if (elapsed < 5) {
+      return "Running tax simulations across donation amounts...";
+    } else if (elapsed < 15) {
+      return "Calculating federal and state tax impacts...";
+    } else if (elapsed < 30) {
+      return "Server is warming up. This happens after periods of inactivity.";
+    } else {
+      return "Almost there. First calculation takes longer while the model loads.";
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-8">
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Calculating...
+        </h2>
+        <p className="text-gray-600 text-center mb-4">{getMessage()}</p>
+        <p className="text-sm text-gray-400">{elapsed}s</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Results({
   result,
   targetResult,
@@ -26,21 +64,7 @@ export default function Results({
   const fmt = (value: number) => formatCurrency(value, currency);
   const currencySymbol = currency === "GBP" ? "£" : "$";
   if (isCalculating) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Calculating...
-          </h2>
-          <p className="text-gray-600 text-center">
-            Running tax simulations across donation amounts.
-            <br />
-            This may take a few seconds.
-          </p>
-        </div>
-      </div>
-    );
+    return <CalculatingProgress />;
   }
 
   if (!result && !targetResult) {
