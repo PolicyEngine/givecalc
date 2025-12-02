@@ -28,7 +28,7 @@ Most charity tax calculators give you a rough estimate: take your donation, mult
 - Scottish income tax rates (19%-48%)
 - Personal Allowance tapering (£100k+ income)
 
-GiveCalc uses [PolicyEngine's](https://policyengine.org) comprehensive microsimulation models—the same engine powering benefit screening tools that have identified over $1 billion in unclaimed benefits—to give you precise numbers rather than rough estimates.
+GiveCalc uses [PolicyEngine's](https://policyengine.org) microsimulation models to compute precise numbers rather than rough estimates. The same engine powers policy research used by government agencies and benefit screening tools that have connected families with over $1 billion in unclaimed benefits.
 
 The key output is your **marginal giving discount**: how much tax you save on your next dollar/pound of giving at any donation level. This varies non-linearly, which matters for decisions about timing and amount.
 
