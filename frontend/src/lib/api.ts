@@ -137,9 +137,13 @@ export async function getUKRegions(): Promise<UKRegionsResponse> {
 export async function calculateUKDonation(
   request: UKCalculateRequest,
 ): Promise<UKCalculateResponse> {
+  // Map simplified region values to API-compatible regions
+  // For tax purposes, only Scotland differs - all other regions use the same rates
+  const apiRegion = request.region === "SCOTLAND" ? "SCOTLAND" : "LONDON";
+
   const response = await api.post<UKCalculateResponse>(
     "/api/uk/calculate",
-    request,
+    { ...request, region: apiRegion },
   );
   return response.data;
 }
