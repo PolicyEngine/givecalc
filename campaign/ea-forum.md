@@ -71,6 +71,10 @@ Donations to PolicyEngine are tax-deductible in the US and eligible for Gift Aid
 
 **[givecalc.org](https://givecalc.org)**
 
+**Privacy note:** GiveCalc doesn't store any of your inputs—all calculations run in your browser and our API without logging.
+
+**Need more complexity?** If your situation requires inputs we don't yet support (appreciated assets, QCDs, carryforwards, etc.), comment below or email max@policyengine.org. We can add features to GiveCalc or point you to the [policyengine-us Python package](https://github.com/PolicyEngine/policyengine-us) to run custom calculations locally.
+
 ---
 
 *Questions? Comment below or reach out to max@policyengine.org*
