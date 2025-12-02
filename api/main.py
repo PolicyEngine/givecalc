@@ -1,7 +1,8 @@
 """GiveCalc API - FastAPI backend powered by PolicyEngine.
 
 This API provides charitable donation tax impact calculations using
-PolicyEngine-US for accurate federal and state tax modeling.
+PolicyEngine-US for accurate federal and state tax modeling, and
+PolicyEngine-UK for UK Gift Aid calculations.
 """
 
 from pathlib import Path
@@ -19,6 +20,14 @@ from givecalc import (
     calculate_target_donation,
     create_situation,
 )
+from givecalc.uk import (
+    ENGLAND_REGIONS,
+    UK_CURRENT_YEAR,
+    UK_REGIONS,
+    calculate_uk_donation_effects,
+    calculate_uk_donation_metrics,
+    create_uk_situation,
+)
 
 from .schemas import (
     CalculateRequest,
@@ -30,6 +39,12 @@ from .schemas import (
     TargetDonationResponse,
     TaxProgram,
     TaxProgramsResponse,
+    UKCalculateRequest,
+    UKCalculateResponse,
+    UKDonationDataPoint,
+    UKRegionInfo,
+    UKRegionsResponse,
+    UKTaxProgramsResponse,
 )
 
 app = FastAPI(
@@ -387,3 +402,166 @@ async def calculate_target(request: TargetDonationRequest):
 async def health_check():
     """Health check endpoint for deployment monitoring."""
     return {"status": "healthy", "tax_year": CURRENT_YEAR}
+
+
+# UK region name mapping
+UK_REGION_NAMES = {
+    "NORTH_EAST": "North East",
+    "NORTH_WEST": "North West",
+    "YORKSHIRE": "Yorkshire and the Humber",
+    "EAST_MIDLANDS": "East Midlands",
+    "WEST_MIDLANDS": "West Midlands",
+    "EAST_OF_ENGLAND": "East of England",
+    "LONDON": "London",
+    "SOUTH_EAST": "South East",
+    "SOUTH_WEST": "South West",
+    "WALES": "Wales",
+    "SCOTLAND": "Scotland",
+    "NORTHERN_IRELAND": "Northern Ireland",
+}
+
+
+def get_uk_nation(region: str) -> str:
+    """Get the nation for a UK region."""
+    if region in ENGLAND_REGIONS:
+        return "England"
+    elif region == "SCOTLAND":
+        return "Scotland"
+    elif region == "WALES":
+        return "Wales"
+    elif region == "NORTHERN_IRELAND":
+        return "Northern Ireland"
+    return "Unknown"
+
+
+# UK API Endpoints
+
+
+@app.get("/api/uk/regions", response_model=UKRegionsResponse)
+async def get_uk_regions():
+    """Get list of UK regions."""
+    regions = [
+        UKRegionInfo(
+            code=code,
+            name=UK_REGION_NAMES.get(code, code),
+            nation=get_uk_nation(code),
+        )
+        for code in UK_REGIONS
+    ]
+    return UKRegionsResponse(regions=regions)
+
+
+@app.get("/api/uk/tax-programs", response_model=UKTaxProgramsResponse)
+async def get_uk_tax_programs():
+    """Get UK Gift Aid program information."""
+    gift_aid = TaxProgram(
+        title="Gift Aid",
+        description=(
+            "Gift Aid is a UK tax relief that allows charities to reclaim "
+            "the basic rate of tax on donations made by UK taxpayers. "
+            "For every £1 you donate, the charity can claim an extra 25p "
+            "from HMRC (the basic rate of 20%). Higher rate (40%) and "
+            "additional rate (45%) taxpayers can also claim back the "
+            "difference between their tax rate and the basic rate on their "
+            "Self Assessment tax return."
+        ),
+    )
+    return UKTaxProgramsResponse(gift_aid=gift_aid)
+
+
+@app.post("/api/uk/calculate", response_model=UKCalculateResponse)
+async def calculate_uk_donation(request: UKCalculateRequest):
+    """Calculate UK tax impact of a Gift Aid donation.
+
+    Returns tax savings, marginal rates, and full donation curve data.
+    """
+    try:
+        # Validate region
+        if request.region not in UK_REGIONS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid region. Must be one of: {UK_REGIONS}",
+            )
+
+        # Create UK situation with axes for donation sweep
+        situation = create_uk_situation(
+            employment_income=request.income.employment_income,
+            self_employment_income=request.income.self_employment_income,
+            is_married=request.is_married,
+            region=request.region,
+            num_children=request.num_children,
+            year=request.year,
+        )
+
+        # Calculate baseline (no donation) metrics
+        baseline_metrics = calculate_uk_donation_metrics(situation, 0)
+        baseline_net_tax = float(baseline_metrics["baseline_income_tax"][0])
+        baseline_net_income = float(baseline_metrics["baseline_net_income"][0])
+
+        # Calculate metrics at specified donation
+        donation_metrics = calculate_uk_donation_metrics(
+            situation, request.gift_aid
+        )
+        net_tax_at_donation = float(donation_metrics["baseline_income_tax"][0])
+        net_income_at_donation = float(
+            donation_metrics["baseline_net_income"][0]
+        )
+
+        # Calculate full donation curve
+        df = calculate_uk_donation_effects(situation)
+
+        # Calculate net income column
+        df["net_income"] = (
+            baseline_net_income
+            - (df["income_tax_after_donations"] - baseline_net_tax)
+            - df["gift_aid"]
+        )
+
+        # Get marginal savings at donation amount
+        # Find closest index to donation amount
+        donations = df["gift_aid"].values
+        idx = np.abs(donations - request.gift_aid).argmin()
+        marginal_savings_rate = float(df["marginal_savings"].iloc[idx])
+
+        # Build curve data (sample every 10th point for efficiency)
+        curve = []
+        step = max(1, len(df) // 100)  # ~100 points
+        for i in range(0, len(df), step):
+            curve.append(
+                UKDonationDataPoint(
+                    donation=float(df["gift_aid"].iloc[i]),
+                    net_tax=float(df["income_tax_after_donations"].iloc[i]),
+                    marginal_savings=float(df["marginal_savings"].iloc[i]),
+                    net_income=float(df["net_income"].iloc[i]),
+                )
+            )
+
+        # Ensure last point is included
+        if len(curve) == 0 or curve[-1].donation != float(
+            df["gift_aid"].iloc[-1]
+        ):
+            curve.append(
+                UKDonationDataPoint(
+                    donation=float(df["gift_aid"].iloc[-1]),
+                    net_tax=float(df["income_tax_after_donations"].iloc[-1]),
+                    marginal_savings=float(df["marginal_savings"].iloc[-1]),
+                    net_income=float(df["net_income"].iloc[-1]),
+                )
+            )
+
+        return UKCalculateResponse(
+            gift_aid=request.gift_aid,
+            baseline_net_tax=baseline_net_tax,
+            net_tax_at_donation=net_tax_at_donation,
+            tax_savings=baseline_net_tax - net_tax_at_donation,
+            marginal_savings_rate=marginal_savings_rate,
+            baseline_net_income=baseline_net_income,
+            net_income_after_donation=net_income_at_donation
+            - request.gift_aid,
+            curve=curve,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

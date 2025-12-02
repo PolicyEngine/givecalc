@@ -23,6 +23,7 @@ classifiers = [
 dependencies = [
     "streamlit",
     "policyengine-us>=1.155.0",
+    "policyengine-uk>=2.45.0,<2.55.0",
     "plotly",
     "numpy",
     "pandas",
