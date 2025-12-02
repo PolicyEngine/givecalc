@@ -1,115 +1,75 @@
-# EA Forum Post: GiveCalc v2
+# EA Forum Post: GiveCalc
 
-**Title:** GiveCalc v2: Now with UK Gift Aid support
+**Title:** GiveCalc: Open-source tool to calculate the true cost of charitable giving
 
-**Crosspost to:** LessWrong (optional)
+**Crosspost to:** LessWrong
 
 ---
 
 ## Post Body
 
-*This is an update to our [original GiveCalc announcement](https://forum.effectivealtruism.org/posts/gRLipHaijMn4ffv3a/givecalc-a-new-tool-to-calculate-the-true-cost-of-us) from last year's Giving Tuesday.*
-
-**TL;DR:** [GiveCalc](https://givecalc.org) now supports **UK Gift Aid** alongside US federal and state taxes. We've also added multiple income sources, multi-year tax planning, and improved accuracy through our partnership with NBER/TAXSIM.
+**TL;DR:** [GiveCalc](https://givecalc.org) is a free, [open-source](https://github.com/PolicyEngine/givecalc) calculator that computes how charitable donations affect your taxes. Unlike typical calculators that multiply by marginal rates, GiveCalc runs full microsimulations to account for interactions between donations, deductions, credits, and benefit phase-outs. It supports US federal/state taxes and UK Gift Aid.
 
 ## What is GiveCalc?
 
-GiveCalc calculates how charitable donations affect your taxes. Unlike simple calculators that multiply by your marginal rate, GiveCalc uses [PolicyEngine's](https://policyengine.org) comprehensive microsimulation models to account for:
+Most charity tax calculators give you a rough estimate: take your donation, multiply by your marginal tax rate, done. This approach misses the complexity that determines your actual tax savings:
 
-**🇺🇸 US:**
-- Standard vs. itemized deduction thresholds
-- Tax bracket changes from large donations
-- State income taxes and credits (all 50 states + DC + NYC)
-- Benefit phase-outs (CTC, EITC, etc.)
-- AGI-based deduction limits (60% cap for cash donations)
+**🇺🇸 US considerations:**
+- Whether your total itemized deductions exceed the standard deduction threshold
+- How large donations shift your tax bracket
+- State income tax interactions (all 50 states + DC + NYC)
+- AGI-based deduction limits (60% cap for cash)
+- Phase-outs of credits like EITC and CTC
 
-**🇬🇧 UK:**
-- Gift Aid tax relief (charity claims 25p per £1)
-- Higher rate relief (40%/45% taxpayers)
+**🇬🇧 UK considerations:**
+- Gift Aid mechanics (charity reclaims 25p per £1)
+- Higher/additional rate relief (20%-25% back for 40%/45% taxpayers)
 - Scottish income tax rates (19%-48%)
-- Personal Allowance taper effects (£100k+ income)
+- Personal Allowance tapering (£100k+ income)
 
-The key output is your **marginal giving discount**—how much tax you save on your next pound/dollar of giving at any donation level.
+GiveCalc uses [PolicyEngine's](https://policyengine.org) comprehensive microsimulation models—the same engine powering benefit screening tools that have identified over $1 billion in unclaimed benefits—to give you precise numbers rather than rough estimates.
 
-## What's New in v2
+The key output is your **marginal giving discount**: how much tax you save on your next dollar/pound of giving at any donation level. This varies non-linearly, which matters for decisions about timing and amount.
 
-### 1. UK Gift Aid Support (New!)
+## Features
 
-GiveCalc now works for UK taxpayers. Select "United Kingdom" and see how Gift Aid affects your taxes:
+**Multi-country support:** Calculate for US (federal + all states) or UK (including Scotland).
 
-- **Basic rate (20%)**: The charity claims Gift Aid, you pay nothing extra
-- **Higher rate (40%)**: You save 20p per £1 donated through your tax return
-- **Additional rate (45%)**: You save 25p per £1 donated
-- **Scotland**: Different rates (19%-48%) mean different savings
+**Multiple income sources:** Beyond wages, include self-employment, capital gains, dividends, and interest—each taxed differently.
 
-The calculator also shows interactions with Personal Allowance tapering—important for £100k+ earners where donations can restore allowance.
+**Multi-year planning (US):** Model 2024, 2025, or 2026. This matters given 2026 changes from HR1: a 0.5% AGI floor on charitable deductions, restored non-itemizer deduction ($1k/$2k), and 80% itemized deduction limitation for high earners.
 
-### 2. Multiple Income Sources
+**Validated accuracy:** Calculations validated against NBER's TAXSIM through a [formal partnership](/us/research/policyengine-nber-mou-taxsim).
 
-The original GiveCalc only accepted a single "employment income" field. Version 2 supports:
+**Fully open source:** The [complete source code](https://github.com/PolicyEngine/givecalc) is public. Inspect the calculations, verify against your own analysis, or contribute improvements.
 
-- Wages and salaries
-- Tips
-- Ordinary dividends / Qualified dividends
-- Short-term / Long-term capital gains
-- Interest income
-- Self-employment income
-
-This matters because different income types are taxed differently, affecting your marginal rates and optimal donation strategy.
-
-### 3. Multi-Year Tax Planning (US)
-
-You can calculate for **2024, 2025, or 2026** US tax years. This is particularly relevant given recent tax law changes.
-
-**2026 brings significant changes** from the One Big Beautiful Bill Act (HR1):
-
-- **0.5% AGI floor on charitable deductions** — Only donations above 0.5% of your AGI are deductible
-- **Non-itemizer charitable deduction restored** — $1,000 for individuals, $2,000 for married couples
-- **Itemized deduction limitation** — Deductions capped at 80% of their value for high-income taxpayers
-
-GiveCalc models all of these provisions, allowing you to compare tax savings across years.
-
-### 4. Improved Accuracy
-
-Our calculations are validated against NBER's TAXSIM model through a formal MOU partnership. This means you can trust the numbers—they're the same quality used by academic researchers and congressional offices.
-
-### 5. Always Available
-
-The new architecture (React + FastAPI on Cloud Run) means **no more cold starts**. The old Streamlit app would go to sleep and take 30+ seconds to wake up. Now it's instant.
-
-## Bunching Example
+## Bunching example
 
 For US donors considering large gifts, bunching multiple years of donations can significantly increase tax savings:
 
-**Scenario:** $200k income in California, planning to give $20k/year
+**Scenario:** $200k income in California, $20k/year giving plan
 
-- **Standard approach**: $20k in 2025 + $20k in 2026 = modest savings (may not exceed standard deduction)
-- **Bunched approach**: $40k in 2025 = $1,281 additional tax savings
+Without bunching, $20k in 2025 may not exceed your standard deduction threshold, yielding modest federal savings. Bunching $40k in a single year can produce $1,281 in additional savings by ensuring you itemize.
 
-GiveCalc's charts show exactly where your marginal savings rate changes, helping you identify optimal bunching thresholds.
+GiveCalc's marginal rate charts show exactly where your savings rate changes, helping identify optimal bunching thresholds.
 
-## How to Use It
+## About PolicyEngine
 
-1. Go to **[givecalc.org](https://givecalc.org)**
-2. Select your country (US or UK)
-3. Enter your income, region/state, and filing status
-4. Enter a donation amount
-5. Click "Calculate tax impact"
-6. See your tax savings, marginal rate, and net cost of giving
+GiveCalc is built by [PolicyEngine](https://policyengine.org), a 501(c)(3) nonprofit (US) and registered charity (UK, no. 1210532).
 
-## Limitations
+We build epistemic infrastructure that improves institutional decisionmaking by making tax and benefit policy transparent, accessible, and rigorously quantifiable. Our open-source simulation models power:
 
-- **Cash donations only** — We assume 60% AGI limit (US); appreciated assets have a 30% limit
-- **No carryforward modeling** — If you exceed AGI limits, we don't yet model carryforward
-- **Simplified household structure** — Head of household + spouse + children only
-- **No QCDs** — Qualified Charitable Distributions from IRAs aren't modeled
-- **UK: Gift Aid only** — We don't yet model Payroll Giving or share donations
+- **[PolicyEngine calculators](https://policyengine.org/us/reports)**: Anyone can model how taxes and benefits affect their situation and how reforms would change it
+- **Benefit access tools**: [MyFriendBen](https://myfriendben.org), [Amplifi](https://www.benefitnavigator.us), [Starlight](https://www.meetstarlight.com), and [Mirza](https://mirza.co) use our API to screen families for 40+ programs—collectively identifying $1B+ in unclaimed benefits
+- **Policy analysis**: Congressional offices, think tanks, and researchers use our models for evidence-based policy research
 
-## Support PolicyEngine
+We're also investigating how public policy mediates the relationship between AI-driven economic transformation and distributional outcomes. Our [research framework](https://policyengine.github.io/ai-growth-research/) examines how policy interventions shape who benefits and who loses from AI-driven economic shifts—comparing current policy to alternatives like UBI, expanded safety nets, and capital taxation.
 
-GiveCalc is free because [PolicyEngine](https://policyengine.org) is a 501(c)(3) nonprofit. We build open-source tax and benefit models used by congressional offices, think tanks, and researchers.
+Donations to PolicyEngine are tax-deductible in the US and eligible for Gift Aid in the UK. If GiveCalc helps you plan your giving, consider [donating to PolicyEngine](https://policyengine.org/us/donate)—and use GiveCalc to calculate your tax savings.
 
-If GiveCalc helps you plan your giving, consider [donating to PolicyEngine](https://policyengine.org/us/donate)—and use GiveCalc to calculate your tax savings!
+## Try it
+
+**[givecalc.org](https://givecalc.org)**
 
 ---
 
