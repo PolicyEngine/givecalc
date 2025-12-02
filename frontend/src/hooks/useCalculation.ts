@@ -5,12 +5,13 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   getStates,
-  getTaxPrograms,
   calculateDonation,
   calculateTargetDonation,
   getUKRegions,
   calculateUKDonation,
+  STATES,
 } from "../lib/api";
+import { getTaxProgramsData } from "../lib/taxPrograms";
 import type {
   CalculateRequest,
   TargetDonationRequest,
@@ -22,6 +23,7 @@ export function useStates() {
     queryKey: ["states"],
     queryFn: getStates,
     staleTime: Infinity, // States don't change
+    initialData: STATES, // Prevents loading state - data available immediately
   });
 }
 
@@ -36,9 +38,10 @@ export function useUKRegions() {
 export function useTaxPrograms(stateCode: string) {
   return useQuery({
     queryKey: ["taxPrograms", stateCode],
-    queryFn: () => getTaxPrograms(stateCode),
+    queryFn: () => getTaxProgramsData(stateCode),
     enabled: !!stateCode,
     staleTime: Infinity,
+    initialData: stateCode ? getTaxProgramsData(stateCode) : undefined,
   });
 }
 

@@ -1,30 +1,27 @@
 /**
- * Tests for App component - State fetching and data flow
+ * Tests for App component - State loading and data flow
+ *
+ * Note: States and tax programs are now hardcoded in the frontend,
+ * so there's no loading state or API calls for initial data.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, cleanup } from "@testing-library/react";
 import * as api from "../../lib/api";
 
-// Mock the API module
-vi.mock("../../lib/api", () => ({
-  getStates: vi.fn(),
-  getTaxPrograms: vi.fn(),
-  calculateDonation: vi.fn(),
-  calculateTargetDonation: vi.fn(),
-}));
+// Mock the API module - only calculateDonation and calculateTargetDonation make real API calls now
+vi.mock("../../lib/api", async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof api;
+  return {
+    ...actual,
+    calculateDonation: vi.fn(),
+    calculateTargetDonation: vi.fn(),
+  };
+});
 
-const mockStates = {
-  states: [
-    { code: "AL", name: "Alabama", has_special_programs: false },
-    { code: "CA", name: "California", has_special_programs: false },
-  ],
-};
-
-describe("App - State Loading", () => {
+describe("App - Instant Load with Hardcoded Data", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset module registry to ensure fresh state
     vi.resetModules();
   });
 
@@ -32,63 +29,43 @@ describe("App - State Loading", () => {
     cleanup();
   });
 
-  it("shows loading spinner while fetching states", async () => {
-    // Make getStates return a promise that never resolves
-    vi.mocked(api.getStates).mockImplementation(() => new Promise(() => {}));
-
+  it("renders immediately without loading spinner (data is hardcoded)", async () => {
     // Import fresh App for this test
     const App = (await import("../../App")).default;
     render(<App />);
 
-    // Should show loading spinner
+    // Should NOT show loading spinner - data is available immediately
     const spinner = document.querySelector(".animate-spin");
-    expect(spinner).toBeInTheDocument();
+    expect(spinner).not.toBeInTheDocument();
+
+    // Should show the main content immediately
+    expect(screen.getByText("Your information")).toBeInTheDocument();
   });
 
-  it("renders states in dropdown after loading", async () => {
-    vi.mocked(api.getStates).mockResolvedValue(mockStates);
-    vi.mocked(api.getTaxPrograms).mockResolvedValue({
-      federal: { title: "Federal", description: "test" },
-      state: null,
-    });
-
-    // Import fresh App for this test
+  it("has all states available in dropdown immediately", async () => {
     const App = (await import("../../App")).default;
     render(<App />);
 
-    // Wait for states to load - increase timeout
-    await waitFor(
-      () => {
-        expect(screen.queryByText("Your information")).toBeInTheDocument();
-      },
-      { timeout: 3000 },
-    );
-
-    // Check that states are in the dropdown
+    // States should be available immediately
     const select = screen.getByRole("combobox");
     expect(select).toBeInTheDocument();
 
-    // Check specific states are rendered
-    expect(screen.getByText("Alabama")).toBeInTheDocument();
+    // Check that some states are rendered
     expect(screen.getByText("California")).toBeInTheDocument();
+    expect(screen.getByText("New York")).toBeInTheDocument();
+    expect(screen.getByText("Texas")).toBeInTheDocument();
   });
 
-  it("calls getStates API on mount", async () => {
-    vi.mocked(api.getStates).mockResolvedValue(mockStates);
-    vi.mocked(api.getTaxPrograms).mockResolvedValue({
-      federal: { title: "Federal", description: "test" },
-      state: null,
-    });
+  it("uses hardcoded STATES constant directly", async () => {
+    // Verify STATES is exported and has correct structure
+    expect(api.STATES).toBeDefined();
+    expect(api.STATES.states).toBeInstanceOf(Array);
+    expect(api.STATES.states.length).toBeGreaterThan(50); // All US states + DC
 
-    // Import fresh App for this test
-    const App = (await import("../../App")).default;
-    render(<App />);
-
-    await waitFor(
-      () => {
-        expect(api.getStates).toHaveBeenCalledTimes(1);
-      },
-      { timeout: 3000 },
-    );
+    // Check structure of state entries
+    const california = api.STATES.states.find((s) => s.code === "CA");
+    expect(california).toBeDefined();
+    expect(california?.name).toBe("California");
+    expect(california?.has_special_programs).toBeDefined();
   });
 });

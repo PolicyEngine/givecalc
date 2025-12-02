@@ -19,9 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "streamlit",
     "policyengine-us>=1.155.0",
-    "policyengine-uk>=2.55.0",
+    "policyengine-uk>=2.63.0",
     "plotly",
     "numpy",
     "pandas",
