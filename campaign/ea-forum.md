@@ -10,11 +10,7 @@
 
 *Update to our [2023 GiveCalc launch](https://forum.effectivealtruism.org/posts/gRLipHaijMn4ffv3a/givecalc-a-new-tool-to-calculate-the-true-cost-of-us). Now supports UK Gift Aid.*
 
-I donate about 10% of my income. For years I estimated my tax savings by multiplying donations by my marginal rate—around 35% federal + 9% California. So a $10,000 donation "costs" me $5,600, right?
-
-When I actually ran the numbers through a full tax simulation, I discovered my marginal giving discount was closer to 28%. The difference: I wasn't accounting for how my donations interact with state deductions, bracket boundaries, and the standard deduction threshold. That's $700/year I was miscounting.
-
-**[GiveCalc](https://givecalc.org)** runs these full simulations so you can see your actual marginal giving discount at any donation level. It's free, [open source](https://github.com/PolicyEngine/givecalc), and doesn't store your data.
+**[GiveCalc](https://givecalc.org)** calculates how charitable donations affect your taxes. It runs full tax simulations rather than multiplying by marginal rates, which captures interactions between donations, state taxes, bracket boundaries, and the standard deduction threshold. It's free, [open source](https://github.com/PolicyEngine/givecalc), and doesn't store your data.
 
 ![GiveCalc US screenshot](<!-- TODO: Upload from ~/Downloads/GiveCalc screens.png (US example) -->)
 
