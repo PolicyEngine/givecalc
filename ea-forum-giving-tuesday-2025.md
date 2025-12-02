@@ -54,7 +54,7 @@ The [source code](https://github.com/PolicyEngine/givecalc) remains fully open s
 
 ## Validated Against TAXSIM
 
-PolicyEngine has signed a [memorandum of understanding with NBER](https://policyengine.org/us/research/policyengine-nber-mou-taxsim) to develop a TAXSIM emulator, validating our tax calculations against the research community's standard. This gives you confidence that GiveCalc's results are accurate.
+PolicyEngine has signed a [memorandum of understanding with NBER](https://policyengine.org/us/research/policyengine-nber-mou-taxsim) to develop a TAXSIM emulator. This partnership has improved our accuracy by validating our tax calculations against the research community's standard.
 
 ## Support PolicyEngine
 
