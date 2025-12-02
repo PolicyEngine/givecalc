@@ -30,7 +30,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest tests/ -v --tb=short
+          pytest tests/ -v --tb=short
 
       - name: Check formatting
         run: |
