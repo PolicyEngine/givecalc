@@ -31,6 +31,10 @@ GiveCalc uses [PolicyEngine's](https://policyengine.org) comprehensive microsimu
 
 The key output is your **marginal giving discount**: how much tax you save on your next dollar/pound of giving at any donation level. This varies non-linearly, which matters for decisions about timing and amount.
 
+![GiveCalc US screenshot](<!-- TODO: Upload from ~/Downloads/GiveCalc screens.png (US example) -->)
+
+![GiveCalc UK screenshot](<!-- TODO: Upload from ~/Downloads/GiveCalc screens.png (UK example) -->)
+
 ## Features
 
 **Multi-country support:** Calculate for US (federal + all states) or UK (including Scotland).
@@ -55,17 +59,11 @@ GiveCalc's marginal rate charts show exactly where your savings rate changes, he
 
 ## About PolicyEngine
 
-GiveCalc is built by [PolicyEngine](https://policyengine.org), a 501(c)(3) nonprofit (US) and registered charity (UK, no. 1210532).
+GiveCalc is built by [PolicyEngine](https://policyengine.org), a 501(c)(3) nonprofit (US) and registered charity (UK, no. 1210532). We build open-source tax-benefit simulation models used by congressional offices, think tanks, and researchers for evidence-based policy analysis.
 
-We build epistemic infrastructure that improves institutional decisionmaking by making tax and benefit policy transparent, accessible, and rigorously quantifiable. Our open-source simulation models power:
+We're also investigating how public policy mediates the relationship between AI-driven economic transformation and distributional outcomes. Our [research framework](https://policyengine.github.io/ai-growth-research/) examines how policy interventions shape who benefits and who loses from AI-driven economic shifts.
 
-- **[PolicyEngine calculators](https://policyengine.org/us/reports)**: Anyone can model how taxes and benefits affect their situation and how reforms would change it
-- **Benefit access tools**: [MyFriendBen](https://myfriendben.org), [Amplifi](https://www.benefitnavigator.us), [Starlight](https://www.meetstarlight.com), and [Mirza](https://mirza.co) use our API to screen families for 40+ programs—collectively identifying $1B+ in unclaimed benefits
-- **Policy analysis**: Congressional offices, think tanks, and researchers use our models for evidence-based policy research
-
-We're also investigating how public policy mediates the relationship between AI-driven economic transformation and distributional outcomes. Our [research framework](https://policyengine.github.io/ai-growth-research/) examines how policy interventions shape who benefits and who loses from AI-driven economic shifts—comparing current policy to alternatives like UBI, expanded safety nets, and capital taxation.
-
-Donations to PolicyEngine are tax-deductible in the US and eligible for Gift Aid in the UK. If GiveCalc helps you plan your giving, consider [donating to PolicyEngine](https://policyengine.org/us/donate)—and use GiveCalc to calculate your tax savings.
+Donations are tax-deductible (US) and Gift Aid eligible (UK). If GiveCalc helps you plan your giving, consider [donating to PolicyEngine](https://policyengine.org/us/donate).
 
 ## Try it
 
