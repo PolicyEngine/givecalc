@@ -22,7 +22,8 @@ const api = axios.create({
 });
 
 // Hardcoded states list for instant UI load (avoids Cloud Run cold start)
-const STATES: StatesResponse = {
+// Exported so it can be used as initialData in React Query
+export const STATES: StatesResponse = {
   states: [
     { code: "AL", name: "Alabama" },
     { code: "AK", name: "Alaska" },

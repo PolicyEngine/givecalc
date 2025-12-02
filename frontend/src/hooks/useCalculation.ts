@@ -8,6 +8,7 @@ import {
   getTaxPrograms,
   calculateDonation,
   calculateTargetDonation,
+  STATES,
 } from "../lib/api";
 import type { CalculateRequest, TargetDonationRequest } from "../lib/types";
 
@@ -16,6 +17,7 @@ export function useStates() {
     queryKey: ["states"],
     queryFn: getStates,
     staleTime: Infinity, // States don't change
+    initialData: STATES, // Prevents loading state - data available immediately
   });
 }
 
