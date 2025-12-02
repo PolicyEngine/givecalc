@@ -175,3 +175,81 @@ class TaxProgramsResponse(BaseModel):
 
     federal: TaxProgram
     state: Optional[TaxProgram] = None
+
+
+# UK-specific schemas
+
+
+class UKIncomeInput(BaseModel):
+    """UK income sources input."""
+
+    employment_income: float = Field(
+        default=0, ge=0, le=10_000_000, description="Employment income"
+    )
+    self_employment_income: float = Field(
+        default=0, ge=0, description="Self-employment income"
+    )
+
+
+class UKRegionInfo(BaseModel):
+    """Information about a UK region."""
+
+    code: str
+    name: str
+    nation: str  # England, Scotland, Wales, Northern Ireland
+
+
+class UKRegionsResponse(BaseModel):
+    """List of UK regions."""
+
+    regions: list[UKRegionInfo]
+
+
+class UKCalculateRequest(BaseModel):
+    """Request body for UK donation calculation."""
+
+    income: UKIncomeInput = Field(..., description="Income sources")
+    region: str = Field(default="LONDON", description="UK region code")
+    gift_aid: float = Field(
+        ..., ge=0, description="Gift Aid donation amount (GBP)"
+    )
+    is_married: bool = Field(default=False, description="Has partner")
+    num_children: int = Field(
+        default=0, ge=0, le=20, description="Number of dependent children"
+    )
+    year: int = Field(
+        default=2025, ge=2024, le=2026, description="Tax year for calculations"
+    )
+
+
+class UKDonationDataPoint(BaseModel):
+    """Single data point in UK donation curve."""
+
+    donation: float
+    net_tax: float
+    marginal_savings: float
+    net_income: float
+
+
+class UKCalculateResponse(BaseModel):
+    """Response from UK donation calculation."""
+
+    # Current donation metrics
+    gift_aid: float
+    baseline_net_tax: float
+    net_tax_at_donation: float
+    tax_savings: float
+    marginal_savings_rate: float
+
+    # Net income metrics
+    baseline_net_income: float
+    net_income_after_donation: float
+
+    # Full curve data for charts (donation sweep)
+    curve: list[UKDonationDataPoint]
+
+
+class UKTaxProgramsResponse(BaseModel):
+    """UK tax programs information."""
+
+    gift_aid: TaxProgram

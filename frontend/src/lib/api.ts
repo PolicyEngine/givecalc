@@ -10,6 +10,9 @@ import type {
   TargetDonationResponse,
   StatesResponse,
   TaxProgramsResponse,
+  UKRegionsResponse,
+  UKCalculateRequest,
+  UKCalculateResponse,
 } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -115,5 +118,28 @@ export async function healthCheck(): Promise<{
   tax_year: number;
 }> {
   const response = await api.get("/api/health");
+  return response.data;
+}
+
+// UK API functions
+export async function getUKRegions(): Promise<UKRegionsResponse> {
+  console.log("Fetching UK regions from:", API_URL + "/api/uk/regions");
+  try {
+    const response = await api.get<UKRegionsResponse>("/api/uk/regions");
+    console.log("UK regions response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch UK regions:", error);
+    throw error;
+  }
+}
+
+export async function calculateUKDonation(
+  request: UKCalculateRequest,
+): Promise<UKCalculateResponse> {
+  const response = await api.post<UKCalculateResponse>(
+    "/api/uk/calculate",
+    request,
+  );
   return response.data;
 }

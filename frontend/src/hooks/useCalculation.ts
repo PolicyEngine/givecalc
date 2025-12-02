@@ -7,10 +7,16 @@ import {
   getStates,
   calculateDonation,
   calculateTargetDonation,
+  getUKRegions,
+  calculateUKDonation,
   STATES,
 } from "../lib/api";
 import { getTaxProgramsData } from "../lib/taxPrograms";
-import type { CalculateRequest, TargetDonationRequest } from "../lib/types";
+import type {
+  CalculateRequest,
+  TargetDonationRequest,
+  UKCalculateRequest,
+} from "../lib/types";
 
 export function useStates() {
   return useQuery({
@@ -18,6 +24,14 @@ export function useStates() {
     queryFn: getStates,
     staleTime: Infinity, // States don't change
     initialData: STATES, // Prevents loading state - data available immediately
+  });
+}
+
+export function useUKRegions() {
+  return useQuery({
+    queryKey: ["ukRegions"],
+    queryFn: getUKRegions,
+    staleTime: Infinity, // Regions don't change
   });
 }
 
@@ -41,5 +55,11 @@ export function useCalculateTargetDonation() {
   return useMutation({
     mutationFn: (request: TargetDonationRequest) =>
       calculateTargetDonation(request),
+  });
+}
+
+export function useCalculateUKDonation() {
+  return useMutation({
+    mutationFn: (request: UKCalculateRequest) => calculateUKDonation(request),
   });
 }

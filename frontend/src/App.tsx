@@ -7,30 +7,38 @@ import { useState, useRef, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Header from "./components/Header";
 import InputForm from "./components/InputForm";
+import UKInputForm from "./components/UKInputForm";
 import Results from "./components/Results";
 import TaxInfo from "./components/TaxInfo";
 import {
   useStates,
+  useUKRegions,
   useCalculateDonation,
   useCalculateTargetDonation,
+  useCalculateUKDonation,
 } from "./hooks/useCalculation";
 import type {
+  Country,
   FormState,
+  UKFormState,
   CalculateResponse,
   TargetDonationResponse,
+  UKCalculateResponse,
 } from "./lib/types";
-import { DEFAULT_FORM_STATE } from "./lib/types";
+import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "./lib/types";
 
 // Cache for calculation results
 type CacheEntry = {
   result?: CalculateResponse;
   targetResult?: TargetDonationResponse;
+  ukResult?: UKCalculateResponse;
 };
 type ResultCache = Map<string, CacheEntry>;
 
 // Generate cache key from request parameters
-function getCacheKey(formState: FormState): string {
+function getCacheKey(formState: FormState, country: Country): string {
   const key = {
+    country,
     income: formState.income,
     state_code: formState.state_code,
     is_married: formState.is_married,
@@ -50,6 +58,10 @@ function getCacheKey(formState: FormState): string {
   return JSON.stringify(key);
 }
 
+function getUKCacheKey(formState: UKFormState): string {
+  return JSON.stringify({ country: "uk", ...formState });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -60,11 +72,15 @@ const queryClient = new QueryClient({
 });
 
 function Calculator() {
+  const [country, setCountry] = useState<Country>("us");
   const [formState, setFormStateInternal] =
     useState<FormState>(DEFAULT_FORM_STATE);
+  const [ukFormState, setUKFormStateInternal] =
+    useState<UKFormState>(DEFAULT_UK_FORM_STATE);
   const [result, setResult] = useState<CalculateResponse | null>(null);
   const [targetResult, setTargetResult] =
     useState<TargetDonationResponse | null>(null);
+  const [ukResult, setUKResult] = useState<UKCalculateResponse | null>(null);
   const cacheRef = useRef<ResultCache>(new Map());
 
   const {
@@ -74,25 +90,23 @@ function Calculator() {
     error: statesErrorData,
   } = useStates();
 
-  // Debug logging
-  console.log(
-    "States loading:",
-    statesLoading,
-    "Data:",
-    statesData,
-    "Error:",
-    statesError,
-    statesErrorData,
-  );
+  const {
+    data: ukRegionsData,
+    isLoading: ukRegionsLoading,
+    isError: ukRegionsError,
+    error: ukRegionsErrorData,
+  } = useUKRegions();
+
   const calculateMutation = useCalculateDonation();
   const targetMutation = useCalculateTargetDonation();
+  const ukCalculateMutation = useCalculateUKDonation();
 
   // Check cache and update results when form state changes
   const setFormState = useCallback((newState: FormState) => {
     setFormStateInternal(newState);
 
     // Check if we have cached results for this state
-    const cacheKey = getCacheKey(newState);
+    const cacheKey = getCacheKey(newState, "us");
     const cached = cacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -106,8 +120,44 @@ function Calculator() {
     }
   }, []);
 
+  const setUKFormState = useCallback((newState: UKFormState) => {
+    setUKFormStateInternal(newState);
+
+    // Check if we have cached results for this state
+    const cacheKey = getUKCacheKey(newState);
+    const cached = cacheRef.current.get(cacheKey);
+
+    if (cached) {
+      setUKResult(cached.ukResult || null);
+    } else {
+      setUKResult(null);
+    }
+  }, []);
+
   const handleCalculate = async () => {
-    const cacheKey = getCacheKey(formState);
+    if (country === "uk") {
+      const cacheKey = getUKCacheKey(ukFormState);
+      const cached = cacheRef.current.get(cacheKey);
+      if (cached?.ukResult) {
+        setUKResult(cached.ukResult);
+        return;
+      }
+
+      setUKResult(null);
+      const response = await ukCalculateMutation.mutateAsync({
+        income: ukFormState.income,
+        region: ukFormState.region,
+        gift_aid: ukFormState.gift_aid,
+        is_married: ukFormState.is_married,
+        num_children: ukFormState.num_children,
+        year: ukFormState.year,
+      });
+      setUKResult(response);
+      cacheRef.current.set(cacheKey, { ukResult: response });
+      return;
+    }
+
+    const cacheKey = getCacheKey(formState, "us");
 
     // Check cache first
     const cached = cacheRef.current.get(cacheKey);
@@ -152,11 +202,22 @@ function Calculator() {
     }
   };
 
-  const isCalculating = calculateMutation.isPending || targetMutation.isPending;
-  const hasError = calculateMutation.isError || targetMutation.isError;
-  const error = calculateMutation.error || targetMutation.error;
+  const isCalculating =
+    calculateMutation.isPending ||
+    targetMutation.isPending ||
+    ukCalculateMutation.isPending;
+  const hasError =
+    calculateMutation.isError ||
+    targetMutation.isError ||
+    ukCalculateMutation.isError;
+  const error =
+    calculateMutation.error || targetMutation.error || ukCalculateMutation.error;
 
-  if (statesLoading) {
+  const isLoading = country === "us" ? statesLoading : ukRegionsLoading;
+  const hasLoadError = country === "us" ? statesError : ukRegionsError;
+  const loadErrorData = country === "us" ? statesErrorData : ukRegionsErrorData;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
@@ -164,16 +225,16 @@ function Calculator() {
     );
   }
 
-  if (statesError) {
+  if (hasLoadError) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
           <h2 className="text-lg font-semibold text-red-700 mb-2">
-            Failed to load states
+            Failed to load {country === "us" ? "states" : "regions"}
           </h2>
           <p className="text-red-600 text-sm">
-            {statesErrorData instanceof Error
-              ? statesErrorData.message
+            {loadErrorData instanceof Error
+              ? loadErrorData.message
               : "Could not connect to API"}
           </p>
           <button
@@ -188,21 +249,74 @@ function Calculator() {
   }
 
   const states = statesData?.states || [];
+  const ukRegions = ukRegionsData?.regions || [];
+
+  // Convert UK result to US-compatible format for Results component
+  const ukResultAsUS: CalculateResponse | null = ukResult
+    ? {
+        donation_amount: ukResult.gift_aid,
+        baseline_net_tax: ukResult.baseline_net_tax,
+        net_tax_at_donation: ukResult.net_tax_at_donation,
+        tax_savings: ukResult.tax_savings,
+        marginal_savings_rate: ukResult.marginal_savings_rate,
+        baseline_net_income: ukResult.baseline_net_income,
+        net_income_after_donation: ukResult.net_income_after_donation,
+        curve: ukResult.curve,
+      }
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Country Selector */}
+        <div className="mb-6">
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden w-fit">
+            <button
+              type="button"
+              onClick={() => setCountry("us")}
+              className={`py-2 px-6 text-sm font-medium transition-colors flex items-center gap-2 ${
+                country === "us"
+                  ? "bg-teal-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <span>🇺🇸</span> United States
+            </button>
+            <button
+              type="button"
+              onClick={() => setCountry("uk")}
+              className={`py-2 px-6 text-sm font-medium border-l border-gray-300 transition-colors flex items-center gap-2 ${
+                country === "uk"
+                  ? "bg-teal-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <span>🇬🇧</span> United Kingdom
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Input Form */}
           <div className="lg:col-span-1 space-y-6">
-            <InputForm
-              formState={formState}
-              setFormState={setFormState}
-              states={states}
-            />
-            <TaxInfo stateCode={formState.state_code} />
+            {country === "us" ? (
+              <>
+                <InputForm
+                  formState={formState}
+                  setFormState={setFormState}
+                  states={states}
+                />
+                <TaxInfo stateCode={formState.state_code} />
+              </>
+            ) : (
+              <UKInputForm
+                formState={ukFormState}
+                setFormState={setUKFormState}
+                regions={ukRegions}
+              />
+            )}
             {/* Sticky Calculate Button - attached to left panel */}
             <div className="sticky bottom-4">
               <button
@@ -231,10 +345,11 @@ function Calculator() {
               </div>
             )}
             <Results
-              result={result}
-              targetResult={targetResult}
-              mode={formState.mode}
+              result={country === "uk" ? ukResultAsUS : result}
+              targetResult={country === "us" ? targetResult : null}
+              mode={country === "uk" ? "amount" : formState.mode}
               isCalculating={isCalculating}
+              currency={country === "uk" ? "GBP" : "USD"}
             />
           </div>
         </div>
