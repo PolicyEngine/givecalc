@@ -16,7 +16,7 @@ from givecalc import (
 def test_calculate_donation_metrics_returns_dict():
     """Test that calculate_donation_metrics returns a dictionary with expected keys."""
 
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     metrics = calculate_donation_metrics(situation, donation_amount=5000)
 
     assert isinstance(metrics, dict)
@@ -26,7 +26,7 @@ def test_calculate_donation_metrics_returns_dict():
 
 def test_calculate_donation_metrics_zero_donation():
     """Test metrics with zero donation."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     metrics = calculate_donation_metrics(situation, donation_amount=0)
 
     # Should have positive income tax
@@ -37,7 +37,7 @@ def test_calculate_donation_metrics_zero_donation():
 
 def test_calculate_donation_metrics_with_donation():
     """Test that donations affect tax calculation correctly."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     metrics_no_donation = calculate_donation_metrics(
         situation, donation_amount=0
     )
@@ -55,7 +55,7 @@ def test_calculate_donation_metrics_with_donation():
 
 def test_calculate_donation_effects_returns_dataframe():
     """Test that calculate_donation_effects returns a DataFrame."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     df = calculate_donation_effects(situation)
 
     assert isinstance(df, pd.DataFrame)
@@ -63,7 +63,7 @@ def test_calculate_donation_effects_returns_dataframe():
 
 def test_calculate_donation_effects_columns():
     """Test that the DataFrame has expected columns."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     df = calculate_donation_effects(situation)
 
     expected_columns = [
@@ -78,7 +78,7 @@ def test_calculate_donation_effects_columns():
 
 def test_calculate_donation_effects_shape():
     """Test that the DataFrame has 1001 rows (from axes)."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     df = calculate_donation_effects(situation)
 
     assert len(df) == 1001  # 1001 points from axes
@@ -87,7 +87,7 @@ def test_calculate_donation_effects_shape():
 def test_calculate_donation_effects_donation_range():
     """Test that donations range from 0 to income."""
     income = 100000
-    situation = create_situation(employment_income=income)
+    situation = create_situation(wages_and_salaries=income)
     df = calculate_donation_effects(situation)
 
     assert df["charitable_cash_donations"].min() == 0
@@ -96,7 +96,7 @@ def test_calculate_donation_effects_donation_range():
 
 def test_calculate_donation_effects_marginal_savings():
     """Test that marginal savings are between 0 and 1."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
     df = calculate_donation_effects(situation)
 
     # Remove NaN values (can occur at boundaries)

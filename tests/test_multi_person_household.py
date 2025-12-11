@@ -8,7 +8,7 @@ from givecalc import CURRENT_YEAR, calculate_donation_effects, create_situation
 def test_axes_with_married_couple():
     """Test that axes work with married couple."""
     situation = create_situation(
-        employment_income=100000,
+        wages_and_salaries=100000,
         is_married=True,
     )
 
@@ -34,7 +34,7 @@ def test_axes_with_married_couple():
 def test_axes_with_children():
     """Test that axes work with children."""
     situation = create_situation(
-        employment_income=100000,
+        wages_and_salaries=100000,
         is_married=True,
         num_children=2,
     )

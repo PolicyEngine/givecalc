@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +30,10 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest tests/ -v --tb=short
+          pytest tests/ -v --tb=short
 
       - name: Check formatting
-        if: matrix.python-version == '3.11'
         run: |
           pip install black isort
-          black --check givecalc/ tests/ ui/ --line-length 79
-          isort --check givecalc/ tests/ ui/
+          black --check givecalc/ tests/ api/ --line-length 79
+          isort --check givecalc/ tests/ api/

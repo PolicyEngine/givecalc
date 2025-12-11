@@ -7,7 +7,7 @@ from givecalc import CURRENT_YEAR, create_situation
 
 def test_axes_generate_donation_range():
     """Test that axes parameter actually generates different donation amounts."""
-    situation = create_situation(employment_income=100000)
+    situation = create_situation(wages_and_salaries=100000)
 
     print(f"\nSituation axes: {situation['axes']}")
 
