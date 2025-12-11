@@ -9,9 +9,12 @@ import { formatCurrency } from "../lib/format";
 interface Props {
   curve: DonationDataPoint[];
   currentDonation: number;
+  currency?: "USD" | "GBP";
 }
 
-export default function TaxChart({ curve, currentDonation }: Props) {
+export default function TaxChart({ curve, currentDonation, currency = "USD" }: Props) {
+  const isUK = currency === "GBP";
+  const currencySymbol = isUK ? "£" : "$";
   const donations = curve.map((d) => d.donation);
   const netTaxes = curve.map((d) => d.net_tax);
 
@@ -36,7 +39,7 @@ export default function TaxChart({ curve, currentDonation }: Props) {
           name: "Net taxes",
           line: { color: "#319795", width: 3 },
           hovertemplate:
-            "Donation: %{x:$,.0f}<br>Net tax: %{y:$,.0f}<extra></extra>",
+            `Donation: ${currencySymbol}%{x:,.0f}<br>Net tax: ${currencySymbol}%{y:,.0f}<extra></extra>`,
         },
         {
           x: [donations[currentIdx]],
@@ -45,7 +48,7 @@ export default function TaxChart({ curve, currentDonation }: Props) {
           mode: "markers",
           name: "Your donation",
           marker: { color: "#1D4044", size: 12, symbol: "circle" },
-          hovertemplate: `Your donation: ${formatCurrency(currentDonation)}<br>Net tax: ${formatCurrency(netTaxes[currentIdx])}<extra></extra>`,
+          hovertemplate: `Your donation: ${formatCurrency(currentDonation, currency)}<br>Net tax: ${formatCurrency(netTaxes[currentIdx], currency)}<extra></extra>`,
         },
       ]}
       layout={{
@@ -55,12 +58,14 @@ export default function TaxChart({ curve, currentDonation }: Props) {
         font: { family: "Inter, sans-serif" },
         xaxis: {
           title: { text: "Donation amount" },
-          tickformat: "$,.0f",
+          tickformat: ",.0f",
+          tickprefix: currencySymbol,
           gridcolor: "#E2E8F0",
         },
         yaxis: {
           title: { text: "Net taxes" },
-          tickformat: "$,.0f",
+          tickformat: ",.0f",
+          tickprefix: currencySymbol,
           gridcolor: "#E2E8F0",
           rangemode: "tozero",
         },

@@ -109,7 +109,7 @@ export interface FormState {
 }
 
 export const DEFAULT_INCOME: Income = {
-  wages_and_salaries: 100000,
+  wages_and_salaries: 0,
   tips: 0,
   dividends: 0,
   qualified_dividends: 0,
@@ -121,11 +121,11 @@ export const DEFAULT_INCOME: Income = {
 
 export const DEFAULT_FORM_STATE: FormState = {
   income: DEFAULT_INCOME,
-  state_code: "CA",
+  state_code: "",  // No default state
   is_married: false,
   num_children: 0,
   in_nyc: false,
-  donation_amount: 5000,
+  donation_amount: 0,  // No default donation
   deductions: {
     mortgage_interest: 0,
     real_estate_taxes: 0,
@@ -135,7 +135,7 @@ export const DEFAULT_FORM_STATE: FormState = {
   mode: "amount",
   target_reduction: 10,
   is_percentage: true,
-  year: 2025,
+  year: new Date().getFullYear(),  // Current year
 };
 
 // UK-specific types
@@ -191,7 +191,7 @@ export interface UKFormState {
 }
 
 export const DEFAULT_UK_INCOME: UKIncome = {
-  employment_income: 60000,
+  employment_income: 0,
   self_employment_income: 0,
 };
 
@@ -200,6 +200,6 @@ export const DEFAULT_UK_FORM_STATE: UKFormState = {
   region: "ENGLAND",  // Default to Rest of UK (England, Wales, NI share same tax rates)
   is_married: false,
   num_children: 0,
-  gift_aid: 1000,
-  year: 2025,
+  gift_aid: 0,  // No default donation
+  year: new Date().getFullYear(),
 };
