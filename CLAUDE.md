@@ -6,38 +6,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 GiveCalc is a Streamlit web application that calculates how charitable giving affects taxes. It uses the PolicyEngine-US Python package to compute accurate federal and state tax impacts from charitable donations. Users input their income, filing status, state, and other deductions, and the app shows how donations reduce net taxes through deductions and credits.
 
-## Running the Application
+## Commands
 
-**Development:**
 ```bash
-streamlit run app.py
-```
+# Run the Streamlit app
+make run                    # or: streamlit run app.py
 
-The app will open in your browser at http://localhost:8501.
+# Install
+make install                # Install package (uv pip install --system -e .)
+make install-dev            # Install with dev dependencies
 
-**Installation:**
-```bash
-# Install package in editable mode
-pip install -e .
+# Testing
+make test                   # Run all tests (uv run pytest tests/ -v)
+make test-cov               # Run tests with coverage
+make test-one TEST=path     # Run specific test (e.g., make test-one TEST=tests/test_tax.py::test_function)
+make perf                   # Run performance tests
 
-# Or use uv (recommended)
-uv pip install --system -e .
-```
+# Formatting
+make format                 # Format with black (79 chars) and isort
 
-**Testing:**
-```bash
-# Run tests with uv
-uv run pytest tests/ -v
-
-# Or with standard pytest
-pytest tests/ -v
+# Maintenance
+make clean                  # Remove build artifacts
+make update                 # Update policyengine-us and policyengine-core
 ```
 
 Key dependencies:
-- `streamlit`: Web application framework
 - `policyengine-us>=1.155.0`: Tax and benefit calculations
+- `streamlit`: Web application framework
 - `plotly`: Interactive charts
-- `pandas`, `numpy`: Data manipulation
 - `scipy`: Optimization for target donation calculations
 
 ## Architecture
@@ -47,7 +43,7 @@ Key dependencies:
 The codebase is organized into two main layers:
 
 1. **`givecalc/` package** - Core calculation logic (installable Python package)
-2. **UI layer** (`ui/`, `app.py`, `visualization.py`, `tax_info.py`) - Streamlit interface
+2. **UI layer** (`app.py`, `ui/`) - Streamlit interface
 
 ### Application Flow
 
@@ -61,18 +57,18 @@ The codebase is organized into two main layers:
    - Builds a PolicyEngine situation dictionary with all household members
    - Creates entities: people, families, marital units, tax units, SPM units, households
    - Adds an "axes" array that varies charitable donations from $0 to income in 1001 steps
-   - All calculations use CURRENT_YEAR (2024) from `givecalc/constants.py`
+   - All calculations use CURRENT_YEAR (2025) from `givecalc/constants.py`
 
 3. **Tax Calculations** (`givecalc/calculations/tax.py`)
    - `calculate_donation_metrics()`: Calculates metrics at a specific donation amount
    - `calculate_donation_effects()`: Runs simulation across donation range using axes
    - Returns DataFrames with income tax (net of benefits) and marginal savings rate
 
-4. **Visualization** (`visualization.py`)
+4. **Visualization** (`ui/visualization.py`)
    - Net taxes vs donation amount line chart
    - Marginal giving discount (tax savings per $1 donated)
    - Net income after taxes and donations
-   - All charts use PolicyEngine branding (Roboto font, teal accent color)
+   - All charts use PolicyEngine branding (Inter font, teal accent color)
 
 5. **Target Donation Calculator** (`ui/target_donation.py`, `givecalc/calculations/donations.py`)
    - Users can specify a target net income reduction
@@ -97,25 +93,21 @@ The codebase is organized into two main layers:
 - `ui/donations.py`: Donation input widgets
 - `ui/tax_results.py`: Tax results display
 - `ui/target_donation.py`: Target donation calculator UI
-- `visualization.py`: Plotly chart generation
-- `tax_info.py`: Displays federal and state tax program information
+- `ui/visualization.py`: Plotly chart generation
+- `ui/tax_info.py`: Displays federal and state tax program information
 - `config.yaml`: State-specific tax program descriptions
 
 ### Code Organization
 
 ```
-givecalc/
+givecalc/                       # Repository root
 ├── app.py                      # Main Streamlit app
-├── visualization.py            # Plotly chart generation
-├── tax_info.py                 # Tax program info display
 ├── config.yaml                 # State tax program descriptions
-├── requirements.txt            # Python dependencies
-├── requirements-dev.txt        # Dev dependencies (pytest, etc.)
-├── setup.py                    # Package installation configuration
-├── pytest.ini                  # Pytest configuration
+├── pyproject.toml              # Package configuration
+├── Makefile                    # Build commands
 ├── givecalc/                   # Core calculation package
 │   ├── __init__.py            # Clean package API
-│   ├── constants.py           # Shared constants
+│   ├── constants.py           # Shared constants (CURRENT_YEAR, colors)
 │   ├── config.py              # YAML config loader
 │   ├── core/                  # Core functionality
 │   │   ├── situation.py       # PolicyEngine situation builder
@@ -128,8 +120,10 @@ givecalc/
 │   ├── basic.py               # Basic input widgets
 │   ├── donations.py           # Donation input widgets
 │   ├── tax_results.py         # Tax results display
-│   └── target_donation.py     # Target donation calculator
-├── tests/                     # Test suite (TDD)
+│   ├── target_donation.py     # Target donation calculator
+│   ├── visualization.py       # Plotly chart generation
+│   └── tax_info.py            # Tax program info display
+├── tests/                     # Test suite
 │   ├── test_situation.py      # Situation creation tests
 │   ├── test_tax.py            # Tax calculation tests
 │   ├── test_donations.py      # Donation calculation tests
@@ -188,7 +182,7 @@ This creates 1001 simulations with donations from $0 to income. When you call `s
 Use `create_donation_simulation()` for calculating metrics at a specific donation:
 
 ```python
-from donation_simulation import create_donation_simulation
+from givecalc import create_donation_simulation, CURRENT_YEAR
 
 simulation = create_donation_simulation(situation, donation_amount=5000)
 net_tax = simulation.calculate("household_tax", CURRENT_YEAR) - \
@@ -229,18 +223,19 @@ This gives the tax reduction per dollar donated (e.g., 0.24 = 24¢ saved per $1 
 ## Styling
 
 ### Colors (from constants.py)
-- `TEAL_ACCENT = "#39C6C0"`: Primary UI accent color
-- `BLUE_PRIMARY = "#2C6496"`: Chart color (not currently used)
+- `TEAL_PRIMARY = "#319795"`: Primary brand color
+- `TEAL_ACCENT = "#39C6C0"`: Legacy accent color
+- `BLUE_PRIMARY = "#026AA2"`: Chart color
 
 ### Fonts
-- UI: Roboto (loaded via Google Fonts in app.py)
-- Charts: Roboto Serif (set in visualization.py)
+- UI: Inter (loaded via Google Fonts in app.py)
+- Charts: Roboto Serif (set in ui/visualization.py)
 
 ### Streamlit Theme
 See `.streamlit/config.toml` for theme configuration with teal accent.
 
 ### Chart Formatting
-All charts use `format_fig()` in `visualization.py` which:
+All charts use `format_fig()` in `ui/visualization.py` which:
 - Applies PolicyEngine branding
 - Adds PolicyEngine logo
 - Sets Roboto Serif font
@@ -253,7 +248,7 @@ The `config.yaml` file contains descriptions of federal and state-specific chari
 
 1. Add entry under `state_programs` with two-letter state code
 2. Include `title` and `description` fields
-3. Update `tax_info.py` if new display logic is needed
+3. Update `ui/tax_info.py` if new display logic is needed
 
 States with special charitable benefits:
 - **AZ**: Dollar-for-dollar tax credit (up to $400-$800)
@@ -264,26 +259,9 @@ States with special charitable benefits:
 
 ## PolicyEngine-US Version
 
-The app requires `policyengine-us>=1.155.0` for accurate 2024 calculations. The current version is displayed in the app footer (see `constants.py` for version detection logic).
+The app requires `policyengine-us>=1.155.0` for accurate calculations. The current version is displayed in the app footer (see `constants.py` for version detection logic).
 
-## Development Tips
-
-### Testing Changes Locally
-
-1. Make code changes
-2. Streamlit auto-reloads when files change
-3. If auto-reload fails, refresh browser or restart `streamlit run app.py`
-
-### Debugging PolicyEngine Issues
-
-Add these lines to see calculation details:
-
-```python
-print(simulation.calculate("variable_name", CURRENT_YEAR))
-simulation.trace = True  # Enables detailed calculation tracing
-```
-
-### Common Gotchas
+## Common Gotchas
 
 1. **Situation modifications**: Always copy situations before modifying to avoid side effects
 2. **Member lists**: All entities (family, marital_unit, tax_unit, etc.) must have same members
@@ -291,3 +269,13 @@ simulation.trace = True  # Enables detailed calculation tracing
 4. **Axes removal**: Remove axes before creating single-point simulations
 5. **Net taxes**: Remember to subtract benefits from taxes: `household_tax - household_benefits`
 6. **NYC checkbox**: Only show for NY state residents (handled in `ui/basic.py`)
+7. **Caching**: `app.py` uses `@st.cache_data` for expensive calculations - parameter changes invalidate cache
+
+## Debugging PolicyEngine
+
+```python
+from givecalc import CURRENT_YEAR
+
+print(simulation.calculate("variable_name", CURRENT_YEAR))
+simulation.trace = True  # Enables detailed calculation tracing
+```

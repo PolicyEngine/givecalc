@@ -1,21 +1,49 @@
+"""UK tax calculations for GiveCalc."""
+
+import copy
+
 import numpy as np
 import pandas as pd
-from policyengine_us import Simulation
+from policyengine_uk import Simulation
 
-from givecalc.constants import CURRENT_YEAR
-from givecalc.core.simulation import create_donation_simulation
+from givecalc.uk.constants import UK_CURRENT_YEAR
 
 
 def get_year_from_situation(situation):
     """Extract the tax year from a situation dictionary."""
-    # The year is stored in the axes period
     axes = situation.get("axes", [[]])
     if axes and axes[0]:
-        return axes[0][0].get("period", CURRENT_YEAR)
-    return CURRENT_YEAR
+        return axes[0][0].get("period", UK_CURRENT_YEAR)
+    return UK_CURRENT_YEAR
 
 
-def calculate_donation_metrics(situation, donation_amount):
+def create_uk_donation_simulation(situation, donation_amount):
+    """
+    Create a UK simulation with a specific donation amount.
+
+    Args:
+        situation (dict): Base situation dictionary
+        donation_amount (float): Gift Aid donation amount
+
+    Returns:
+        Simulation: PolicyEngine-UK simulation
+    """
+    year = get_year_from_situation(situation)
+
+    # Deep copy and modify situation
+    modified_situation = copy.deepcopy(situation)
+
+    # Remove axes for single-point simulation
+    if "axes" in modified_situation:
+        del modified_situation["axes"]
+
+    # Set the donation amount
+    modified_situation["people"]["you"]["gift_aid"] = {year: donation_amount}
+
+    return Simulation(situation=modified_situation)
+
+
+def calculate_uk_donation_metrics(situation, donation_amount):
     """
     Calculate baseline metrics with specified donation.
 
@@ -27,7 +55,7 @@ def calculate_donation_metrics(situation, donation_amount):
         dict: Dictionary containing baseline metrics
     """
     year = get_year_from_situation(situation)
-    baseline_simulation = create_donation_simulation(
+    baseline_simulation = create_uk_donation_simulation(
         situation=situation, donation_amount=donation_amount
     )
     return {
@@ -43,9 +71,9 @@ def calculate_donation_metrics(situation, donation_amount):
     }
 
 
-def calculate_donation_effects(situation):
+def calculate_uk_donation_effects(situation):
     """
-    Calculate the effects of varying donation amounts.
+    Calculate the effects of varying Gift Aid donation amounts.
 
     Args:
         situation (dict): Base situation dictionary
@@ -55,12 +83,11 @@ def calculate_donation_effects(situation):
     """
     year = get_year_from_situation(situation)
     simulation = Simulation(situation=situation)
-    # Note: We add this as a column to enable non-cash donations in the future.
-    donation_column = "charitable_cash_donations"
-    # Use tax_unit for donations (where deductions are claimed) instead of household
-    # Person-level variable without aggregation formula doesn't map properly to household
+
+    donation_column = "gift_aid"
+    # Use benunit for donations (where tax relief is claimed)
     donations = simulation.calculate(
-        donation_column, period=year, map_to="tax_unit"
+        donation_column, period=year, map_to="benunit"
     )
 
     income_tax_by_donation = simulation.calculate(
@@ -69,16 +96,16 @@ def calculate_donation_effects(situation):
         "household_benefits", period=year, map_to="household"
     )
 
-    return create_donation_dataframe(
+    return create_uk_donation_dataframe(
         donations, income_tax_by_donation, donation_column
     )
 
 
-def create_donation_dataframe(
+def create_uk_donation_dataframe(
     donations, income_tax_by_donation, donation_column
 ):
     """
-    Create a DataFrame with donation effects analysis.
+    Create a DataFrame with UK donation effects analysis.
 
     Args:
         donations (numpy.ndarray): Array of donation amounts
