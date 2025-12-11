@@ -7,7 +7,7 @@ name = "givecalc"
 version = "0.1.0"
 description = "Calculate how charitable giving affects taxes"
 readme = "README.md"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.11,<3.14"
 license = "MIT"
 authors = [
     {name = "PolicyEngine", email = "hello@policyengine.org"}
@@ -16,19 +16,21 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "streamlit",
     "policyengine-us>=1.155.0",
-    "policyengine-uk>=2.63.0",
     "plotly",
     "numpy",
     "pandas",
     "pyyaml",
     "scipy",
-    "fastapi>=0.109.0",
-    "uvicorn[standard]>=0.27.0",
-    "pydantic>=2.0.0",
+    "policyengine-uk>=2.45.4",
+    "fastapi>=0.124.2",
+    "uvicorn[standard]>=0.38.0",
 ]
 
 [project.optional-dependencies]
@@ -37,7 +39,6 @@ dev = [
     "pytest-cov>=4.0.0",
     "black>=22.0.0",
     "isort>=5.10.0",
-    "httpx>=0.25.0",
 ]
 
 [project.urls]
@@ -57,7 +58,7 @@ addopts = "-v --tb=short"
 
 [tool.black]
 line-length = 79
-target-version = ["py313"]
+target-version = ["py311", "py312", "py313"]
 
 [tool.isort]
 profile = "black"
