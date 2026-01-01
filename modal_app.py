@@ -18,11 +18,11 @@ image = (
         "fastapi>=0.124.2",
         "pyyaml",
     )
-    .env({"NUMEXPR_MAX_THREADS": "4", "USE_MODAL": "false"})
-    .copy_local_file("config.yaml", "/root/config.yaml")
-    .copy_local_dir("givecalc", "/root/givecalc")
-    .copy_local_dir("api", "/root/api")
+    .env({"NUMEXPR_MAX_THREADS": "4", "USE_MODAL": "false", "PYTHONPATH": "/root"})
     .workdir("/root")
+    .add_local_file("config.yaml", "/root/config.yaml")
+    .add_local_dir("givecalc", "/root/givecalc")
+    .add_local_dir("api", "/root/api")
 )
 
 app = modal.App("givecalc")
@@ -31,10 +31,10 @@ app = modal.App("givecalc")
 @app.function(
     image=image,
     timeout=300,
-    keep_warm=1,
+    min_containers=1,
     memory=2048,
-    allow_concurrent_inputs=100,
 )
+@modal.concurrent(max_inputs=100)
 @modal.asgi_app()
 def fastapi_app():
     """Serve the FastAPI app on Modal."""
