@@ -31,7 +31,6 @@ app = modal.App("givecalc")
 @app.function(
     image=image,
     timeout=300,
-    min_containers=1,
     memory=2048,
 )
 @modal.concurrent(max_inputs=100)
