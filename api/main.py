@@ -15,8 +15,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from givecalc import (
     CURRENT_YEAR,
     add_net_income_columns,
-    calculate_donation_effects,
-    calculate_donation_metrics,
     calculate_target_donation,
     create_situation,
 )
@@ -24,11 +22,10 @@ from givecalc.uk import (
     ENGLAND_REGIONS,
     UK_CURRENT_YEAR,
     UK_REGIONS,
-    calculate_uk_donation_effects,
-    calculate_uk_donation_metrics,
     create_uk_situation,
 )
 
+from .modal_client import get_donation_effects, get_donation_metrics
 from .schemas import (
     CalculateRequest,
     CalculateResponse,
@@ -234,21 +231,19 @@ async def calculate_donation(request: CalculateRequest):
         )
 
         # Calculate baseline (no donation) metrics
-        baseline_metrics = calculate_donation_metrics(situation, 0)
-        baseline_net_tax = float(baseline_metrics["baseline_income_tax"][0])
-        baseline_net_income = float(baseline_metrics["baseline_net_income"][0])
+        baseline_metrics = get_donation_metrics(situation, 0, "us")
+        baseline_net_tax = baseline_metrics["baseline_income_tax"]
+        baseline_net_income = baseline_metrics["baseline_net_income"]
 
         # Calculate metrics at specified donation
-        donation_metrics = calculate_donation_metrics(
-            situation, request.donation_amount
+        donation_metrics = get_donation_metrics(
+            situation, request.donation_amount, "us"
         )
-        net_tax_at_donation = float(donation_metrics["baseline_income_tax"][0])
-        net_income_at_donation = float(
-            donation_metrics["baseline_net_income"][0]
-        )
+        net_tax_at_donation = donation_metrics["baseline_income_tax"]
+        net_income_at_donation = donation_metrics["baseline_net_income"]
 
         # Calculate full donation curve
-        df = calculate_donation_effects(situation)
+        df = get_donation_effects(situation, "us")
 
         # Add net income columns
         df = add_net_income_columns(df, baseline_metrics)
@@ -341,11 +336,11 @@ async def calculate_target(request: TargetDonationRequest):
         )
 
         # Calculate baseline metrics
-        baseline_metrics = calculate_donation_metrics(situation, 0)
-        baseline_net_income = float(baseline_metrics["baseline_net_income"][0])
+        baseline_metrics = get_donation_metrics(situation, 0, "us")
+        baseline_net_income = baseline_metrics["baseline_net_income"]
 
         # Calculate donation effects
-        df = calculate_donation_effects(situation)
+        df = get_donation_effects(situation, "us")
         df = add_net_income_columns(df, baseline_metrics)
 
         # Calculate target donation
@@ -494,21 +489,19 @@ async def calculate_uk_donation(request: UKCalculateRequest):
         )
 
         # Calculate baseline (no donation) metrics
-        baseline_metrics = calculate_uk_donation_metrics(situation, 0)
-        baseline_net_tax = float(baseline_metrics["baseline_income_tax"][0])
-        baseline_net_income = float(baseline_metrics["baseline_net_income"][0])
+        baseline_metrics = get_donation_metrics(situation, 0, "uk")
+        baseline_net_tax = baseline_metrics["baseline_income_tax"]
+        baseline_net_income = baseline_metrics["baseline_net_income"]
 
         # Calculate metrics at specified donation
-        donation_metrics = calculate_uk_donation_metrics(
-            situation, request.gift_aid
+        donation_metrics = get_donation_metrics(
+            situation, request.gift_aid, "uk"
         )
-        net_tax_at_donation = float(donation_metrics["baseline_income_tax"][0])
-        net_income_at_donation = float(
-            donation_metrics["baseline_net_income"][0]
-        )
+        net_tax_at_donation = donation_metrics["baseline_income_tax"]
+        net_income_at_donation = donation_metrics["baseline_net_income"]
 
         # Calculate full donation curve
-        df = calculate_uk_donation_effects(situation)
+        df = get_donation_effects(situation, "uk")
 
         # Calculate net income column
         df["net_income"] = (

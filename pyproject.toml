@@ -31,6 +31,7 @@ dependencies = [
     "policyengine-uk>=2.45.4",
     "fastapi>=0.124.2",
     "uvicorn[standard]>=0.38.0",
+    "modal>=0.68.0",
 ]
 
 [project.optional-dependencies]
@@ -63,3 +64,9 @@ target-version = ["py311", "py312", "py313"]
 [tool.isort]
 profile = "black"
 line_length = 79
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "isort>=7.0.0",
+]
