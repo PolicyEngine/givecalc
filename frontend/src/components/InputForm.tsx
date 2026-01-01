@@ -2,7 +2,7 @@
  * US input form with wizard-style progressive disclosure
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FormState, StateInfo, Income } from "../lib/types";
 import { formatCurrency } from "../lib/format";
 
@@ -36,7 +36,9 @@ function Section({
       <div className="opacity-50 pointer-events-none">
         <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
           <span className="text-sm font-medium text-gray-400">{title}</span>
-          <span className="text-xs text-gray-400">Complete previous section first</span>
+          <span className="text-xs text-gray-400">
+            Complete previous section first
+          </span>
         </div>
       </div>
     );
@@ -51,16 +53,36 @@ function Section({
         >
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-4 h-4 text-primary-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <span className="text-sm font-medium text-gray-900">{title}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-600 text-right">{summary}</div>
-            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            <svg
+              className="w-4 h-4 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              />
             </svg>
           </div>
         </button>
@@ -129,11 +151,37 @@ export default function InputForm({
   const detailsComplete = totalIncome > 0 && formState.state_code !== "";
 
   // Section states - details only unlocks after user clicks Continue on donation
-  const donationState: SectionState = editingDonation ? "active" : donationConfirmed ? "complete" : "active";
-  const detailsState: SectionState = !donationConfirmed ? "locked" : editingDetails ? "active" : detailsConfirmed ? "complete" : "active";
+  const donationState: SectionState = editingDonation
+    ? "active"
+    : donationConfirmed
+      ? "complete"
+      : "active";
+  const detailsState: SectionState = !donationConfirmed
+    ? "locked"
+    : editingDetails
+      ? "active"
+      : detailsConfirmed
+        ? "complete"
+        : "active";
 
   // Can calculate when both sections confirmed
-  const canCalculate = donationConfirmed && detailsConfirmed && !editingDonation && !editingDetails;
+  const canCalculate =
+    donationConfirmed &&
+    detailsConfirmed &&
+    !editingDonation &&
+    !editingDetails;
+
+  // Global Enter key handler to trigger calculate when ready
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && canCalculate && !isCalculating) {
+        e.preventDefault();
+        onCalculate();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [canCalculate, isCalculating, onCalculate]);
 
   const handleDonationContinue = () => {
     if (donationComplete) {
@@ -161,7 +209,11 @@ export default function InputForm({
       <Section
         title="Your donation"
         state={donationState}
-        summary={donationComplete ? formatCurrency(formState.donation_amount) : undefined}
+        summary={
+          donationComplete
+            ? formatCurrency(formState.donation_amount)
+            : undefined
+        }
         onEdit={() => {
           setEditingDonation(true);
           setEditingDetails(false);
@@ -201,13 +253,21 @@ export default function InputForm({
                   How much are you planning to donate?
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
                   <input
                     type="number"
                     value={formState.donation_amount || ""}
                     onChange={(e) =>
                       updateField("donation_amount", Number(e.target.value))
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && donationComplete) {
+                        e.preventDefault();
+                        handleDonationContinue();
+                      }
+                    }}
                     min={0}
                     step={100}
                     placeholder="Enter amount"
@@ -260,6 +320,12 @@ export default function InputForm({
                       onChange={(e) =>
                         updateField("target_reduction", Number(e.target.value))
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && donationComplete) {
+                          e.preventDefault();
+                          handleDonationContinue();
+                        }
+                      }}
                       min={0}
                       step={formState.is_percentage ? 1 : 100}
                       placeholder="Enter target"
@@ -306,13 +372,21 @@ export default function InputForm({
               Wages and salaries
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                $
+              </span>
               <input
                 type="number"
                 value={formState.income.wages_and_salaries || ""}
                 onChange={(e) =>
                   updateIncome("wages_and_salaries", Number(e.target.value))
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && detailsComplete) {
+                    e.preventDefault();
+                    handleDetailsContinue();
+                  }
+                }}
                 min={0}
                 step={1000}
                 placeholder="Enter annual income"
@@ -333,7 +407,9 @@ export default function InputForm({
               className="flex items-center justify-between w-full text-left text-sm text-gray-600 hover:text-gray-900"
             >
               <span>Other income (optional)</span>
-              <span className="text-gray-400">{showOtherIncome ? "−" : "+"}</span>
+              <span className="text-gray-400">
+                {showOtherIncome ? "−" : "+"}
+              </span>
             </button>
 
             {showOtherIncome && (
@@ -344,16 +420,27 @@ export default function InputForm({
                   { key: "interest_income", label: "Interest" },
                   { key: "dividends", label: "Dividends" },
                   { key: "qualified_dividends", label: "Qualified dividends" },
-                  { key: "short_term_capital_gains", label: "Short-term capital gains" },
-                  { key: "long_term_capital_gains", label: "Long-term capital gains" },
+                  {
+                    key: "short_term_capital_gains",
+                    label: "Short-term capital gains",
+                  },
+                  {
+                    key: "long_term_capital_gains",
+                    label: "Long-term capital gains",
+                  },
                 ].map(({ key, label }) => (
                   <div key={key}>
-                    <label className="block text-xs text-gray-600 mb-1">{label}</label>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      {label}
+                    </label>
                     <input
                       type="number"
                       value={formState.income[key as keyof Income] || ""}
                       onChange={(e) =>
-                        updateIncome(key as keyof Income, Number(e.target.value))
+                        updateIncome(
+                          key as keyof Income,
+                          Number(e.target.value),
+                        )
                       }
                       min={0}
                       className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
@@ -378,6 +465,12 @@ export default function InputForm({
             <select
               value={formState.state_code}
               onChange={(e) => updateField("state_code", e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && detailsComplete) {
+                  e.preventDefault();
+                  handleDetailsContinue();
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="">Select a state...</option>
@@ -445,6 +538,12 @@ export default function InputForm({
                   Math.max(0, Math.min(10, Number(e.target.value))),
                 )
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && detailsComplete) {
+                  e.preventDefault();
+                  handleDetailsContinue();
+                }
+              }}
               min={0}
               max={10}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
@@ -458,7 +557,9 @@ export default function InputForm({
               className="flex items-center justify-between w-full text-left text-sm text-gray-600 hover:text-gray-900"
             >
               <span>Itemized deductions (optional)</span>
-              <span className="text-gray-400">{showDeductions ? "−" : "+"}</span>
+              <span className="text-gray-400">
+                {showDeductions ? "−" : "+"}
+              </span>
             </button>
 
             {showDeductions && (
@@ -470,12 +571,21 @@ export default function InputForm({
                   { key: "casualty_loss", label: "Casualty/theft losses" },
                 ].map(({ key, label }) => (
                   <div key={key}>
-                    <label className="block text-xs text-gray-600 mb-1">{label}</label>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      {label}
+                    </label>
                     <input
                       type="number"
-                      value={formState.deductions[key as keyof FormState["deductions"]] || ""}
+                      value={
+                        formState.deductions[
+                          key as keyof FormState["deductions"]
+                        ] || ""
+                      }
                       onChange={(e) =>
-                        updateDeduction(key as keyof FormState["deductions"], Number(e.target.value))
+                        updateDeduction(
+                          key as keyof FormState["deductions"],
+                          Number(e.target.value),
+                        )
                       }
                       min={0}
                       className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
@@ -493,7 +603,9 @@ export default function InputForm({
               className="flex items-center justify-between w-full text-left text-sm text-gray-600 hover:text-gray-900"
             >
               <span>Tax year: {taxYearDisplay}</span>
-              <span className="text-gray-400">{showYearOptions ? "−" : "+"}</span>
+              <span className="text-gray-400">
+                {showYearOptions ? "−" : "+"}
+              </span>
             </button>
 
             {showYearOptions && (
@@ -548,8 +660,20 @@ export default function InputForm({
           {isCalculating ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               Calculating...
             </span>

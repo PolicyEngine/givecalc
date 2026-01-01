@@ -2,7 +2,7 @@
  * UK input form with wizard-style progressive disclosure
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { UKFormState, UKIncome } from "../lib/types";
 import { formatCurrency } from "../lib/format";
 
@@ -35,7 +35,9 @@ function Section({
       <div className="opacity-50 pointer-events-none">
         <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
           <span className="text-sm font-medium text-gray-400">{title}</span>
-          <span className="text-xs text-gray-400">Complete previous section first</span>
+          <span className="text-xs text-gray-400">
+            Complete previous section first
+          </span>
         </div>
       </div>
     );
@@ -50,16 +52,36 @@ function Section({
         >
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-4 h-4 text-primary-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <span className="text-sm font-medium text-gray-900">{title}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-600 text-right">{summary}</div>
-            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            <svg
+              className="w-4 h-4 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              />
             </svg>
           </div>
         </button>
@@ -119,11 +141,37 @@ export default function UKInputForm({
   const detailsComplete = totalIncome > 0;
 
   // Section states - details only unlocks after user clicks Continue on donation
-  const donationState: SectionState = editingDonation ? "active" : donationConfirmed ? "complete" : "active";
-  const detailsState: SectionState = !donationConfirmed ? "locked" : editingDetails ? "active" : detailsConfirmed ? "complete" : "active";
+  const donationState: SectionState = editingDonation
+    ? "active"
+    : donationConfirmed
+      ? "complete"
+      : "active";
+  const detailsState: SectionState = !donationConfirmed
+    ? "locked"
+    : editingDetails
+      ? "active"
+      : detailsConfirmed
+        ? "complete"
+        : "active";
 
   // Can calculate when both sections confirmed
-  const canCalculate = donationConfirmed && detailsConfirmed && !editingDonation && !editingDetails;
+  const canCalculate =
+    donationConfirmed &&
+    detailsConfirmed &&
+    !editingDonation &&
+    !editingDetails;
+
+  // Global Enter key handler to trigger calculate when ready
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && canCalculate && !isCalculating) {
+        e.preventDefault();
+        onCalculate();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [canCalculate, isCalculating, onCalculate]);
 
   const handleDonationContinue = () => {
     if (donationComplete) {
@@ -172,11 +220,21 @@ export default function UKInputForm({
               How much are you planning to donate?
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">£</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                £
+              </span>
               <input
                 type="number"
                 value={formState.gift_aid || ""}
-                onChange={(e) => updateField("gift_aid", Number(e.target.value))}
+                onChange={(e) =>
+                  updateField("gift_aid", Number(e.target.value))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && donationComplete) {
+                    e.preventDefault();
+                    handleDonationContinue();
+                  }
+                }}
                 min={0}
                 step={100}
                 placeholder="Enter amount"
@@ -233,13 +291,21 @@ export default function UKInputForm({
               Employment income
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">£</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                £
+              </span>
               <input
                 type="number"
                 value={formState.income.employment_income || ""}
                 onChange={(e) =>
                   updateIncome("employment_income", Number(e.target.value))
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && detailsComplete) {
+                    e.preventDefault();
+                    handleDetailsContinue();
+                  }
+                }}
                 min={0}
                 step={1000}
                 placeholder="Enter annual income"
@@ -260,7 +326,9 @@ export default function UKInputForm({
               className="flex items-center justify-between w-full text-left text-sm text-gray-600 hover:text-gray-900"
             >
               <span>Other income (optional)</span>
-              <span className="text-gray-400">{showOtherIncome ? "−" : "+"}</span>
+              <span className="text-gray-400">
+                {showOtherIncome ? "−" : "+"}
+              </span>
             </button>
 
             {showOtherIncome && (
@@ -273,7 +341,10 @@ export default function UKInputForm({
                     type="number"
                     value={formState.income.self_employment_income || ""}
                     onChange={(e) =>
-                      updateIncome("self_employment_income", Number(e.target.value))
+                      updateIncome(
+                        "self_employment_income",
+                        Number(e.target.value),
+                      )
                     }
                     min={0}
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
@@ -383,7 +454,9 @@ export default function UKInputForm({
               className="flex items-center justify-between w-full text-left text-sm text-gray-600 hover:text-gray-900"
             >
               <span>Tax year: {taxYearDisplay}</span>
-              <span className="text-gray-400">{showYearOptions ? "−" : "+"}</span>
+              <span className="text-gray-400">
+                {showYearOptions ? "−" : "+"}
+              </span>
             </button>
 
             {showYearOptions && (
@@ -438,8 +511,20 @@ export default function UKInputForm({
           {isCalculating ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               Calculating...
             </span>
