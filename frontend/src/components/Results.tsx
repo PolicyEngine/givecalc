@@ -36,9 +36,9 @@ function CalculatingProgress({ isUK }: { isUK: boolean }) {
         ? "Calculating Gift Aid relief and tax impacts..."
         : "Calculating federal and state tax impacts...";
     } else if (elapsed < 30) {
-      return "Server is warming up. This happens after periods of inactivity.";
+      return "Simulating 1,000+ scenarios across your donation range...";
     } else {
-      return "Almost there. First calculation takes longer while the model loads.";
+      return "Almost done. Complex scenarios take a bit longer.";
     }
   };
 
