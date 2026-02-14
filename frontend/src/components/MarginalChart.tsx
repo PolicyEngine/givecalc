@@ -84,7 +84,6 @@ export default function MarginalChart({
 
   // Compute nice round ticks
   const xMax = data.length > 0 ? Math.max(...data.map((d) => d.donation)) : 0;
-  const yDataKey = isUK ? "total_relief" : "marginal_pct";
   const yMax =
     data.length > 0
       ? Math.max(...data.map((d) =>
