@@ -254,10 +254,10 @@ function Calculator() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex-1 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Input Form */}
           <div className="lg:col-span-1 space-y-6">
@@ -330,7 +330,7 @@ function Calculator() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-t from-gray-50 to-white border-t border-gray-200 mt-12">
+      <footer className="bg-gradient-to-t from-gray-50 to-white border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           {/* CTA Section */}
           <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl p-6 mb-8 border border-primary-200/50">
