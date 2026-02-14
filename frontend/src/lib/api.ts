@@ -17,7 +17,7 @@ import type {
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  "https://policyengine--givecalc-fastapi-app.modal.run";
+  "https://maxghenis--givecalc-fastapi-app.modal.run";
 
 const api = axios.create({
   baseURL: API_URL,
