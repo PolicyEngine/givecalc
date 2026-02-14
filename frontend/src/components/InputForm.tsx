@@ -347,7 +347,7 @@ export default function InputForm({
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
           >
-            Continue
+            Enter household info
           </button>
         </div>
       </Section>

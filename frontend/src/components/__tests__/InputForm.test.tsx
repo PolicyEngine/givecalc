@@ -47,7 +47,7 @@ describe("InputForm - Wizard Flow", () => {
     render(<InputForm {...propsWithDonation} />);
 
     // Click Continue to advance past donation step
-    const continueButton = screen.getByText("Continue");
+    const continueButton = screen.getByText("Enter household info");
     fireEvent.click(continueButton);
 
     // Details section should now be active with state dropdown visible
@@ -65,7 +65,7 @@ describe("InputForm - Wizard Flow", () => {
     };
 
     render(<InputForm {...propsWithDonation} />);
-    fireEvent.click(screen.getByText("Continue"));
+    fireEvent.click(screen.getByText("Enter household info"));
 
     const select = screen.getByRole("combobox");
     const options = select.querySelectorAll("option");
@@ -90,7 +90,7 @@ describe("InputForm - Wizard Flow", () => {
     };
 
     render(<InputForm {...propsWithDonationNoStates} />);
-    fireEvent.click(screen.getByText("Continue"));
+    fireEvent.click(screen.getByText("Enter household info"));
 
     const select = screen.getByRole("combobox");
     const options = select.querySelectorAll("option");
