@@ -1,3 +1,5 @@
+from datetime import date
+
 try:
     from importlib.metadata import PackageNotFoundError, version
 except ImportError:
@@ -9,7 +11,7 @@ try:
 except PackageNotFoundError:
     PE_VERSION = "unknown"
 
-CURRENT_YEAR = 2025  # Year for all calculations
+CURRENT_YEAR = date.today().year
 
 # PolicyEngine brand colors (matching policyengine-app-v2)
 # Primary colors

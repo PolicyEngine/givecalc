@@ -1,5 +1,7 @@
 """Tests for situation creation."""
 
+import datetime
+
 import pytest
 
 from givecalc import CURRENT_YEAR, DEFAULT_AGE, create_situation
@@ -104,3 +106,28 @@ def test_create_situation_axes_count():
     situation = create_situation(wages_and_salaries=100000)
 
     assert situation["axes"][0][0]["count"] == 1001
+
+
+def test_current_year_matches_system_year():
+    """Test that CURRENT_YEAR matches the actual system year."""
+    assert CURRENT_YEAR == datetime.date.today().year
+
+
+def test_create_situation_uses_current_year_by_default():
+    """Test that situations default to current year, not a hardcoded value."""
+    situation = create_situation(wages_and_salaries=100000)
+    expected_year = datetime.date.today().year
+
+    # Axes period should use current year
+    assert situation["axes"][0][0]["period"] == expected_year
+
+    # Person data should use current year
+    assert expected_year in situation["people"]["you"]["age"]
+
+
+def test_create_situation_accepts_explicit_year():
+    """Test that an explicit year parameter overrides the default."""
+    situation = create_situation(wages_and_salaries=100000, year=2024)
+
+    assert situation["axes"][0][0]["period"] == 2024
+    assert 2024 in situation["people"]["you"]["age"]

@@ -14,11 +14,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          plotly: ["plotly.js", "react-plotly.js"],
           vendor: ["react", "react-dom", "@tanstack/react-query", "axios"],
         },
       },
     },
-    chunkSizeWarningLimit: 1500, // Plotly is large but acceptable
   },
 });

@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from givecalc.constants import CURRENT_YEAR
+
 
 class IncomeInput(BaseModel):
     """Income sources input."""
@@ -73,7 +75,10 @@ class CalculateRequest(BaseModel):
         description="Itemized deductions",
     )
     year: int = Field(
-        default=2025, ge=2024, le=2026, description="Tax year for calculations"
+        default=CURRENT_YEAR,
+        ge=2024,
+        le=2026,
+        description="Tax year for calculations",
     )
 
 
@@ -132,7 +137,10 @@ class TargetDonationRequest(BaseModel):
         description="If true, target_reduction is a percentage",
     )
     year: int = Field(
-        default=2025, ge=2024, le=2026, description="Tax year for calculations"
+        default=CURRENT_YEAR,
+        ge=2024,
+        le=2026,
+        description="Tax year for calculations",
     )
 
 
@@ -218,7 +226,10 @@ class UKCalculateRequest(BaseModel):
         default=0, ge=0, le=20, description="Number of dependent children"
     )
     year: int = Field(
-        default=2025, ge=2024, le=2026, description="Tax year for calculations"
+        default=CURRENT_YEAR,
+        ge=2024,
+        le=2026,
+        description="Tax year for calculations",
     )
 
 

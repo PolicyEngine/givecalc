@@ -1,10 +1,26 @@
 /**
- * Net Tax vs Donation Amount chart using Plotly
+ * Net Tax vs Donation Amount chart using Recharts
  */
 
-import Plot from "react-plotly.js";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceDot,
+  ResponsiveContainer,
+  Label,
+} from "recharts";
 import type { DonationDataPoint } from "../lib/types";
 import { formatCurrency } from "../lib/format";
+import {
+  TOOLTIP_STYLE,
+  RECHARTS_FONT_STYLE,
+  CHART_COLORS,
+  niceTicks,
+} from "../lib/chartUtils";
 
 interface Props {
   curve: DonationDataPoint[];
@@ -12,73 +28,97 @@ interface Props {
   currency?: "USD" | "GBP";
 }
 
-export default function TaxChart({ curve, currentDonation, currency = "USD" }: Props) {
-  const isUK = currency === "GBP";
-  const currencySymbol = isUK ? "£" : "$";
-  const donations = curve.map((d) => d.donation);
-  const netTaxes = curve.map((d) => d.net_tax);
+export default function TaxChart({
+  curve,
+  currentDonation,
+  currency = "USD",
+}: Props) {
+  const currencySymbol = currency === "GBP" ? "\u00a3" : "$";
 
-  // Find current donation point
-  const currentIdx = donations.reduce(
-    (best, d, i) =>
-      Math.abs(d - currentDonation) <
-      Math.abs(donations[best] - currentDonation)
-        ? i
+  // Find the data point closest to the current donation
+  const currentPoint = curve.reduce(
+    (best, d) =>
+      Math.abs(d.donation - currentDonation) <
+      Math.abs(best.donation - currentDonation)
+        ? d
         : best,
-    0,
+    curve[0] ?? { donation: 0, net_tax: 0, marginal_savings: 0, net_income: 0 },
   );
 
+  const tickFormatter = (value: number) =>
+    `${currencySymbol}${value.toLocaleString()}`;
+
+  // Compute nice round ticks
+  const xMax = curve.length > 0 ? Math.max(...curve.map((d) => d.donation)) : 0;
+  const yMax = curve.length > 0 ? Math.max(...curve.map((d) => d.net_tax)) : 0;
+  const xTicks = niceTicks(xMax);
+  const yTicks = niceTicks(yMax);
+
   return (
-    <Plot
-      data={[
-        {
-          x: donations,
-          y: netTaxes,
-          type: "scatter",
-          mode: "lines",
-          name: "Net taxes",
-          line: { color: "#319795", width: 3 },
-          hovertemplate:
-            `Donation: ${currencySymbol}%{x:,.0f}<br>Net tax: ${currencySymbol}%{y:,.0f}<extra></extra>`,
-        },
-        {
-          x: [donations[currentIdx]],
-          y: [netTaxes[currentIdx]],
-          type: "scatter",
-          mode: "markers",
-          name: "Your donation",
-          marker: { color: "#1D4044", size: 12, symbol: "circle" },
-          hovertemplate: `Your donation: ${formatCurrency(currentDonation, currency)}<br>Net tax: ${formatCurrency(netTaxes[currentIdx], currency)}<extra></extra>`,
-        },
-      ]}
-      layout={{
-        autosize: true,
-        height: 350,
-        margin: { l: 70, r: 30, t: 30, b: 60 },
-        font: { family: "Inter, sans-serif" },
-        xaxis: {
-          title: { text: "Donation amount" },
-          tickformat: ",.0f",
-          tickprefix: currencySymbol,
-          gridcolor: "#E2E8F0",
-        },
-        yaxis: {
-          title: { text: "Net taxes" },
-          tickformat: ",.0f",
-          tickprefix: currencySymbol,
-          gridcolor: "#E2E8F0",
-          rangemode: "tozero",
-        },
-        plot_bgcolor: "white",
-        paper_bgcolor: "white",
-        showlegend: false,
-        hovermode: "closest",
-      }}
-      config={{
-        displayModeBar: false,
-        responsive: true,
-      }}
-      style={{ width: "100%" }}
-    />
+    <ResponsiveContainer width="100%" height={350}>
+      <LineChart
+        data={curve}
+        margin={{ left: 20, right: 30, top: 10, bottom: 20 }}
+      >
+        <CartesianGrid stroke={CHART_COLORS.GRID} strokeDasharray="3 3" />
+        <XAxis
+          dataKey="donation"
+          type="number"
+          domain={[0, xTicks[xTicks.length - 1]]}
+          ticks={xTicks}
+          tickFormatter={tickFormatter}
+          tick={RECHARTS_FONT_STYLE}
+        >
+          <Label
+            value="Donation amount"
+            position="bottom"
+            offset={0}
+            style={RECHARTS_FONT_STYLE}
+          />
+        </XAxis>
+        <YAxis
+          domain={[0, yTicks[yTicks.length - 1]]}
+          ticks={yTicks}
+          tickFormatter={tickFormatter}
+          tick={RECHARTS_FONT_STYLE}
+        >
+          <Label
+            value="Net taxes"
+            angle={-90}
+            position="insideLeft"
+            offset={-5}
+            style={{ ...RECHARTS_FONT_STYLE, textAnchor: "middle" }}
+          />
+        </YAxis>
+        <Tooltip
+          contentStyle={TOOLTIP_STYLE}
+          separator=": "
+          formatter={(value: number) => [
+            formatCurrency(value, currency),
+            "Net tax",
+          ]}
+          labelFormatter={(label: number) =>
+            `Donation: ${formatCurrency(label, currency)}`
+          }
+        />
+        <Line
+          type="monotone"
+          dataKey="net_tax"
+          stroke={CHART_COLORS.TEAL_PRIMARY}
+          strokeWidth={3}
+          dot={false}
+          name="Net taxes"
+        />
+        {curve.length > 0 && (
+          <ReferenceDot
+            x={currentPoint.donation}
+            y={currentPoint.net_tax}
+            r={6}
+            fill={CHART_COLORS.DARK_TEAL}
+            stroke={CHART_COLORS.DARK_TEAL}
+          />
+        )}
+      </LineChart>
+    </ResponsiveContainer>
   );
 }
