@@ -1,10 +1,27 @@
 /**
- * Marginal Savings Rate chart using Plotly
+ * Marginal Savings Rate chart using Recharts
  */
 
-import Plot from "react-plotly.js";
+import {
+  ComposedChart,
+  Line,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ReferenceDot,
+  ResponsiveContainer,
+  Label,
+} from "recharts";
 import type { DonationDataPoint } from "../lib/types";
-import { formatCurrency, formatPercent } from "../lib/format";
+import { formatCurrency } from "../lib/format";
+import {
+  TOOLTIP_STYLE,
+  RECHARTS_FONT_STYLE,
+  CHART_COLORS,
+} from "../lib/chartUtils";
 
 interface Props {
   curve: DonationDataPoint[];
@@ -12,133 +29,151 @@ interface Props {
   currency?: "USD" | "GBP";
 }
 
-export default function MarginalChart({ curve, currentDonation, currency = "USD" }: Props) {
+interface ChartDataPoint {
+  donation: number;
+  marginal_pct: number;
+  charity_gift_aid?: number;
+  total_relief?: number;
+}
+
+export default function MarginalChart({
+  curve,
+  currentDonation,
+  currency = "USD",
+}: Props) {
   const isUK = currency === "GBP";
-  const currencySymbol = isUK ? "£" : "$";
-  const donations = curve.map((d) => d.donation);
-  const marginalSavings = curve.map((d) => d.marginal_savings * 100); // Convert to percentage
+  const currencySymbol = isUK ? "\u00a3" : "$";
+  const charityGiftAid = isUK ? 25 : 0;
+
+  // Transform data for Recharts format
+  const data: ChartDataPoint[] = curve.map((d) => {
+    const marginal_pct = d.marginal_savings * 100;
+    if (isUK) {
+      return {
+        donation: d.donation,
+        marginal_pct,
+        charity_gift_aid: charityGiftAid,
+        total_relief: marginal_pct + charityGiftAid,
+      };
+    }
+    return { donation: d.donation, marginal_pct };
+  });
 
   // Find current donation point
-  const currentIdx = donations.reduce(
+  const currentIdx = curve.reduce(
     (best, d, i) =>
-      Math.abs(d - currentDonation) <
-      Math.abs(donations[best] - currentDonation)
+      Math.abs(d.donation - currentDonation) <
+      Math.abs(curve[best].donation - currentDonation)
         ? i
         : best,
     0,
   );
+  const currentData = data[currentIdx];
+  const currentMarkerY = isUK
+    ? (currentData?.total_relief ?? 0)
+    : (currentData?.marginal_pct ?? 0);
 
-  // For UK, charity always gets 25% Gift Aid reclaim
-  const charityGiftAid = isUK ? 25 : 0;
+  const tickFormatterX = (value: number) =>
+    `${currencySymbol}${value.toLocaleString()}`;
+  const tickFormatterY = (value: number) => `${value}%`;
 
-  // Build chart traces
-  const traces: Plotly.Data[] = [];
-
-  if (isUK) {
-    // Shaded area for charity's 25% Gift Aid reclaim
-    traces.push({
-      x: donations,
-      y: donations.map(() => charityGiftAid),
-      type: "scatter",
-      mode: "lines",
-      name: "Charity's Gift Aid (25%)",
-      fill: "tozeroy",
-      fillcolor: "rgba(49, 151, 149, 0.15)",
-      line: { color: "rgba(49, 151, 149, 0.3)", width: 1, dash: "dot" },
-      hovertemplate: `Charity receives: 25% Gift Aid reclaim<extra></extra>`,
-    } as Plotly.Data);
-
-    // Your higher rate relief (stacked on top)
-    traces.push({
-      x: donations,
-      y: marginalSavings.map(s => s + charityGiftAid),
-      type: "scatter",
-      mode: "lines",
-      name: "Total tax relief",
-      fill: "tonexty",
-      fillcolor: "rgba(49, 151, 149, 0.35)",
-      line: { color: "#319795", width: 3 },
-      hovertemplate:
-        `Donation: ${currencySymbol}%{x:,.0f}<br>Your relief: %{customdata:.1f}%<br>Charity receives: 25%<br>Total: %{y:.1f}%<extra></extra>`,
-      customdata: marginalSavings,
-    } as Plotly.Data);
-
-    // Current donation marker
-    traces.push({
-      x: [donations[currentIdx]],
-      y: [marginalSavings[currentIdx] + charityGiftAid],
-      type: "scatter",
-      mode: "markers",
-      name: "Your donation",
-      marker: { color: "#1D4044", size: 12, symbol: "circle" },
-      hovertemplate: `Your donation: ${formatCurrency(currentDonation, currency)}<br>Total relief: ${formatPercent((marginalSavings[currentIdx] + charityGiftAid) / 100)}<extra></extra>`,
-    } as Plotly.Data);
-  } else {
-    // US: simple line chart
-    traces.push({
-      x: donations,
-      y: marginalSavings,
-      type: "scatter",
-      mode: "lines",
-      name: "Marginal savings",
-      line: { color: "#319795", width: 3 },
-      hovertemplate:
-        "Donation: $%{x:,.0f}<br>Marginal rate: %{y:.1f}%<extra></extra>",
-    } as Plotly.Data);
-
-    traces.push({
-      x: [donations[currentIdx]],
-      y: [marginalSavings[currentIdx]],
-      type: "scatter",
-      mode: "markers",
-      name: "Your donation",
-      marker: { color: "#1D4044", size: 12, symbol: "circle" },
-      hovertemplate: `Your donation: ${formatCurrency(currentDonation)}<br>Marginal rate: ${formatPercent(marginalSavings[currentIdx] / 100)}<extra></extra>`,
-    } as Plotly.Data);
-  }
-
-  const maxY = isUK
-    ? Math.max(...marginalSavings.map(s => s + charityGiftAid)) * 1.1
-    : Math.max(...marginalSavings) * 1.1;
+  const yAxisLabel = isUK
+    ? `Tax relief per \u00a31 donated (%)`
+    : `Tax savings per $1 donated (%)`;
 
   return (
-    <Plot
-      data={traces}
-      layout={{
-        autosize: true,
-        height: 350,
-        margin: { l: 70, r: 30, t: 30, b: 60 },
-        font: { family: "Inter, sans-serif" },
-        xaxis: {
-          title: { text: "Donation amount" },
-          tickformat: ",.0f",
-          tickprefix: currencySymbol,
-          gridcolor: "#E2E8F0",
-        },
-        yaxis: {
-          title: { text: isUK ? "Tax relief per £1 donated (%)" : "Tax savings per $1 donated (%)" },
-          ticksuffix: "%",
-          gridcolor: "#E2E8F0",
-          range: [0, maxY],
-        },
-        plot_bgcolor: "white",
-        paper_bgcolor: "white",
-        showlegend: isUK,
-        legend: isUK ? {
-          orientation: "h",
-          yanchor: "bottom",
-          y: 1.02,
-          xanchor: "center",
-          x: 0.5,
-          font: { size: 11 },
-        } : undefined,
-        hovermode: "closest",
-      }}
-      config={{
-        displayModeBar: false,
-        responsive: true,
-      }}
-      style={{ width: "100%" }}
-    />
+    <ResponsiveContainer width="100%" height={350}>
+      <ComposedChart
+        data={data}
+        margin={{ left: 20, right: 30, top: 10, bottom: 20 }}
+      >
+        <CartesianGrid stroke={CHART_COLORS.GRID} strokeDasharray="3 3" />
+        <XAxis
+          dataKey="donation"
+          tickFormatter={tickFormatterX}
+          tick={RECHARTS_FONT_STYLE}
+        >
+          <Label
+            value="Donation amount"
+            position="bottom"
+            offset={0}
+            style={RECHARTS_FONT_STYLE}
+          />
+        </XAxis>
+        <YAxis tickFormatter={tickFormatterY} tick={RECHARTS_FONT_STYLE}>
+          <Label
+            value={yAxisLabel}
+            angle={-90}
+            position="insideLeft"
+            offset={-5}
+            style={{ ...RECHARTS_FONT_STYLE, textAnchor: "middle" }}
+          />
+        </YAxis>
+        <Tooltip
+          contentStyle={TOOLTIP_STYLE}
+          formatter={(value: number, name: string) => {
+            if (name === "charity_gift_aid")
+              return [`${value.toFixed(1)}%`, "Charity's Gift Aid (25%)"];
+            if (name === "total_relief")
+              return [`${value.toFixed(1)}%`, "Total tax relief"];
+            return [`${value.toFixed(1)}%`, "Marginal savings"];
+          }}
+          labelFormatter={(label: number) =>
+            `Donation: ${formatCurrency(label, currency)}`
+          }
+        />
+        {isUK ? (
+          <>
+            <Area
+              type="monotone"
+              dataKey="charity_gift_aid"
+              fill={CHART_COLORS.TEAL_LIGHT}
+              stroke={CHART_COLORS.TEAL_BORDER}
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              fillOpacity={1}
+              name="charity_gift_aid"
+            />
+            <Area
+              type="monotone"
+              dataKey="total_relief"
+              fill={CHART_COLORS.TEAL_MEDIUM}
+              stroke={CHART_COLORS.TEAL_PRIMARY}
+              strokeWidth={3}
+              fillOpacity={1}
+              name="total_relief"
+            />
+            <Legend
+              verticalAlign="top"
+              wrapperStyle={{ ...RECHARTS_FONT_STYLE, paddingBottom: 10 }}
+              formatter={(value: string) => {
+                if (value === "charity_gift_aid")
+                  return "Charity's Gift Aid (25%)";
+                if (value === "total_relief") return "Total tax relief";
+                return value;
+              }}
+            />
+          </>
+        ) : (
+          <Line
+            type="monotone"
+            dataKey="marginal_pct"
+            stroke={CHART_COLORS.TEAL_PRIMARY}
+            strokeWidth={3}
+            dot={false}
+            name="Marginal savings"
+          />
+        )}
+        {data.length > 0 && currentData && (
+          <ReferenceDot
+            x={currentData.donation}
+            y={currentMarkerY}
+            r={6}
+            fill={CHART_COLORS.DARK_TEAL}
+            stroke={CHART_COLORS.DARK_TEAL}
+          />
+        )}
+      </ComposedChart>
+    </ResponsiveContainer>
   );
 }

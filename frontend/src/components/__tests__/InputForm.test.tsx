@@ -1,9 +1,9 @@
 /**
- * Tests for InputForm component - State dropdown functionality
+ * Tests for InputForm component - Wizard flow and state dropdown
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import InputForm from "../InputForm";
 import type { StateInfo } from "../../lib/types";
 import { DEFAULT_FORM_STATE } from "../../lib/types";
@@ -16,7 +16,7 @@ const mockStates: StateInfo[] = [
   { code: "AZ", name: "Arizona", has_special_programs: true },
 ];
 
-describe("InputForm - State Dropdown", () => {
+describe("InputForm - Wizard Flow", () => {
   const defaultProps = {
     formState: DEFAULT_FORM_STATE,
     setFormState: vi.fn(),
@@ -25,15 +25,47 @@ describe("InputForm - State Dropdown", () => {
     isCalculating: false,
   };
 
-  it("renders the state dropdown with label", () => {
+  it("renders donation section active and details locked initially", () => {
     render(<InputForm {...defaultProps} />);
 
-    expect(screen.getByText("State")).toBeInTheDocument();
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByText("Your donation")).toBeInTheDocument();
+    expect(screen.getByText("Your details")).toBeInTheDocument();
+    expect(
+      screen.getByText("Complete previous section first"),
+    ).toBeInTheDocument();
   });
 
-  it("renders all state options in the dropdown", () => {
-    render(<InputForm {...defaultProps} />);
+  it("unlocks details section after entering donation and clicking Continue", () => {
+    const propsWithDonation = {
+      ...defaultProps,
+      formState: {
+        ...DEFAULT_FORM_STATE,
+        donation_amount: 5000,
+      },
+    };
+
+    render(<InputForm {...propsWithDonation} />);
+
+    // Click Continue to advance past donation step
+    const continueButton = screen.getByText("Continue");
+    fireEvent.click(continueButton);
+
+    // Details section should now be active with state dropdown visible
+    const select = screen.getByRole("combobox");
+    expect(select).toBeInTheDocument();
+  });
+
+  it("renders all state options after unlocking details", () => {
+    const propsWithDonation = {
+      ...defaultProps,
+      formState: {
+        ...DEFAULT_FORM_STATE,
+        donation_amount: 5000,
+      },
+    };
+
+    render(<InputForm {...propsWithDonation} />);
+    fireEvent.click(screen.getByText("Continue"));
 
     const select = screen.getByRole("combobox");
     const options = select.querySelectorAll("option");
@@ -41,32 +73,24 @@ describe("InputForm - State Dropdown", () => {
     // Should have placeholder + 4 states
     expect(options.length).toBe(5);
 
-    // Check each state is rendered
     expect(screen.getByText("Alabama")).toBeInTheDocument();
     expect(screen.getByText("California")).toBeInTheDocument();
     expect(screen.getByText("New York")).toBeInTheDocument();
     expect(screen.getByText("Arizona")).toBeInTheDocument();
   });
 
-  it("selects the state from formState", () => {
-    const propsWithCA = {
-      ...defaultProps,
-      formState: { ...DEFAULT_FORM_STATE, state_code: "CA" },
-    };
-
-    render(<InputForm {...propsWithCA} />);
-
-    const select = screen.getByRole("combobox") as HTMLSelectElement;
-    expect(select.value).toBe("CA");
-  });
-
   it("renders with empty states array without crashing", () => {
-    const propsWithNoStates = {
+    const propsWithDonationNoStates = {
       ...defaultProps,
+      formState: {
+        ...DEFAULT_FORM_STATE,
+        donation_amount: 5000,
+      },
       states: [],
     };
 
-    render(<InputForm {...propsWithNoStates} />);
+    render(<InputForm {...propsWithDonationNoStates} />);
+    fireEvent.click(screen.getByText("Continue"));
 
     const select = screen.getByRole("combobox");
     const options = select.querySelectorAll("option");

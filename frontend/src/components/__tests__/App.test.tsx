@@ -38,22 +38,19 @@ describe("App - Instant Load with Hardcoded Data", () => {
     const spinner = document.querySelector(".animate-spin");
     expect(spinner).not.toBeInTheDocument();
 
-    // Should show the main content immediately
-    expect(screen.getByText("Your information")).toBeInTheDocument();
+    // Should show the donation section (wizard step 1)
+    expect(screen.getByText("Your donation")).toBeInTheDocument();
   });
 
-  it("has all states available in dropdown immediately", async () => {
+  it("shows locked details section before donation is entered", async () => {
     const App = (await import("../../App")).default;
     render(<App />);
 
-    // States should be available immediately
-    const select = screen.getByRole("combobox");
-    expect(select).toBeInTheDocument();
-
-    // Check that some states are rendered
-    expect(screen.getByText("California")).toBeInTheDocument();
-    expect(screen.getByText("New York")).toBeInTheDocument();
-    expect(screen.getByText("Texas")).toBeInTheDocument();
+    // Details section should be locked (shown as locked text)
+    expect(screen.getByText("Your details")).toBeInTheDocument();
+    expect(
+      screen.getByText("Complete previous section first"),
+    ).toBeInTheDocument();
   });
 
   it("uses hardcoded STATES constant directly", async () => {
