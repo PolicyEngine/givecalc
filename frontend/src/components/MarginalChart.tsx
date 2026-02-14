@@ -21,6 +21,7 @@ import {
   TOOLTIP_STYLE,
   RECHARTS_FONT_STYLE,
   CHART_COLORS,
+  niceTicks,
 } from "../lib/chartUtils";
 
 interface Props {
@@ -81,6 +82,16 @@ export default function MarginalChart({
     ? `Tax relief per \u00a31 donated (%)`
     : `Tax savings per $1 donated (%)`;
 
+  // Compute nice round ticks
+  const xMax = data.length > 0 ? Math.max(...data.map((d) => d.donation)) : 0;
+  const yDataKey = isUK ? "total_relief" : "marginal_pct";
+  const yMax =
+    data.length > 0
+      ? Math.max(...data.map((d) => (d as Record<string, number>)[yDataKey] ?? 0))
+      : 0;
+  const xTicks = niceTicks(xMax);
+  const yTicks = niceTicks(yMax);
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <ComposedChart
@@ -90,6 +101,9 @@ export default function MarginalChart({
         <CartesianGrid stroke={CHART_COLORS.GRID} strokeDasharray="3 3" />
         <XAxis
           dataKey="donation"
+          type="number"
+          domain={[0, xTicks[xTicks.length - 1]]}
+          ticks={xTicks}
           tickFormatter={tickFormatterX}
           tick={RECHARTS_FONT_STYLE}
         >
@@ -100,7 +114,12 @@ export default function MarginalChart({
             style={RECHARTS_FONT_STYLE}
           />
         </XAxis>
-        <YAxis tickFormatter={tickFormatterY} tick={RECHARTS_FONT_STYLE}>
+        <YAxis
+          domain={[0, yTicks[yTicks.length - 1]]}
+          ticks={yTicks}
+          tickFormatter={tickFormatterY}
+          tick={RECHARTS_FONT_STYLE}
+        >
           <Label
             value={yAxisLabel}
             angle={-90}

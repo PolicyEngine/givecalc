@@ -19,6 +19,7 @@ import {
   TOOLTIP_STYLE,
   RECHARTS_FONT_STYLE,
   CHART_COLORS,
+  niceTicks,
 } from "../lib/chartUtils";
 
 interface Props {
@@ -47,6 +48,12 @@ export default function TaxChart({
   const tickFormatter = (value: number) =>
     `${currencySymbol}${value.toLocaleString()}`;
 
+  // Compute nice round ticks
+  const xMax = curve.length > 0 ? Math.max(...curve.map((d) => d.donation)) : 0;
+  const yMax = curve.length > 0 ? Math.max(...curve.map((d) => d.net_tax)) : 0;
+  const xTicks = niceTicks(xMax);
+  const yTicks = niceTicks(yMax);
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart
@@ -56,6 +63,9 @@ export default function TaxChart({
         <CartesianGrid stroke={CHART_COLORS.GRID} strokeDasharray="3 3" />
         <XAxis
           dataKey="donation"
+          type="number"
+          domain={[0, xTicks[xTicks.length - 1]]}
+          ticks={xTicks}
           tickFormatter={tickFormatter}
           tick={RECHARTS_FONT_STYLE}
         >
@@ -66,7 +76,12 @@ export default function TaxChart({
             style={RECHARTS_FONT_STYLE}
           />
         </XAxis>
-        <YAxis tickFormatter={tickFormatter} tick={RECHARTS_FONT_STYLE}>
+        <YAxis
+          domain={[0, yTicks[yTicks.length - 1]]}
+          ticks={yTicks}
+          tickFormatter={tickFormatter}
+          tick={RECHARTS_FONT_STYLE}
+        >
           <Label
             value="Net taxes"
             angle={-90}
