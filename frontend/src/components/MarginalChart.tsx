@@ -130,6 +130,7 @@ export default function MarginalChart({
         </YAxis>
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
+          separator=": "
           formatter={(value: number, name: string) => {
             if (name === "charity_gift_aid")
               return [`${value.toFixed(1)}%`, "Charity's Gift Aid (25%)"];

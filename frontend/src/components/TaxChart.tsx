@@ -92,6 +92,7 @@ export default function TaxChart({
         </YAxis>
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
+          separator=": "
           formatter={(value: number) => [
             formatCurrency(value, currency),
             "Net tax",
