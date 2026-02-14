@@ -87,7 +87,8 @@ export default function MarginalChart({
   const yDataKey = isUK ? "total_relief" : "marginal_pct";
   const yMax =
     data.length > 0
-      ? Math.max(...data.map((d) => (d as Record<string, number>)[yDataKey] ?? 0))
+      ? Math.max(...data.map((d) =>
+          isUK ? (d.total_relief ?? 0) : d.marginal_pct))
       : 0;
   const xTicks = niceTicks(xMax);
   const yTicks = niceTicks(yMax);
