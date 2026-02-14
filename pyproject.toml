@@ -7,7 +7,7 @@ name = "givecalc"
 version = "0.1.0"
 description = "Calculate how charitable giving affects taxes"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.13,<3.14"
 license = "MIT"
 authors = [
     {name = "PolicyEngine", email = "hello@policyengine.org"}
@@ -28,7 +28,7 @@ dependencies = [
     "pandas",
     "pyyaml",
     "scipy",
-    "policyengine-uk>=2.45.4",
+    "policyengine-uk>=2.72.3",
     "fastapi>=0.124.2",
     "uvicorn[standard]>=0.38.0",
     "modal>=0.68.0",

@@ -8,10 +8,10 @@ import modal
 
 # Create Modal image with all dependencies
 image = (
-    modal.Image.debian_slim(python_version="3.12")
+    modal.Image.debian_slim(python_version="3.13")
     .pip_install(
         "policyengine-us>=1.155.0",
-        "policyengine-uk>=2.45.4",
+        "policyengine-uk>=2.72.3",
         "numpy",
         "pandas",
         "scipy",
