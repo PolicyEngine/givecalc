@@ -1,7 +1,11 @@
 """Tests for UK API endpoints."""
 
+import os
+
 import pytest
 from fastapi.testclient import TestClient
+
+os.environ.setdefault("USE_MODAL", "false")
 
 from api.main import app
 
