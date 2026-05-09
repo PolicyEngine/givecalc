@@ -568,7 +568,6 @@ export default function InputForm({
                 {[
                   { key: "mortgage_interest", label: "Mortgage interest" },
                   { key: "real_estate_taxes", label: "Real estate taxes" },
-                  { key: "medical_expenses", label: "Medical expenses" },
                   { key: "casualty_loss", label: "Casualty/theft losses" },
                 ].map(({ key, label }) => (
                   <div key={key}>

@@ -43,9 +43,6 @@ class DeductionsInput(BaseModel):
     real_estate_taxes: float = Field(
         default=0, ge=0, description="Annual real estate taxes paid"
     )
-    medical_expenses: float = Field(
-        default=0, ge=0, description="Medical out-of-pocket expenses"
-    )
     casualty_loss: float = Field(
         default=0, ge=0, description="Casualty and theft losses"
     )

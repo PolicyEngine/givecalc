@@ -17,7 +17,6 @@ def create_situation(
     num_children: int = 0,
     mortgage_interest: float = 0,
     real_estate_taxes: float = 0,
-    medical_out_of_pocket_expenses: float = 0,
     casualty_loss: float = 0,
     in_nyc: bool = False,
     year: int = None,
@@ -39,7 +38,6 @@ def create_situation(
         num_children (int): Number of dependent children (default: 0)
         mortgage_interest (float): Annual mortgage interest paid
         real_estate_taxes (float): Annual real estate taxes paid
-        medical_out_of_pocket_expenses (float): Annual medical expenses paid out of pocket
         casualty_loss (float): Casualty and theft losses from federally declared disasters
         in_nyc (bool): Whether the person lives in NYC
         year (int): Tax year for calculations (default: CURRENT_YEAR)
@@ -58,6 +56,10 @@ def create_situation(
         + long_term_capital_gains
         + interest_income
         + self_employment_income
+    )
+    non_contiguous_states = {"AK", "HI", "GU", "PR", "VI"}
+    state_group = (
+        state_code if state_code in non_contiguous_states else "CONTIGUOUS_US"
     )
 
     # Initialize base situation with primary person
@@ -81,9 +83,6 @@ def create_situation(
                 },  # Initialize for axes
                 "mortgage_interest": {tax_year: mortgage_interest},
                 "real_estate_taxes": {tax_year: real_estate_taxes},
-                "medical_out_of_pocket_expenses": {
-                    tax_year: medical_out_of_pocket_expenses
-                },
                 "casualty_loss": {tax_year: casualty_loss},
             }
         }
@@ -125,7 +124,8 @@ def create_situation(
             "households": {
                 "your household": {
                     "members": members.copy(),
-                    "state_name": {tax_year: state_code},
+                    "state_code": {tax_year: state_code},
+                    "state_group": {tax_year: state_group},
                     "in_nyc": {tax_year: in_nyc},
                 }
             },

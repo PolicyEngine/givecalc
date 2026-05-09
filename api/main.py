@@ -200,9 +200,6 @@ async def calculate_donation(request: CalculateRequest):
         deductions_dict = {
             "mortgage_interest": getattr(deductions, "mortgage_interest", 0),
             "real_estate_taxes": getattr(deductions, "real_estate_taxes", 0),
-            "medical_out_of_pocket_expenses": getattr(
-                deductions, "medical_expenses", 0
-            ),
             "casualty_loss": getattr(deductions, "casualty_loss", 0),
         }
 
@@ -305,9 +302,6 @@ async def calculate_target(request: TargetDonationRequest):
         deductions_dict = {
             "mortgage_interest": getattr(deductions, "mortgage_interest", 0),
             "real_estate_taxes": getattr(deductions, "real_estate_taxes", 0),
-            "medical_out_of_pocket_expenses": getattr(
-                deductions, "medical_expenses", 0
-            ),
             "casualty_loss": getattr(deductions, "casualty_loss", 0),
         }
 
