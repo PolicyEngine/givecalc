@@ -1,6 +1,7 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "framework": "vite",
-  "installCommand": "cd frontend && npm install"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd frontend && bun install --frozen-lockfile && bun run build",
+  "installCommand": "cd frontend && bun install --frozen-lockfile",
+  "framework": "nextjs",
+  "outputDirectory": "frontend/.next"
 }
