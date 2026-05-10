@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import PolicyEngineHeader from '@/components/PolicyEngineHeader';
 
 const TITLE = 'GiveCalc - Charitable Donation Tax Calculator';
 const DESCRIPTION =
@@ -27,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PolicyEngineHeader />
+        {children}
+      </body>
     </html>
   );
 }
