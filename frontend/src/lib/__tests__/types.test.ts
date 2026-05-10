@@ -23,10 +23,10 @@ describe("Year consistency", () => {
 });
 
 describe("API URL configuration", () => {
-  it("falls back to localhost when VITE_API_URL is not set", async () => {
+  it("falls back to localhost when NEXT_PUBLIC_API_URL is not set", async () => {
     // Clear the env var if set
-    const originalEnv = import.meta.env.VITE_API_URL;
-    delete import.meta.env.VITE_API_URL;
+    const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+    delete process.env.NEXT_PUBLIC_API_URL;
 
     // Re-import to test the fallback - since the module is already loaded
     // we verify the pattern: the fallback should be localhost, not a production URL
@@ -37,7 +37,7 @@ describe("API URL configuration", () => {
 
     // Restore
     if (originalEnv !== undefined) {
-      import.meta.env.VITE_API_URL = originalEnv;
+      process.env.NEXT_PUBLIC_API_URL = originalEnv;
     }
   });
 });

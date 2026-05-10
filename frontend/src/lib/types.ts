@@ -19,7 +19,6 @@ export interface Income {
 export interface Deductions {
   mortgage_interest: number;
   real_estate_taxes: number;
-  medical_expenses: number;
   casualty_loss: number;
 }
 
@@ -129,7 +128,6 @@ export const DEFAULT_FORM_STATE: FormState = {
   deductions: {
     mortgage_interest: 0,
     real_estate_taxes: 0,
-    medical_expenses: 0,
     casualty_loss: 0,
   },
   mode: "amount",

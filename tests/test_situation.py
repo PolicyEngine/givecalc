@@ -67,7 +67,7 @@ def test_create_situation_with_state():
     situation = create_situation(wages_and_salaries=100000, state_code="NY")
 
     assert (
-        situation["households"]["your household"]["state_name"][CURRENT_YEAR]
+        situation["households"]["your household"]["state_code"][CURRENT_YEAR]
         == "NY"
     )
 
@@ -90,14 +90,12 @@ def test_create_situation_with_deductions():
         wages_and_salaries=100000,
         mortgage_interest=10000,
         real_estate_taxes=5000,
-        medical_out_of_pocket_expenses=3000,
         casualty_loss=2000,
     )
 
     person = situation["people"]["you"]
     assert person["mortgage_interest"][CURRENT_YEAR] == 10000
     assert person["real_estate_taxes"][CURRENT_YEAR] == 5000
-    assert person["medical_out_of_pocket_expenses"][CURRENT_YEAR] == 3000
     assert person["casualty_loss"][CURRENT_YEAR] == 2000
 
 

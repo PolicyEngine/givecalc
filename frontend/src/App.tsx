@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * GiveCalc - Charitable Donation Tax Calculator
  * Powered by PolicyEngine
