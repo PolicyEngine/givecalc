@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   authors: [{ name: 'PolicyEngine' }],
   icons: {
-    icon: '/favicon.svg',
+    icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/favicon.svg`,
   },
 };
 
