@@ -176,7 +176,7 @@ df["marginal_savings"] = -np.gradient(df.income_tax_after_donations) / \
 
 ## Common gotchas
 
-1. **API URL**: Set `VITE_API_URL` in `frontend/.env` (defaults to `http://localhost:8000`)
+1. **API URL**: Set `NEXT_PUBLIC_API_URL` in `frontend/.env` (defaults to `http://localhost:8000`)
 2. **Modal deploy**: Must `unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET` before deploying to policyengine workspace
 3. **Vercel deploy**: Root `vercel.json` builds frontend/ -- deploy from repo root, not frontend/
 4. **NYC checkbox**: Only shown for NY state (handled in InputForm.tsx)
@@ -190,7 +190,7 @@ df["marginal_savings"] = -np.gradient(df.income_tax_after_donations) / \
 ```bash
 cd frontend && npm run dev   # Dev server with hot reload
 # Check browser console for API errors
-# VITE_API_URL in .env controls backend URL
+# NEXT_PUBLIC_API_URL in .env controls backend URL
 ```
 
 ### Backend

@@ -100,7 +100,7 @@ gcloud run deploy givecalc \
 ### Environment Variables
 
 **Frontend (build-time):**
-- `VITE_API_URL`: Backend API URL
+- `NEXT_PUBLIC_API_URL`: Backend API URL
 
 **Backend:**
 - `PORT`: Server port (default: 8080, set by Cloud Run)
