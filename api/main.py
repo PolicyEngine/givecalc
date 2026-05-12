@@ -66,6 +66,8 @@ app.add_middleware(
         "http://localhost:5176",
         "https://givecalc.org",
         "https://www.givecalc.org",
+        "https://policyengine.org",
+        "https://www.policyengine.org",
     ],
     allow_credentials=True,
     allow_methods=["*"],
