@@ -1,6 +1,7 @@
-from policyengine_us import Simulation
+import copy
 
 from givecalc.constants import CURRENT_YEAR
+from givecalc.policyengine import USSimulation
 
 
 def get_year_from_situation(situation):
@@ -28,12 +29,12 @@ def create_donation_simulation(situation, donation_amount):
         donation_amount (float): Amount of charitable donation
 
     Returns:
-        Simulation: PolicyEngine simulation object with donation
+        USSimulation: PolicyEngine simulation object with donation
     """
     year = get_year_from_situation(situation)
 
     # Create a copy of the situation to avoid modifying the original
-    donation_situation = situation.copy()
+    donation_situation = copy.deepcopy(situation)
 
     # Add the donation amount
     donation_situation["people"]["you"]["charitable_cash_donations"] = {
@@ -45,7 +46,7 @@ def create_donation_simulation(situation, donation_amount):
         del donation_situation["axes"]
 
     # Create and return the simulation
-    return Simulation(situation=donation_situation)
+    return USSimulation(situation=donation_situation)
 
 
 def display_results(

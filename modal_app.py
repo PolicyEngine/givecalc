@@ -10,15 +10,20 @@ import modal
 image = (
     modal.Image.debian_slim(python_version="3.13")
     .pip_install(
-        "policyengine-us>=1.155.0",
-        "policyengine-uk>=2.72.3",
+        "policyengine[us,uk]>=4.3.1",
         "numpy",
         "pandas",
         "scipy",
         "fastapi>=0.124.2",
         "pyyaml",
     )
-    .env({"NUMEXPR_MAX_THREADS": "4", "USE_MODAL": "false", "PYTHONPATH": "/root"})
+    .env(
+        {
+            "NUMEXPR_MAX_THREADS": "4",
+            "USE_MODAL": "false",
+            "PYTHONPATH": "/root",
+        }
+    )
     .workdir("/root")
     .add_local_file("config.yaml", "/root/config.yaml")
     .add_local_dir("givecalc", "/root/givecalc")

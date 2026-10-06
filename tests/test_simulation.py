@@ -1,9 +1,9 @@
 """Tests for donation simulation functions."""
 
 import pytest
-from policyengine_us import Simulation
 
 from givecalc import CURRENT_YEAR, create_donation_simulation, create_situation
+from givecalc.policyengine import USSimulation
 
 
 def test_create_donation_simulation():
@@ -12,7 +12,7 @@ def test_create_donation_simulation():
     situation = create_situation(wages_and_salaries=100000)
     simulation = create_donation_simulation(situation, donation_amount=5000)
 
-    assert isinstance(simulation, Simulation)
+    assert isinstance(simulation, USSimulation)
 
 
 def test_create_donation_simulation_removes_axes():

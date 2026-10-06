@@ -50,7 +50,7 @@ unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy modal_app.py
 
 Key dependencies:
 - Frontend: React 19, Recharts, Tailwind CSS v4, TanStack React Query, Axios, Vite, Vitest
-- Backend: `policyengine-us>=1.155.0`, `policyengine-uk>=2.72.3`, FastAPI, scipy
+- Backend: `policyengine[us,uk]>=4.3.1`, FastAPI, scipy
 
 ## Architecture
 
@@ -183,6 +183,7 @@ df["marginal_savings"] = -np.gradient(df.income_tax_after_donations) / \
 5. **UK/US result mapping**: UK results are mapped to US-compatible format in App.tsx
 6. **States list**: Hardcoded in `api.ts` to avoid cold start delays
 7. **Chart testing**: Recharts is mocked in tests since jsdom can't render SVG
+8. **Calculation mode**: `USE_MODAL=false` runs calculations in-process and is the default for local dev, tests, and the Modal-hosted API
 
 ## Debugging
 

@@ -199,6 +199,18 @@ wheels = [
 ]
 
 [[package]]
+name = "census"
+version = "0.8.26"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f7/e0/c1cde674716d836139550542febca6231616d776119ae73705036d741da7/census-0.8.26.tar.gz", hash = "sha256:c7f9944e38952b4ecc137d14d083018a1c2734f64d2fbc4a8946f35fd51888c2", size = 13019, upload-time = "2026-04-08T13:44:19.24Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/80/13/13dcc8a3142c3c73e5228c05e1ce6567378bc5c673d5567c116d4a8162d7/census-0.8.26-py3-none-any.whl", hash = "sha256:c341bbce4bcdd75c0ddecf75f28ab7eda26a47d7fecc95c4690a2d8ee5b6a727", size = 11364, upload-time = "2026-04-08T13:44:18.333Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.10.5"
 source = { registry = "https://pypi.org/simple" }
@@ -304,6 +316,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b5/ce/e1fd64d36e4a5717bd5e6b2ad188f5eaa2e902fde871ea73a79875793fc9/dpath-2.2.0.tar.gz", hash = "sha256:34f7e630dc55ea3f219e555726f5da4b4b25f2200319c8e6902c394258dd6a3e", size = 28266, upload-time = "2024-06-12T22:08:03.686Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/05/d1/8952806fbf9583004ab479d8f58a9496c3d35f6b6009ddd458bdd9978eaf/dpath-2.2.0-py3-none-any.whl", hash = "sha256:b330a375ded0a0d2ed404440f6c6a715deae5313af40bbb01c8a41d891900576", size = 17618, upload-time = "2024-06-12T22:08:01.881Z" },
+]
+
+[[package]]
+name = "et-xmlfile"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/38/af70d7ab1ae9d4da450eeec1fa3918940a5fafb9055e934af8d6eb0c2313/et_xmlfile-2.0.0.tar.gz", hash = "sha256:dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54", size = 17234, upload-time = "2024-10-25T17:25:40.039Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/8b/5fe2cc11fee489817272089c4203e679c63b570a5aaeb18d852ae3cbba6a/et_xmlfile-2.0.0-py3-none-any.whl", hash = "sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa", size = 18059, upload-time = "2024-10-25T17:25:39.051Z" },
 ]
 
 [[package]]
@@ -423,8 +444,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "plotly" },
-    { name = "policyengine-uk" },
-    { name = "policyengine-us" },
+    { name = "policyengine", extra = ["uk", "us"] },
     { name = "pyyaml" },
     { name = "scipy" },
     { name = "streamlit" },
@@ -454,8 +474,7 @@ requires-dist = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "plotly" },
-    { name = "policyengine-uk", specifier = ">=2.72.3" },
-    { name = "policyengine-us", specifier = ">=1.155.0" },
+    { name = "policyengine", extras = ["uk", "us"], specifier = ">=4.3.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pyyaml" },
@@ -677,6 +696,24 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/72/3a/79a912fbd4d8dd6fbb02bf69afd3bb72cf0c729bb3063c6f4498603db17a/jedi-0.19.2.tar.gz", hash = "sha256:4770dc3de41bde3966b02eb84fbcf557fb33cce26ad23da12c742fb50ecb11f0", size = 1231287, upload-time = "2024-11-11T01:41:42.873Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c0/5a/9cac0c82afec3d09ccd97c8b6502d48f165f9124db81b4bcb90b4af974ee/jedi-0.19.2-py2.py3-none-any.whl", hash = "sha256:a8ef22bde8490f57fe5c7681a3c83cb58874daf72b4784de3cce5b6ef6edb5b9", size = 1572278, upload-time = "2024-11-11T01:41:40.175Z" },
+]
+
+[[package]]
+name = "jellyfish"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/14/fc5bdb637996df181e5c4fa3b15dcc27d33215e6c41753564ae453bdb40f/jellyfish-1.2.1.tar.gz", hash = "sha256:72d2fda61b23babe862018729be73c8b0dc12e3e6601f36f6e65d905e249f4db", size = 364417, upload-time = "2025-10-11T19:36:37.219Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5c/e6/75feeda1c3634525296aa56265db151f896005b139e177f8b1a285546a1f/jellyfish-1.2.1-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:4b3e3223aaad74e18aacc74775e01815e68af810258ceea6fa6a81b19f384312", size = 322958, upload-time = "2025-10-11T19:35:29.906Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/66/4b92bb55b545ebefbf085e45cbcda576d2a2a3dc48fd61dae469c27e73a6/jellyfish-1.2.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e967e67058b78189d2b20a9586c7720a05ec4a580d6a98c796cd5cd2b7b11303", size = 317859, upload-time = "2025-10-11T19:35:31.312Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/8e/9d0055f921c884605bf22a96e376b016993928126e8a4c7fd8698260fb4e/jellyfish-1.2.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:32581c50b34a09889b2d96796170e53da313a1e7fde32be63c82e50e7e791e3c", size = 353222, upload-time = "2025-10-11T19:35:32.352Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/d2/deca58a62e57f7e2b2172ab39f522831279ee08ec0943fc0d0e33cd6e6f9/jellyfish-1.2.1-cp313-cp313-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:07b022412ebece96759006cb015d46b8218d7f896d8b327c6bbee784ddf38ed9", size = 362392, upload-time = "2025-10-11T19:35:33.305Z" },
+    { url = "https://files.pythonhosted.org/packages/12/40/9a7f62d367f5a862950ce3598188fe0e22e11d1f5d6eaad6eda5adc354b0/jellyfish-1.2.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:80a49eb817eaa6591f43a31e5c93d79904de62537f029907ef88c050d781a638", size = 360358, upload-time = "2025-10-11T19:35:34.585Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/e5/6b44a1058df3dfa3dd1174c9f86685c78f780d0b68851a057075aea14587/jellyfish-1.2.1-cp313-cp313-musllinux_1_1_aarch64.whl", hash = "sha256:e1b990fb15985571616f7f40a12d6fa062897b19fb5359b6dec3cd811d802c24", size = 533945, upload-time = "2025-10-11T19:35:35.764Z" },
+    { url = "https://files.pythonhosted.org/packages/50/4c/2397f43ad2692a1052299607838b41a4c2dd5707fde4ce459d686e763eb1/jellyfish-1.2.1-cp313-cp313-musllinux_1_1_i686.whl", hash = "sha256:dd895cf63fac0a9f11b524fff810d9a6081dcf3c518b34172ac8684eb504dd43", size = 553707, upload-time = "2025-10-11T19:35:36.926Z" },
+    { url = "https://files.pythonhosted.org/packages/de/aa/dc7cf053c8c40035791de1dc2f45b1f57772a14b0dc53318720e87073831/jellyfish-1.2.1-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:6d2bac5982d7a08759ea487bfa00149e6aa8a3be7cd43c4ed1be1e3505425c69", size = 523323, upload-time = "2025-10-11T19:35:37.981Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/1a/610c7f1f7777646322f489b5ed1e4631370c9fa4fb40a8246af71b496b6d/jellyfish-1.2.1-cp313-cp313-win32.whl", hash = "sha256:509355ebedec69a8bf0cc113a6bf9c01820d12fe2eea44f47dfa809faf2d5463", size = 209143, upload-time = "2025-10-11T19:35:39.276Z" },
+    { url = "https://files.pythonhosted.org/packages/80/9a/6102b23b03a6df779fee76c979c0eb819b300c83b468900df78bb574b944/jellyfish-1.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:9c747ae5c0fb4bd519f6abbfe4bd704b2f1c63fd4dd3dbb8d8864478974e1571", size = 213466, upload-time = "2025-10-11T19:35:40.24Z" },
 ]
 
 [[package]]
@@ -997,6 +1034,18 @@ wheels = [
 ]
 
 [[package]]
+name = "openpyxl"
+version = "3.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "et-xmlfile" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz", hash = "sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050", size = 186464, upload-time = "2024-06-28T14:03:44.161Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2", size = 250910, upload-time = "2024-06-28T14:03:41.161Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1127,8 +1176,36 @@ wheels = [
 ]
 
 [[package]]
+name = "policyengine"
+version = "4.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jsonschema" },
+    { name = "microdf-python" },
+    { name = "packaging" },
+    { name = "pandas" },
+    { name = "psutil" },
+    { name = "pydantic" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/3d/70f78072ce19819659d5f73acd7584d5f8147c804b3041a432eb5236a841/policyengine-4.3.1.tar.gz", hash = "sha256:9e1bdc01d8cc76480f59335e3a320de09d725ee30f92177f4ce5f8664b60cde6", size = 491632, upload-time = "2026-04-21T13:44:11.506Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/90/79/2ca03a0e8459705115c9b1fec89ccda87226ebcc9ca0a470b6cf08096e60/policyengine-4.3.1-py3-none-any.whl", hash = "sha256:8a83fc5130aef66dc3442a8da45119e9b712e942a097fdd8a0b3194708fbbdb5", size = 149485, upload-time = "2026-04-21T13:44:09.99Z" },
+]
+
+[package.optional-dependencies]
+uk = [
+    { name = "policyengine-core" },
+    { name = "policyengine-uk" },
+]
+us = [
+    { name = "policyengine-core" },
+    { name = "policyengine-us" },
+]
+
+[[package]]
 name = "policyengine-core"
-version = "3.23.6"
+version = "3.25.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dpath" },
@@ -1148,14 +1225,14 @@ dependencies = [
     { name = "standard-imghdr" },
     { name = "wheel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/de/5bc5b02626703ea7d288c84c474ec51e823aa726d55ebabafe7c85e7285f/policyengine_core-3.23.6.tar.gz", hash = "sha256:81bb4057f5d6380f2d7f1af2fe4932bd3bd37fdfda7b841f7ee38b30aa5cc8e6", size = 163499, upload-time = "2026-01-25T14:04:43.233Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/ed/117c487e09bc2d5dae1d39baef2d317158433f66004f38f19f6ed82110eb/policyengine_core-3.25.2.tar.gz", hash = "sha256:de80b64b969e3c6b5a3046e29e5b9f2ce56c82f874064f65556fa60c8c423f17", size = 466431, upload-time = "2026-04-21T17:37:40.654Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/7a/b47b239fb0a85a36b36b47e7665db981800fcac3384aeec6dadf92a9e548/policyengine_core-3.23.6-py3-none-any.whl", hash = "sha256:f0834107335de6f2452d39e53db7a72a57088ed26d3703a4c4eaded55a4e7bce", size = 225309, upload-time = "2026-01-25T14:04:41.844Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/22/b2297927a2091a22267c112e8d5d5d2b374d0f1ce67f257816fee1388170/policyengine_core-3.25.2-py3-none-any.whl", hash = "sha256:c884961937940e16730fb473d486728ed8c66250dc65df15257ad611e6655b09", size = 231186, upload-time = "2026-04-21T17:37:39.148Z" },
 ]
 
 [[package]]
 name = "policyengine-uk"
-version = "2.72.3"
+version = "2.88.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "microdf-python" },
@@ -1163,23 +1240,26 @@ dependencies = [
     { name = "pydantic" },
     { name = "tables" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e7/46/3809e41495c4f9039017338352bb191d4e0da7f30b2b9e45fb80ab53a618/policyengine_uk-2.72.3.tar.gz", hash = "sha256:0eb561a31028d48380d6c148011a6dc8afb920c6fd79c091b6f2f29bcf899934", size = 1093874, upload-time = "2026-01-25T14:14:09.519Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/cf/749dea25c17210b5dc40098363e0b6a60b7fc5feb69ff77c74b88deb5cde/policyengine_uk-2.88.0.tar.gz", hash = "sha256:d157c7336b7aa3a321f317af1a4f111d7b857451ff43f4998abdc5a8c893e989", size = 1166666, upload-time = "2026-04-17T19:22:55.418Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/19/3a9cd7b5d95928a09c35e84aa97350f17f4302fa50460dc3b72d4b2f4bc0/policyengine_uk-2.72.3-py3-none-any.whl", hash = "sha256:282a6fb78060b8dd5612a994996331c89b66817c18cfd4491a1753f5ba4af535", size = 1690318, upload-time = "2026-01-25T14:14:07.288Z" },
+    { url = "https://files.pythonhosted.org/packages/23/7e/8a2a42eac1da63730a865964aa17e7fd4420ce4db4c80001c1b5ca6011e8/policyengine_uk-2.88.0-py3-none-any.whl", hash = "sha256:46a3ba443b43ec810c5efaccd4645edb63c8dc90ef5acf9b0cdf5ace86b9334d", size = 1867764, upload-time = "2026-04-17T19:22:53.244Z" },
 ]
 
 [[package]]
 name = "policyengine-us"
-version = "1.422.0"
+version = "1.653.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "microdf-python" },
+    { name = "pandas" },
     { name = "policyengine-core" },
+    { name = "spm-calculator" },
+    { name = "tables" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/c6/09f8c6c524b74fa069b42cdb67cdc942c752d8ea437cc77dcced85ffed2d/policyengine_us-1.422.0.tar.gz", hash = "sha256:ea6d7d511f0d2fd8658972cd9afe773f797c58813eeca0f379ae118e192533a3", size = 8116725, upload-time = "2025-10-19T06:20:06.985Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/60/5b736fa238559857fbf29168933c809eaada9abf006d26910b7958f5748e/policyengine_us-1.653.3.tar.gz", hash = "sha256:8a5c33997b7aefa2061d0dafce837b130e8ebdb0b9f83ae8c236f80cbf1805d6", size = 9180339, upload-time = "2026-04-18T12:06:45.764Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/2d/032f5919d4eb56d4db6325d5da39e7e6b19c77969ff3ee7887892593a678/policyengine_us-1.422.0-py3-none-any.whl", hash = "sha256:545e7fc94c17f5e98b6c2d26d4ed895bd9842e7053922b1c040b9ef04a5ef59c", size = 6218106, upload-time = "2025-10-19T06:20:02.622Z" },
+    { url = "https://files.pythonhosted.org/packages/02/07/25f39a2bfa1ff210cd8e78826c47c03b9040a98a83f4eed59c434c1ed862/policyengine_us-1.653.3-py3-none-any.whl", hash = "sha256:67a49b98d85c060b24d547a569e91a6703c0fc9c41299c1c67f4ecfac75c67c6", size = 9445650, upload-time = "2026-04-18T12:06:43.163Z" },
 ]
 
 [[package]]
@@ -1621,6 +1701,23 @@ wheels = [
 ]
 
 [[package]]
+name = "spm-calculator"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "census" },
+    { name = "numpy" },
+    { name = "openpyxl" },
+    { name = "pandas" },
+    { name = "requests" },
+    { name = "us" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/54/3b/b805c7e3e18c5b5c00f61b60112f9690d084c910e2481bc020f35390d8fd/spm_calculator-0.3.1.tar.gz", hash = "sha256:41f2f4d00d8c03422a7d57b800052e7760b88e463a5884802f83ed58d35c18c1", size = 75945, upload-time = "2026-04-17T19:52:39.707Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/1b/29f705f8a96fc7f55f2c07dfcddbbae78efdc6f174d25d4a0560fc3f5cf9/spm_calculator-0.3.1-py3-none-any.whl", hash = "sha256:52c57ecc5a240ec941b0f2b0d93bc4fa437ef6250e233baed8e11916fa9c1150", size = 57826, upload-time = "2026-04-17T19:52:38.444Z" },
+]
+
+[[package]]
 name = "stack-data"
 version = "0.6.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1845,6 +1942,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/15/22/9ee70a2574a4f4599c47dd506532914ce044817c7752a79b6a51286319bc/urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760", size = 393185, upload-time = "2025-06-18T14:07:41.644Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc", size = 129795, upload-time = "2025-06-18T14:07:40.39Z" },
+]
+
+[[package]]
+name = "us"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jellyfish" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/12/06f87be706ccc5794569d14f903c2f755aa98e1a9d53e4e7e17d9986e9d1/us-3.2.0.tar.gz", hash = "sha256:cb223e85393dcc5171ead0dd212badc47f9667b23700fea3e7ea5f310d545338", size = 16046, upload-time = "2024-07-22T01:09:42.736Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/65/a8/1791660a87f03d10a3bce00401a66035999c91f5a9a6987569b84df5719d/us-3.2.0-py3-none-any.whl", hash = "sha256:571714ad6d473c72bbd2058a53404cdf4ecc0129e4f19adfcbeb4e2d7e3dc3e7", size = 13775, upload-time = "2024-07-22T01:09:41.432Z" },
 ]
 
 [[package]]

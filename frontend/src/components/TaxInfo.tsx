@@ -263,12 +263,12 @@ export default function TaxInfo({ stateCode }: Props) {
             <p className="text-xs text-gray-500 mt-2">
               Calculations powered by{" "}
               <a
-                href="https://github.com/PolicyEngine/policyengine-us"
+                href="https://github.com/PolicyEngine/policyengine.py"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary-500 hover:text-primary-600"
               >
-                PolicyEngine-US
+                PolicyEngine.py
               </a>
               , an open-source tax-benefit microsimulation model.
             </p>

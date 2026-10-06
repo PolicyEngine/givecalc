@@ -1,8 +1,7 @@
 """Test that axes work correctly."""
 
-from policyengine_us import Simulation
-
 from givecalc import CURRENT_YEAR, create_situation
+from givecalc.policyengine import USSimulation
 
 
 def test_axes_generate_donation_range():
@@ -12,7 +11,7 @@ def test_axes_generate_donation_range():
     print(f"\nSituation axes: {situation['axes']}")
 
     # Create simulation
-    sim = Simulation(situation=situation)
+    sim = USSimulation(situation=situation)
 
     # Try calculating on person level first
     donations_person = sim.calculate("charitable_cash_donations", CURRENT_YEAR)

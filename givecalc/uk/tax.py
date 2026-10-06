@@ -4,8 +4,8 @@ import copy
 
 import numpy as np
 import pandas as pd
-from policyengine_uk import Simulation
 
+from givecalc.policyengine import UKSimulation
 from givecalc.uk.constants import UK_CURRENT_YEAR
 
 
@@ -40,7 +40,7 @@ def create_uk_donation_simulation(situation, donation_amount):
     # Set the donation amount
     modified_situation["people"]["you"]["gift_aid"] = {year: donation_amount}
 
-    return Simulation(situation=modified_situation)
+    return UKSimulation(situation=modified_situation)
 
 
 def calculate_uk_donation_metrics(situation, donation_amount):
@@ -82,7 +82,7 @@ def calculate_uk_donation_effects(situation):
         pandas.DataFrame: DataFrame containing donation effects
     """
     year = get_year_from_situation(situation)
-    simulation = Simulation(situation=situation)
+    simulation = UKSimulation(situation=situation)
 
     donation_column = "gift_aid"
     # Use benunit for donations (where tax relief is claimed)

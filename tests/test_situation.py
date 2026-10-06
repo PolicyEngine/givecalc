@@ -70,6 +70,10 @@ def test_create_situation_with_state():
         situation["households"]["your household"]["state_name"][CURRENT_YEAR]
         == "NY"
     )
+    assert (
+        situation["households"]["your household"]["state_group"][CURRENT_YEAR]
+        == "CONTIGUOUS_US"
+    )
 
 
 def test_create_situation_with_nyc():
@@ -81,6 +85,16 @@ def test_create_situation_with_nyc():
     assert (
         situation["households"]["your household"]["in_nyc"][CURRENT_YEAR]
         is True
+    )
+
+
+def test_create_situation_with_non_contiguous_state_group():
+    """Test that non-contiguous states set PolicyEngine state group."""
+    situation = create_situation(wages_and_salaries=100000, state_code="AK")
+
+    assert (
+        situation["households"]["your household"]["state_group"][CURRENT_YEAR]
+        == "AK"
     )
 
 

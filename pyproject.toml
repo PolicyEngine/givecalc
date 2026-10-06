@@ -16,22 +16,19 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "streamlit",
-    "policyengine-us>=1.155.0",
     "plotly",
     "numpy",
     "pandas",
     "pyyaml",
     "scipy",
-    "policyengine-uk>=2.72.3",
     "fastapi>=0.124.2",
     "uvicorn[standard]>=0.38.0",
     "modal>=0.68.0",
+    "policyengine[uk,us]>=4.3.1",
 ]
 
 [project.optional-dependencies]

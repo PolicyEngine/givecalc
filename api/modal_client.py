@@ -1,7 +1,8 @@
 """Modal client for GiveCalc - wraps Modal function calls with local fallback.
 
-Set USE_MODAL=false to run calculations locally (for development).
-Set USE_MODAL=true (default) to use Modal for calculations.
+Set USE_MODAL=true to call remote Modal functions.
+By default, calculations run in-process, which is what local development,
+tests, and the Modal-hosted FastAPI app expect.
 """
 
 import os
@@ -12,7 +13,7 @@ import pandas as pd
 
 def use_modal() -> bool:
     """Check if Modal should be used for calculations."""
-    return os.getenv("USE_MODAL", "true").lower() == "true"
+    return os.getenv("USE_MODAL", "false").lower() == "true"
 
 
 def get_donation_effects(
@@ -61,9 +62,9 @@ def _get_effects_modal(
     import modal
 
     if country == "uk":
-        fn = modal.Function.lookup("givecalc", "calculate_uk_effects")
+        fn = modal.Function.from_name("givecalc", "calculate_uk_effects")
     else:
-        fn = modal.Function.lookup("givecalc", "calculate_us_effects")
+        fn = modal.Function.from_name("givecalc", "calculate_us_effects")
 
     result = fn.remote(situation)
     df = pd.DataFrame(result["curve"])
@@ -99,9 +100,9 @@ def _get_metrics_modal(
     import modal
 
     if country == "uk":
-        fn = modal.Function.lookup("givecalc", "calculate_uk_metrics")
+        fn = modal.Function.from_name("givecalc", "calculate_uk_metrics")
     else:
-        fn = modal.Function.lookup("givecalc", "calculate_us_metrics")
+        fn = modal.Function.from_name("givecalc", "calculate_us_metrics")
 
     return fn.remote(situation, donation_amount)
 

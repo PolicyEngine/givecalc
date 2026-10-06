@@ -72,6 +72,6 @@ Donations are tax-deductible (US) and Gift Aid eligible (UK).
 
 **Privacy note:** GiveCalc doesn't store any of your inputs—all calculations run in your browser and our API without logging.
 
-**Need more complexity?** If your situation requires inputs we don't yet support (appreciated assets, QCDs, carryforwards, etc.), comment below or email max@policyengine.org. We can add features to GiveCalc or point you to the [policyengine-us Python package](https://github.com/PolicyEngine/policyengine-us) to run custom calculations locally.
+**Need more complexity?** If your situation requires inputs we don't yet support (appreciated assets, QCDs, carryforwards, etc.), comment below or email max@policyengine.org. We can add features to GiveCalc or point you to the [PolicyEngine Python package](https://github.com/PolicyEngine/policyengine.py) to run custom calculations locally.
 
 **Disclaimer:** GiveCalc provides estimates for informational purposes only. Results depend on the accuracy of inputs and model assumptions. This is not tax, legal, or financial advice—consult a qualified professional for your specific situation.

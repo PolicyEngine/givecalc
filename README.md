@@ -28,7 +28,7 @@ givecalc/
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.13
 - Node.js 20+
 - [uv](https://github.com/astral-sh/uv) (recommended for Python)
 
@@ -76,26 +76,16 @@ The frontend is auto-deployed to Vercel on push to main.
 
 - Production: https://givecalc.org
 
-### Backend (Google Cloud Run)
+### Backend (Modal)
 
-The backend is deployed via Cloud Build trigger in GCP Console:
+The backend is deployed as a FastAPI app on Modal:
 
-1. Go to [Cloud Build Triggers](https://console.cloud.google.com/cloud-build/triggers)
-2. Find the `givecalc` trigger
-3. Click "Run" to manually deploy, or push to main to auto-deploy
-
-Manual deployment:
 ```bash
-cd api
-gcloud builds submit --tag gcr.io/PROJECT_ID/givecalc
-gcloud run deploy givecalc \
-  --image gcr.io/PROJECT_ID/givecalc \
-  --platform managed \
-  --region europe-west1 \
-  --allow-unauthenticated
+unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET
+modal deploy modal_app.py
 ```
 
-- Production API: https://givecalc-578039519715.europe-west1.run.app
+- Production API: https://policyengine--givecalc-fastapi-app.modal.run
 
 ### Environment Variables
 
@@ -103,7 +93,7 @@ gcloud run deploy givecalc \
 - `VITE_API_URL`: Backend API URL
 
 **Backend:**
-- `PORT`: Server port (default: 8080, set by Cloud Run)
+- `USE_MODAL`: Whether to call remote Modal functions for calculations. Defaults to `false`; the Modal-hosted FastAPI app runs calculations in-process.
 
 ## API Endpoints
 

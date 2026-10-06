@@ -1,6 +1,14 @@
-from policyengine_us import Simulation
-
 from givecalc.constants import CURRENT_YEAR, DEFAULT_AGE
+
+NON_CONTIGUOUS_STATE_GROUPS = {"AK", "HI", "GU", "PR", "VI"}
+
+
+def get_state_group(state_code: str) -> str:
+    """Return the PolicyEngine-US state_group input for a state code."""
+    state_code = state_code.upper()
+    if state_code in NON_CONTIGUOUS_STATE_GROUPS:
+        return state_code
+    return "CONTIGUOUS_US"
 
 
 def create_situation(
@@ -126,6 +134,7 @@ def create_situation(
                 "your household": {
                     "members": members.copy(),
                     "state_name": {tax_year: state_code},
+                    "state_group": {tax_year: get_state_group(state_code)},
                     "in_nyc": {tax_year: in_nyc},
                 }
             },

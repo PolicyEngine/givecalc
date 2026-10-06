@@ -29,8 +29,8 @@ COPY api /app/api
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Use Modal for PolicyEngine calculations (set to "false" for local dev)
-ENV USE_MODAL=true
+# Run PolicyEngine calculations in this API process.
+ENV USE_MODAL=false
 
 # Expose port (Cloud Run uses PORT env var)
 ENV PORT=8080

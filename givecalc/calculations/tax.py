@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from policyengine_us import Simulation
 
 from givecalc.constants import CURRENT_YEAR
 from givecalc.core.simulation import create_donation_simulation
+from givecalc.policyengine import USSimulation
 
 
 def get_year_from_situation(situation):
@@ -54,7 +54,7 @@ def calculate_donation_effects(situation):
         pandas.DataFrame: DataFrame containing donation effects
     """
     year = get_year_from_situation(situation)
-    simulation = Simulation(situation=situation)
+    simulation = USSimulation(situation=situation)
     # Note: We add this as a column to enable non-cash donations in the future.
     donation_column = "charitable_cash_donations"
     # Use tax_unit for donations (where deductions are claimed) instead of household

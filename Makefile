@@ -76,35 +76,18 @@ docker-api:
 docker-frontend:
 	docker run -p 3000:8080 -e VITE_API_URL=http://localhost:8000 givecalc-frontend
 
-# Deploy to Google Cloud Run
+# Deploy API to Modal
 deploy-api:
-	gcloud run deploy givecalc-api \
-		--source . \
-		--region us-central1 \
-		--memory 4Gi \
-		--cpu 2 \
-		--timeout 300 \
-		--max-instances 10 \
-		--min-instances 1 \
-		--allow-unauthenticated
+	unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy modal_app.py
 
+# Deploy frontend to Vercel from the repo root so root vercel.json is used
 deploy-frontend:
-	@echo "Getting API URL..."
-	$(eval API_URL := $(shell gcloud run services describe givecalc-api --region us-central1 --format='value(status.url)'))
-	gcloud run deploy givecalc-frontend \
-		--source ./frontend \
-		--region us-central1 \
-		--memory 512Mi \
-		--cpu 1 \
-		--max-instances 10 \
-		--min-instances 0 \
-		--allow-unauthenticated \
-		--set-build-env-vars VITE_API_URL=$(API_URL)
+	vercel --prod
 
 deploy: deploy-api deploy-frontend
 	@echo "Deployment complete!"
-	@echo "API: $$(gcloud run services describe givecalc-api --region us-central1 --format='value(status.url)')"
-	@echo "Frontend: $$(gcloud run services describe givecalc-frontend --region us-central1 --format='value(status.url)')"
+	@echo "API: https://policyengine--givecalc-fastapi-app.modal.run"
+	@echo "Frontend: https://givecalc.org"
 
 # ============= Cleanup =============
 
@@ -118,5 +101,5 @@ clean:
 
 # Update dependencies
 update:
-	pip install --upgrade policyengine-us policyengine-core
+	pip install --upgrade "policyengine[us,uk]"
 	cd frontend && npm update

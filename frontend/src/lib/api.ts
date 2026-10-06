@@ -15,8 +15,7 @@ import type {
   UKCalculateResponse,
 } from "./types";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -124,15 +123,8 @@ export async function healthCheck(): Promise<{
 
 // UK API functions
 export async function getUKRegions(): Promise<UKRegionsResponse> {
-  console.log("Fetching UK regions from:", API_URL + "/api/uk/regions");
-  try {
-    const response = await api.get<UKRegionsResponse>("/api/uk/regions");
-    console.log("UK regions response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch UK regions:", error);
-    throw error;
-  }
+  const response = await api.get<UKRegionsResponse>("/api/uk/regions");
+  return response.data;
 }
 
 export async function calculateUKDonation(

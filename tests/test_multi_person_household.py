@@ -1,7 +1,5 @@
 """Test axes work with multi-person households."""
 
-from policyengine_us import Simulation
-
 from givecalc import CURRENT_YEAR, calculate_donation_effects, create_situation
 
 
