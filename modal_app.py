@@ -62,9 +62,11 @@ app = modal.App("givecalc")
     # minutes after its last request.
     scaledown_window=300,
 )
-# Four requests keep the four workers busy, so scale out past four; up to
-# eight wait for a worker rather than for a new container.
-@modal.concurrent(max_inputs=8, target_inputs=4)
+# Up to eight requests share the four workers. Eight headlines are 16
+# simulations, four rounds on four workers (about 10 s at the 2.3 s per
+# simulation measured), against about a minute for a new container, which
+# also runs without workers until its own are up.
+@modal.concurrent(max_inputs=8)
 @modal.asgi_app()
 def fastapi_app():
     """Serve the FastAPI app on Modal."""
