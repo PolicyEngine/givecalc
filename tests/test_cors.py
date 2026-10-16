@@ -32,3 +32,24 @@ def test_production_frontend_origins_can_call_api(origin):
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == origin
+
+
+def test_vercel_preview_origin_can_call_api():
+    origin = "https://givecalc-git-some-branch-max-ghenis-projects.vercel.app"
+    response = client.options(
+        "/api/calculate",
+        headers={"Origin": origin, "Access-Control-Request-Method": "POST"},
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+
+
+def test_other_vercel_origin_is_rejected():
+    response = client.options(
+        "/api/calculate",
+        headers={
+            "Origin": "https://other-app-max-ghenis-projects.vercel.app",
+            "Access-Control-Request-Method": "POST",
+        },
+    )
+    assert "access-control-allow-origin" not in response.headers

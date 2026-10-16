@@ -5,6 +5,15 @@
 export type Country = "us" | "uk";
 
 // US-specific types
+// Gifts count in the year they are made, so offer last year (for filing),
+// this year and next year. The API accepts up to next year.
+export const CURRENT_YEAR = new Date().getFullYear();
+export const TAX_YEAR_OPTIONS = [
+  CURRENT_YEAR - 1,
+  CURRENT_YEAR,
+  CURRENT_YEAR + 1,
+];
+
 export interface Income {
   wages_and_salaries: number;
   tips: number;
@@ -133,7 +142,7 @@ export const DEFAULT_FORM_STATE: FormState = {
   mode: "amount",
   target_reduction: 10,
   is_percentage: true,
-  year: new Date().getFullYear(),  // Current year
+  year: CURRENT_YEAR,
 };
 
 // UK-specific types
@@ -199,5 +208,5 @@ export const DEFAULT_UK_FORM_STATE: UKFormState = {
   is_married: false,
   num_children: 0,
   gift_aid: 0,  // No default donation
-  year: new Date().getFullYear(),
+  year: CURRENT_YEAR,
 };

@@ -401,9 +401,10 @@ function MethodologyExplainer({ currency }: { currency: "USD" | "GBP" }) {
                       Standard vs. itemized deduction threshold
                     </p>
                     <p className="text-gray-600">
-                      You only benefit from charitable deductions if your total
-                      itemized deductions exceed the standard deduction. GiveCalc
-                      calculates exactly when you cross this threshold.
+                      Beyond the non-itemizer deduction, gifts only lower your
+                      federal tax once your itemized deductions exceed the
+                      standard deduction. GiveCalc calculates exactly when you
+                      cross this threshold.
                     </p>
                   </div>
                 </div>
@@ -445,11 +446,15 @@ function MethodologyExplainer({ currency }: { currency: "USD" | "GBP" }) {
                     4
                   </div>
                   <div>
-                    <p className="font-medium text-gray-800">Benefit phase-outs</p>
+                    <p className="font-medium text-gray-800">
+                      Rules that change in 2026
+                    </p>
                     <p className="text-gray-600">
-                      Credits like the Child Tax Credit and EITC phase out based on
-                      income. Reducing AGI through donations can restore some of
-                      these benefits.
+                      From 2026, filers who take the standard deduction can
+                      deduct up to $1,000 of cash gifts ($2,000 for joint
+                      filers). Itemizers deduct only the part of their gifts
+                      above 0.5% of AGI, and filers in the 37% bracket save at
+                      most 35 cents of federal tax per dollar deducted.
                     </p>
                   </div>
                 </div>

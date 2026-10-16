@@ -1,7 +1,6 @@
 """GiveCalc - Calculate how charitable giving affects taxes.
 
-This package provides the core calculation logic for the GiveCalc application,
-separated from the Streamlit UI layer.
+This package provides the core calculation logic behind the GiveCalc API.
 """
 
 from givecalc.calculations.donations import calculate_target_donation

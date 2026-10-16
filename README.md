@@ -19,17 +19,16 @@ GiveCalc helps donors understand the true cost of their charitable contributions
 givecalc/
 ├── givecalc/           # Core Python calculation package
 ├── api/                # FastAPI backend
-├── frontend/           # React + Vite + TypeScript frontend
-├── ui/                 # Legacy Streamlit UI components
-└── app.py              # Legacy Streamlit entry point
+├── frontend/           # Next.js + TypeScript frontend
+└── modal_app.py        # Modal deployment of the API
 ```
 
 ## Development
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 20+
+- Python 3.13
+- Node.js 22+ and [bun](https://bun.sh)
 - [uv](https://github.com/astral-sh/uv) (recommended for Python)
 
 ### Quick Start
@@ -46,13 +45,7 @@ make frontend
 ```
 
 - API: http://localhost:8000 (docs at /docs)
-- Frontend: http://localhost:5173
-
-### Legacy Streamlit App
-
-```bash
-make run-streamlit
-```
+- Frontend: http://localhost:3000
 
 ### Testing
 
@@ -76,26 +69,18 @@ The frontend is auto-deployed to Vercel on push to main.
 
 - Production: https://givecalc.org
 
-### Backend (Google Cloud Run)
+### Backend (Modal)
 
-The backend is deployed via Cloud Build trigger in GCP Console:
+`.github/workflows/deploy-modal.yml` deploys `modal_app.py` on every push to main.
+`modal_app.py` pins exact PolicyEngine versions, so a deploy only changes the
+model when a PR changes those pins.
 
-1. Go to [Cloud Build Triggers](https://console.cloud.google.com/cloud-build/triggers)
-2. Find the `givecalc` trigger
-3. Click "Run" to manually deploy, or push to main to auto-deploy
-
-Manual deployment:
+Manual deployment (from the repo root):
 ```bash
-cd api
-gcloud builds submit --tag gcr.io/PROJECT_ID/givecalc
-gcloud run deploy givecalc \
-  --image gcr.io/PROJECT_ID/givecalc \
-  --platform managed \
-  --region europe-west1 \
-  --allow-unauthenticated
+unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy modal_app.py
 ```
 
-- Production API: https://givecalc-578039519715.europe-west1.run.app
+- Production API: https://policyengine--givecalc-fastapi-app.modal.run
 
 ### Environment Variables
 
@@ -103,7 +88,7 @@ gcloud run deploy givecalc \
 - `NEXT_PUBLIC_API_URL`: Backend API URL
 
 **Backend:**
-- `PORT`: Server port (default: 8080, set by Cloud Run)
+- `USE_MODAL`: `false` runs calculations in-process (the Modal image sets this)
 
 ## API Endpoints
 
@@ -113,6 +98,8 @@ gcloud run deploy givecalc \
 | `/api/tax-programs/{state}` | GET | Get tax program info for a state |
 | `/api/calculate` | POST | Calculate donation tax impact |
 | `/api/target-donation` | POST | Find donation for target reduction |
+| `/api/uk/calculate` | POST | Calculate UK Gift Aid tax impact |
+| `/api/uk/regions` | GET | List UK regions |
 | `/api/health` | GET | Health check |
 
 ## License

@@ -3,7 +3,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "../types";
+import {
+  DEFAULT_FORM_STATE,
+  DEFAULT_UK_FORM_STATE,
+  TAX_YEAR_OPTIONS,
+} from "../types";
 
 describe("Year consistency", () => {
   it("DEFAULT_FORM_STATE defaults to the current system year", () => {
@@ -16,9 +20,18 @@ describe("Year consistency", () => {
     expect(DEFAULT_UK_FORM_STATE.year).toBe(currentYear);
   });
 
-  it("year is within the supported range (2024-2026)", () => {
-    expect(DEFAULT_FORM_STATE.year).toBeGreaterThanOrEqual(2024);
-    expect(DEFAULT_FORM_STATE.year).toBeLessThanOrEqual(2026);
+  it("offers last year, this year and next year", () => {
+    const currentYear = new Date().getFullYear();
+    expect(TAX_YEAR_OPTIONS).toEqual([
+      currentYear - 1,
+      currentYear,
+      currentYear + 1,
+    ]);
+  });
+
+  it("defaults to a year the picker offers", () => {
+    expect(TAX_YEAR_OPTIONS).toContain(DEFAULT_FORM_STATE.year);
+    expect(TAX_YEAR_OPTIONS).toContain(DEFAULT_UK_FORM_STATE.year);
   });
 });
 

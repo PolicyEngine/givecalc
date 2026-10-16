@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from "react";
 import type { FormState, StateInfo, Income } from "../lib/types";
+import { TAX_YEAR_OPTIONS } from "../lib/types";
 import { formatCurrency } from "../lib/format";
 
 interface Props {
@@ -568,7 +569,6 @@ export default function InputForm({
                 {[
                   { key: "mortgage_interest", label: "Mortgage interest" },
                   { key: "real_estate_taxes", label: "Real estate taxes" },
-                  { key: "casualty_loss", label: "Casualty/theft losses" },
                 ].map(({ key, label }) => (
                   <div key={key}>
                     <label className="block text-xs text-gray-600 mb-1">
@@ -611,13 +611,13 @@ export default function InputForm({
             {showYearOptions && (
               <div className="mt-3">
                 <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                  {[2024, 2025, 2026].map((year) => (
+                  {TAX_YEAR_OPTIONS.map((year, i) => (
                     <button
                       key={year}
                       type="button"
                       onClick={() => updateField("year", year)}
                       className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
-                        year !== 2024 ? "border-l border-gray-300" : ""
+                        i > 0 ? "border-l border-gray-300" : ""
                       } ${
                         formState.year === year
                           ? "bg-primary-600 text-white"

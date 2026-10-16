@@ -6,6 +6,11 @@ from pydantic import BaseModel, Field
 
 from givecalc.constants import CURRENT_YEAR
 
+# Gifts count in the year they are made, so the useful years are the current
+# one and the next. Deriving the bound keeps the API working on January 1.
+MIN_YEAR = 2024
+MAX_YEAR = CURRENT_YEAR + 1
+
 
 class IncomeInput(BaseModel):
     """Income sources input."""
@@ -73,8 +78,8 @@ class CalculateRequest(BaseModel):
     )
     year: int = Field(
         default=CURRENT_YEAR,
-        ge=2024,
-        le=2026,
+        ge=MIN_YEAR,
+        le=MAX_YEAR,
         description="Tax year for calculations",
     )
 
@@ -135,8 +140,8 @@ class TargetDonationRequest(BaseModel):
     )
     year: int = Field(
         default=CURRENT_YEAR,
-        ge=2024,
-        le=2026,
+        ge=MIN_YEAR,
+        le=MAX_YEAR,
         description="Tax year for calculations",
     )
 
@@ -224,8 +229,8 @@ class UKCalculateRequest(BaseModel):
     )
     year: int = Field(
         default=CURRENT_YEAR,
-        ge=2024,
-        le=2026,
+        ge=MIN_YEAR,
+        le=MAX_YEAR,
         description="Tax year for calculations",
     )
 

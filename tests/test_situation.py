@@ -94,7 +94,9 @@ def test_create_situation_with_deductions():
     )
 
     person = situation["people"]["you"]
-    assert person["mortgage_interest"][CURRENT_YEAR] == 10000
+    # home_mortgage_interest is the input the interest deduction reads.
+    assert person["home_mortgage_interest"][CURRENT_YEAR] == 10000
+    assert "mortgage_interest" not in person
     assert person["real_estate_taxes"][CURRENT_YEAR] == 5000
     assert person["casualty_loss"][CURRENT_YEAR] == 2000
 

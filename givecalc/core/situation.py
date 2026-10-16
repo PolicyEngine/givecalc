@@ -81,7 +81,10 @@ def create_situation(
                 "charitable_cash_donations": {
                     tax_year: 0
                 },  # Initialize for axes
-                "mortgage_interest": {tax_year: mortgage_interest},
+                # policyengine-us computes mortgage_interest as a total of
+                # deductible and non-deductible interest; the interest
+                # deduction reads home_mortgage_interest, the input.
+                "home_mortgage_interest": {tax_year: mortgage_interest},
                 "real_estate_taxes": {tax_year: real_estate_taxes},
                 "casualty_loss": {tax_year: casualty_loss},
             }
