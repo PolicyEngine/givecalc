@@ -15,26 +15,46 @@ import TaxInfo from "./components/TaxInfo";
 import {
   useStates,
   useCalculateDonation,
+  useCalculateSavings,
   useCalculateTargetDonation,
   useCalculateUKDonation,
+  useCalculateUKSavings,
 } from "./hooks/useCalculation";
 import type {
   Country,
   FormState,
+  Headline,
   UKFormState,
   CalculateResponse,
   TargetDonationResponse,
   UKCalculateResponse,
+  UKSavingsResponse,
 } from "./lib/types";
 import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "./lib/types";
+import { fetchHeadlineFirst } from "./lib/headlineFirst";
 
-// Cache for calculation results
+// Cache for calculation results. The headline arrives first, from
+// /api/savings; the curve (and the marginal rate) follows from
+// /api/calculate.
 type CacheEntry = {
+  headline?: Headline;
   result?: CalculateResponse;
   targetResult?: TargetDonationResponse;
+  ukHeadline?: Headline;
   ukResult?: UKCalculateResponse;
 };
 type ResultCache = Map<string, CacheEntry>;
+
+function ukHeadlineFrom(savings: UKSavingsResponse): Headline {
+  return {
+    donation_amount: savings.gift_aid,
+    baseline_net_tax: savings.baseline_net_tax,
+    net_tax_at_donation: savings.net_tax_at_donation,
+    tax_savings: savings.tax_savings,
+    baseline_net_income: savings.baseline_net_income,
+    net_income_after_donation: savings.net_income_after_donation,
+  };
+}
 
 // Generate cache key from request parameters
 function getCacheKey(formState: FormState, country: Country): string {
@@ -78,11 +98,17 @@ function Calculator() {
     useState<FormState>(DEFAULT_FORM_STATE);
   const [ukFormState, setUKFormStateInternal] =
     useState<UKFormState>(DEFAULT_UK_FORM_STATE);
+  const [headline, setHeadline] = useState<Headline | null>(null);
   const [result, setResult] = useState<CalculateResponse | null>(null);
   const [targetResult, setTargetResult] =
     useState<TargetDonationResponse | null>(null);
+  const [ukHeadline, setUKHeadline] = useState<Headline | null>(null);
   const [ukResult, setUKResult] = useState<UKCalculateResponse | null>(null);
   const cacheRef = useRef<ResultCache>(new Map());
+  // The cache key of the form each country shows, so a response that
+  // arrives after the form has changed fills the cache but not the screen.
+  const usKeyRef = useRef<string | null>(null);
+  const ukKeyRef = useRef<string | null>(null);
 
   const {
     data: statesData,
@@ -91,8 +117,10 @@ function Calculator() {
     error: statesErrorData,
   } = useStates();
 
+  const savingsMutation = useCalculateSavings();
   const calculateMutation = useCalculateDonation();
   const targetMutation = useCalculateTargetDonation();
+  const ukSavingsMutation = useCalculateUKSavings();
   const ukCalculateMutation = useCalculateUKDonation();
 
   // Check cache and update results when form state changes
@@ -101,17 +129,13 @@ function Calculator() {
 
     // Check if we have cached results for this state
     const cacheKey = getCacheKey(newState, "us");
+    usKeyRef.current = cacheKey;
     const cached = cacheRef.current.get(cacheKey);
 
-    if (cached) {
-      // Restore cached results
-      setResult(cached.result || null);
-      setTargetResult(cached.targetResult || null);
-    } else {
-      // Clear results - need to recalculate
-      setResult(null);
-      setTargetResult(null);
-    }
+    // Restore cached results, or clear them until the next calculation
+    setHeadline(cached?.headline || null);
+    setResult(cached?.result || null);
+    setTargetResult(cached?.targetResult || null);
   }, []);
 
   const setUKFormState = useCallback((newState: UKFormState) => {
@@ -119,93 +143,132 @@ function Calculator() {
 
     // Check if we have cached results for this state
     const cacheKey = getUKCacheKey(newState);
+    ukKeyRef.current = cacheKey;
     const cached = cacheRef.current.get(cacheKey);
 
-    if (cached) {
-      setUKResult(cached.ukResult || null);
-    } else {
-      setUKResult(null);
-    }
+    setUKHeadline(cached?.ukHeadline || null);
+    setUKResult(cached?.ukResult || null);
   }, []);
 
+  const cacheUpdate = (key: string, entry: CacheEntry) => {
+    cacheRef.current.set(key, { ...cacheRef.current.get(key), ...entry });
+  };
+
+  // Errors land in the mutations' state, which the page renders.
   const handleCalculate = async () => {
-    if (country === "uk") {
-      const cacheKey = getUKCacheKey(ukFormState);
-      const cached = cacheRef.current.get(cacheKey);
-      if (cached?.ukResult) {
-        setUKResult(cached.ukResult);
-        return;
-      }
-
-      setUKResult(null);
-      const response = await ukCalculateMutation.mutateAsync({
-        income: ukFormState.income,
-        region: ukFormState.region,
-        gift_aid: ukFormState.gift_aid,
-        is_married: ukFormState.is_married,
-        num_children: ukFormState.num_children,
-        year: ukFormState.year,
-      });
-      setUKResult(response);
-      cacheRef.current.set(cacheKey, { ukResult: response });
-      return;
-    }
-
-    const cacheKey = getCacheKey(formState, "us");
-
-    // Check cache first
-    const cached = cacheRef.current.get(cacheKey);
-    if (cached) {
-      setResult(cached.result || null);
-      setTargetResult(cached.targetResult || null);
-      return;
-    }
-
-    setResult(null);
-    setTargetResult(null);
-
-    if (formState.mode === "amount") {
-      const response = await calculateMutation.mutateAsync({
-        income: formState.income,
-        state_code: formState.state_code,
-        is_married: formState.is_married,
-        num_children: formState.num_children,
-        in_nyc: formState.in_nyc,
-        donation_amount: formState.donation_amount,
-        deductions: formState.deductions,
-        year: formState.year,
-      });
-      setResult(response);
-      // Cache the result
-      cacheRef.current.set(cacheKey, { result: response });
-    } else {
-      const response = await targetMutation.mutateAsync({
-        income: formState.income,
-        state_code: formState.state_code,
-        is_married: formState.is_married,
-        num_children: formState.num_children,
-        in_nyc: formState.in_nyc,
-        deductions: formState.deductions,
-        target_reduction: formState.target_reduction,
-        is_percentage: formState.is_percentage,
-        year: formState.year,
-      });
-      setTargetResult(response);
-      // Cache the result
-      cacheRef.current.set(cacheKey, { targetResult: response });
+    try {
+      await (country === "uk" ? calculateUK() : calculateUS());
+    } catch {
+      // Shown from the mutation's error state.
     }
   };
 
+  const calculateUK = async () => {
+    const cacheKey = getUKCacheKey(ukFormState);
+    ukKeyRef.current = cacheKey;
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached?.ukHeadline && cached.ukResult) {
+      setUKHeadline(cached.ukHeadline);
+      setUKResult(cached.ukResult);
+      return;
+    }
+    const request = {
+      income: ukFormState.income,
+      region: ukFormState.region,
+      gift_aid: ukFormState.gift_aid,
+      is_married: ukFormState.is_married,
+      num_children: ukFormState.num_children,
+      year: ukFormState.year,
+    };
+    setUKResult(null);
+    setUKHeadline(cached?.ukHeadline || null);
+    await fetchHeadlineFirst({
+      cachedHeadline: cached?.ukHeadline,
+      fetchHeadline: async () =>
+        ukHeadlineFrom(await ukSavingsMutation.mutateAsync(request)),
+      fetchFull: () => ukCalculateMutation.mutateAsync(request),
+      storeHeadline: (ukHeadline) => cacheUpdate(cacheKey, { ukHeadline }),
+      storeFull: (ukResult) => cacheUpdate(cacheKey, { ukResult }),
+      showHeadline: setUKHeadline,
+      showFull: setUKResult,
+      isCurrent: () => ukKeyRef.current === cacheKey,
+    });
+  };
+
+  const calculateUS = async () => {
+    const cacheKey = getCacheKey(formState, "us");
+    usKeyRef.current = cacheKey;
+    const isShown = () => usKeyRef.current === cacheKey;
+    const cached = cacheRef.current.get(cacheKey);
+    const household = {
+      income: formState.income,
+      state_code: formState.state_code,
+      is_married: formState.is_married,
+      num_children: formState.num_children,
+      in_nyc: formState.in_nyc,
+      deductions: formState.deductions,
+      year: formState.year,
+    };
+
+    if (formState.mode !== "amount") {
+      if (cached?.targetResult) {
+        setTargetResult(cached.targetResult);
+        return;
+      }
+      setTargetResult(null);
+      const response = await targetMutation.mutateAsync({
+        ...household,
+        target_reduction: formState.target_reduction,
+        is_percentage: formState.is_percentage,
+      });
+      cacheUpdate(cacheKey, { targetResult: response });
+      if (isShown()) setTargetResult(response);
+      return;
+    }
+
+    if (cached?.headline && cached.result) {
+      setHeadline(cached.headline);
+      setResult(cached.result);
+      return;
+    }
+    const request = {
+      ...household,
+      donation_amount: formState.donation_amount,
+    };
+
+    // The headline first, from two simulations; then the curve and the
+    // marginal rate, from the donation sweep.
+    setResult(null);
+    setHeadline(cached?.headline || null);
+    await fetchHeadlineFirst({
+      cachedHeadline: cached?.headline,
+      fetchHeadline: () => savingsMutation.mutateAsync(request),
+      fetchFull: () => calculateMutation.mutateAsync(request),
+      storeHeadline: (headline) => cacheUpdate(cacheKey, { headline }),
+      storeFull: (result) => cacheUpdate(cacheKey, { result }),
+      showHeadline: setHeadline,
+      showFull: setResult,
+      isCurrent: isShown,
+    });
+  };
+
+  // Only the headline holds the page; the charts load after it.
   const isCalculating =
-    calculateMutation.isPending ||
-    targetMutation.isPending ||
-    ukCalculateMutation.isPending;
-  const hasError =
-    calculateMutation.isError ||
-    targetMutation.isError ||
-    ukCalculateMutation.isError;
-  const error =
-    calculateMutation.error || targetMutation.error || ukCalculateMutation.error;
+    country === "uk"
+      ? ukSavingsMutation.isPending
+      : savingsMutation.isPending || targetMutation.isPending;
+  const isLoadingCurve =
+    country === "uk"
+      ? ukCalculateMutation.isPending
+      : calculateMutation.isPending;
+  const headlineError =
+    country === "uk"
+      ? ukSavingsMutation.error
+      : savingsMutation.error || targetMutation.error;
+  const curveFailed =
+    country === "uk" ? ukCalculateMutation.isError : calculateMutation.isError;
+  const hasError = !!headlineError;
+  const error = headlineError;
 
   // Only show loading for US states - UK doesn't need to load regions
   if (country === "us" && statesLoading) {
@@ -321,10 +384,13 @@ function Calculator() {
               </div>
             )}
             <Results
+              headline={country === "uk" ? ukHeadline : headline}
               result={country === "uk" ? ukResultAsUS : result}
               targetResult={country === "us" ? targetResult : null}
               mode={country === "uk" ? "amount" : formState.mode}
               isCalculating={isCalculating}
+              isLoadingCurve={isLoadingCurve}
+              curveFailed={curveFailed}
               currency={country === "uk" ? "GBP" : "USD"}
             />
           </div>

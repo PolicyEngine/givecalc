@@ -87,18 +87,17 @@ unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy modal_app.py
 **Frontend (build-time):**
 - `NEXT_PUBLIC_API_URL`: Backend API URL
 
-**Backend:**
-- `USE_MODAL`: `false` runs calculations in-process (the Modal image sets this)
-
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/states` | GET | List supported states |
 | `/api/tax-programs/{state}` | GET | Get tax program info for a state |
-| `/api/calculate` | POST | Calculate donation tax impact |
+| `/api/savings` | POST | Tax savings at a donation, from two simulations (optionally a bunching comparison, from three more) |
+| `/api/calculate` | POST | Tax savings plus the marginal rate and the donation curve |
 | `/api/target-donation` | POST | Find donation for target reduction |
-| `/api/uk/calculate` | POST | Calculate UK Gift Aid tax impact |
+| `/api/uk/savings` | POST | UK Gift Aid tax savings, from two simulations |
+| `/api/uk/calculate` | POST | UK Gift Aid savings plus the marginal rate and the donation curve |
 | `/api/uk/regions` | GET | List UK regions |
 | `/api/health` | GET | Health check |
 

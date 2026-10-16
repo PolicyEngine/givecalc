@@ -13,6 +13,9 @@ import type {
   UKRegionsResponse,
   UKCalculateRequest,
   UKCalculateResponse,
+  SavingsRequest,
+  SavingsResponse,
+  UKSavingsResponse,
 } from "./types";
 
 const API_URL =
@@ -97,6 +100,18 @@ export async function getTaxPrograms(
   return response.data;
 }
 
+/**
+ * The headline savings from two simulations ($0 and the gift), without the
+ * donation curve. With `bunching`, three more runs compare giving twice the
+ * gift this year with giving the gift this year and next.
+ */
+export async function calculateSavings(
+  request: SavingsRequest,
+): Promise<SavingsResponse> {
+  const response = await api.post<SavingsResponse>("/api/savings", request);
+  return response.data;
+}
+
 export async function calculateDonation(
   request: CalculateRequest,
 ): Promise<CalculateResponse> {
@@ -135,16 +150,32 @@ export async function getUKRegions(): Promise<UKRegionsResponse> {
   }
 }
 
+// Map simplified region values to API-compatible regions. For tax purposes,
+// only Scotland differs: all other regions use the same rates.
+function ukApiRequest(request: UKCalculateRequest): UKCalculateRequest {
+  return {
+    ...request,
+    region: request.region === "SCOTLAND" ? "SCOTLAND" : "LONDON",
+  };
+}
+
 export async function calculateUKDonation(
   request: UKCalculateRequest,
 ): Promise<UKCalculateResponse> {
-  // Map simplified region values to API-compatible regions
-  // For tax purposes, only Scotland differs - all other regions use the same rates
-  const apiRegion = request.region === "SCOTLAND" ? "SCOTLAND" : "LONDON";
-
   const response = await api.post<UKCalculateResponse>(
     "/api/uk/calculate",
-    { ...request, region: apiRegion },
+    ukApiRequest(request),
+  );
+  return response.data;
+}
+
+/** The UK headline savings from two simulations, without the curve. */
+export async function calculateUKSavings(
+  request: UKCalculateRequest,
+): Promise<UKSavingsResponse> {
+  const response = await api.post<UKSavingsResponse>(
+    "/api/uk/savings",
+    ukApiRequest(request),
   );
   return response.data;
 }

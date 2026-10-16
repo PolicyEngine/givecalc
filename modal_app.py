@@ -7,9 +7,18 @@ The PolicyEngine versions are pinned to the ones in uv.lock. Modal caches
 the pip layer, so an unpinned requirement silently keeps whatever version
 was newest when the layer was first built. Bump these pins (and uv.lock)
 in a PR to move the deployed model.
+
+Simulations run in SIMULATION_WORKERS processes (api.simulations), so a
+request's simulations run at once and concurrent requests do not queue on
+one GIL. Measured on Modal, 2026-10-16: the four workers ran at 85% of a
+single process's speed each, within the 2-CPU reservation's burst; the
+container used about 7.5 GiB. Until the workers are up (about a minute
+after a cold start), simulations run in the request's thread.
 """
 
 import modal
+
+SIMULATION_WORKERS = 4
 
 # Create Modal image with all dependencies
 image = (
@@ -27,7 +36,11 @@ image = (
     .env(
         {
             "NUMEXPR_MAX_THREADS": "4",
-            "USE_MODAL": "false",
+            # One household's arrays are tiny; thread pools only add
+            # overhead, and threads must not be running when workers fork.
+            "OMP_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
             "PYTHONPATH": "/root",
         }
     )
@@ -44,12 +57,25 @@ app = modal.App("givecalc")
     image=image,
     timeout=300,
     cpu=2.0,
-    memory=4096,
+    memory=8192,
+    # A cold start takes over a minute, so keep an idle container for five
+    # minutes after its last request.
+    scaledown_window=300,
 )
-@modal.concurrent(max_inputs=4)
+# Four requests keep the four workers busy, so scale out past four; up to
+# eight wait for a worker rather than for a new container.
+@modal.concurrent(max_inputs=8, target_inputs=4)
 @modal.asgi_app()
 def fastapi_app():
     """Serve the FastAPI app on Modal."""
+    import threading
+
+    from api.simulations import start_workers
+
+    threading.Thread(
+        target=start_workers, args=(SIMULATION_WORKERS,), daemon=True
+    ).start()
+
     from api.main import app as api
 
     return api

@@ -1,0 +1,228 @@
+"""The simulation caches must never change an answer.
+
+Invariants:
+- Key completeness: two situations get the same cache key only if they are
+  equal, so a cached result is always for the household asked about.
+- Determinism: a cached point result equals a fresh simulation of the same
+  household and donation, whatever ran before it.
+- LRU bounds: the cache holds at most ``maxsize`` entries and evicts the
+  least recently used one.
+- Single flight: concurrent requests for one missing key run it once; a
+  run that fails caches nothing.
+"""
+
+import threading
+import time
+
+import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
+from api import simulations
+from api.simulations import (
+    LRUCache,
+    _run_point,
+    clear_caches,
+    donation_curve,
+    point_metrics,
+    situation_key,
+)
+from api.warmup import warm_up, warm_up_years
+from givecalc import create_situation
+
+
+def test_lru_evicts_least_recently_used():
+    cache = LRUCache(maxsize=2)
+    cache.get_or_compute("a", lambda: 1)
+    cache.get_or_compute("b", lambda: 2)
+    cache.get_or_compute("a", lambda: pytest.fail("a should be cached"))
+    cache.get_or_compute("c", lambda: 3)  # evicts b, the least recent
+    assert cache.get_or_compute("b", lambda: 20) == 20
+    assert cache.info() == {"hits": 1, "misses": 4, "size": 2, "maxsize": 2}
+
+
+@given(st.lists(st.integers(min_value=0, max_value=9), max_size=60))
+def test_lru_never_exceeds_maxsize_and_returns_computed_values(keys):
+    cache = LRUCache(maxsize=3)
+    for key in keys:
+        assert cache.get_or_compute(key, lambda key=key: key * 10) == key * 10
+        assert cache.info()["size"] <= 3
+    info = cache.info()
+    assert info["hits"] + info["misses"] == len(keys)
+
+
+def test_concurrent_misses_run_once():
+    cache = LRUCache(maxsize=4)
+    calls = []
+    release = threading.Event()
+
+    def slow():
+        calls.append(1)
+        release.wait(5)
+        return "value"
+
+    results = []
+    threads = [
+        threading.Thread(
+            target=lambda: results.append(cache.get_or_compute("k", slow))
+        )
+        for _ in range(4)
+    ]
+    for thread in threads:
+        thread.start()
+    time.sleep(0.2)
+    release.set()
+    for thread in threads:
+        thread.join(5)
+    assert results == ["value"] * 4
+    assert len(calls) == 1
+
+
+def test_failed_run_is_not_cached_and_reaches_every_waiter():
+    cache = LRUCache(maxsize=4)
+    started = threading.Event()
+    release = threading.Event()
+
+    def failing():
+        started.set()
+        release.wait(5)
+        raise ValueError("boom")
+
+    errors = []
+
+    def call():
+        try:
+            cache.get_or_compute("k", failing)
+        except ValueError as error:
+            errors.append(str(error))
+
+    owner = threading.Thread(target=call)
+    owner.start()
+    started.wait(5)
+    waiter = threading.Thread(target=call)
+    waiter.start()
+    time.sleep(0.2)
+    release.set()
+    owner.join(5)
+    waiter.join(5)
+    assert errors == ["boom", "boom"]
+    assert cache.info()["size"] == 0
+    assert cache.get_or_compute("k", lambda: "ok") == "ok"
+
+
+INPUT_STRATEGIES = {
+    "wages_and_salaries": st.sampled_from([0, 50_000, 50_001, 120_000]),
+    "tips": st.sampled_from([0, 5_000]),
+    "dividends": st.sampled_from([0, 4_000]),
+    "qualified_dividends": st.sampled_from([0, 3_000]),
+    "short_term_capital_gains": st.sampled_from([0, 2_000]),
+    "long_term_capital_gains": st.sampled_from([0, 9_000]),
+    "interest_income": st.sampled_from([0, 1_000]),
+    "self_employment_income": st.sampled_from([0, 30_000]),
+    "is_married": st.booleans(),
+    "state_code": st.sampled_from(["CA", "NY", "TX"]),
+    "num_children": st.integers(min_value=0, max_value=2),
+    "mortgage_interest": st.sampled_from([0, 12_000]),
+    "real_estate_taxes": st.sampled_from([0, 7_000]),
+    "in_nyc": st.booleans(),
+    "year": st.sampled_from([2025, 2026, 2027]),
+}
+inputs = st.fixed_dictionaries(INPUT_STRATEGIES)
+FIELDS = sorted(INPUT_STRATEGIES)
+
+
+@settings(max_examples=300, derandomize=True)
+@given(inputs, inputs)
+def test_key_is_equal_only_for_equal_situations(a, b):
+    situation_a = create_situation(**a)
+    situation_b = create_situation(**b)
+    same_key = situation_key(situation_a) == situation_key(situation_b)
+    assert same_key == (situation_a == situation_b)
+
+
+@settings(max_examples=100, derandomize=True)
+@given(inputs, st.sampled_from(FIELDS))
+def test_changing_any_input_that_reaches_the_model_changes_the_key(a, field):
+    b = dict(a)
+    if isinstance(a[field], bool):
+        b[field] = not a[field]
+    elif field == "state_code":
+        b[field] = "WA" if a[field] != "WA" else "OR"
+    else:
+        b[field] = a[field] + 1
+    situation_a = create_situation(**a)
+    situation_b = create_situation(**b)
+    if situation_a != situation_b:
+        assert situation_key(situation_a) != situation_key(situation_b)
+
+
+@settings(
+    max_examples=5,
+    deadline=None,
+    derandomize=True,
+    suppress_health_check=[HealthCheck.too_slow],
+)
+@given(
+    inputs,
+    st.sampled_from(FIELDS),
+    st.sampled_from([0, 1_000, 7_500]),
+)
+def test_cached_point_equals_a_fresh_simulation(a, field, donation):
+    """Run a neighbouring household first, then check the cache returns
+    this household's own result, not the neighbour's."""
+    clear_caches()
+    neighbour = dict(a)
+    if isinstance(a[field], bool):
+        neighbour[field] = not a[field]
+    elif field == "state_code":
+        neighbour[field] = "WA"
+    else:
+        neighbour[field] = a[field] + 1_000
+    point_metrics("us", create_situation(**neighbour), donation)
+
+    situation = create_situation(**a)
+    cached = point_metrics("us", situation, donation)
+    again = point_metrics("us", situation, donation)
+    assert again is cached
+    assert cached == _run_point("us", situation, donation)
+
+
+def test_curve_cache_returns_independent_copies():
+    clear_caches()
+    situation = create_situation(wages_and_salaries=60_000, year=2026)
+    first = donation_curve("us", situation)
+    first["scratch"] = 1.0
+    second = donation_curve("us", situation)
+    assert "scratch" not in second.columns
+    assert simulations.CURVE_CACHE.info()["hits"] == 1
+
+
+def test_warm_up_covers_offered_years_and_leaves_caches_empty(monkeypatch):
+    from datetime import date
+
+    from api import warmup
+
+    assert warm_up_years(date(2026, 10, 16)) == [2025, 2026, 2027, 2028]
+
+    runs = []
+    monkeypatch.setattr(
+        warmup,
+        "point_metrics",
+        lambda country, situation, donation: runs.append(
+            (country, "point", situation["axes"][0][0]["period"])
+        ),
+    )
+    monkeypatch.setattr(
+        warmup,
+        "donation_curve",
+        lambda country, situation: runs.append(
+            (country, "curve", situation["axes"][0][0]["period"])
+        ),
+    )
+    simulations.POINT_CACHE.get_or_compute("leftover", lambda: 1)
+    warm_up(date(2026, 10, 16))
+    assert sorted(runs) == sorted(
+        [("us", "point", year) for year in [2025, 2026, 2027, 2028]]
+        + [("us", "curve", 2026), ("uk", "point", 2026), ("uk", "curve", 2026)]
+    )
+    assert simulations.POINT_CACHE.info()["size"] == 0

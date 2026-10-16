@@ -9,11 +9,14 @@ import {
   calculateTargetDonation,
   getUKRegions,
   calculateUKDonation,
+  calculateSavings,
+  calculateUKSavings,
   STATES,
 } from "../lib/api";
 import { getTaxProgramsData } from "../lib/taxPrograms";
 import type {
   CalculateRequest,
+  SavingsRequest,
   TargetDonationRequest,
   UKCalculateRequest,
 } from "../lib/types";
@@ -61,5 +64,17 @@ export function useCalculateTargetDonation() {
 export function useCalculateUKDonation() {
   return useMutation({
     mutationFn: (request: UKCalculateRequest) => calculateUKDonation(request),
+  });
+}
+
+export function useCalculateSavings() {
+  return useMutation({
+    mutationFn: (request: SavingsRequest) => calculateSavings(request),
+  });
+}
+
+export function useCalculateUKSavings() {
+  return useMutation({
+    mutationFn: (request: UKCalculateRequest) => calculateUKSavings(request),
   });
 }

@@ -10,18 +10,14 @@ Invariants:
   every grid point, since both evaluate the same household.
 """
 
-import os
-
 import pytest
 from fastapi.testclient import TestClient
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-os.environ.setdefault("USE_MODAL", "false")
-
-from api.main import app  # noqa: E402
-from givecalc import create_situation  # noqa: E402
-from givecalc.calculations.tax import calculate_donation_metrics  # noqa: E402
+from api.main import app
+from givecalc import create_situation
+from givecalc.calculations.tax import calculate_donation_metrics
 
 client = TestClient(app)
 
