@@ -28,6 +28,10 @@ def calculate_target_donation(
         np.asarray(baseline_metrics["baseline_income_tax"]).ravel()[0]
     )
 
+    # With no net income there is nothing to reduce, in dollars or percent.
+    if baseline_net_income <= 0:
+        return None
+
     # Convert percentage to amount if needed
     if is_percentage:
         target_amount = (target_reduction / 100) * baseline_net_income

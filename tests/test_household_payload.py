@@ -276,6 +276,21 @@ def test_target_reduction_is_reached_or_refused():
     assert refused.status_code == 400, refused.text
 
 
+def test_target_share_of_no_income_is_refused():
+    """A percentage of zero net income was a division by zero (500)."""
+    response = client.post(
+        "/api/target-donation",
+        json={
+            "income": {"wages_and_salaries": 0},
+            "state_code": "TX",
+            "year": 2026,
+            "target_reduction": 10,
+            "is_percentage": True,
+        },
+    )
+    assert response.status_code == 400, response.text
+
+
 def test_donor_is_the_first_person():
     request = BY_NAME[
         "married itemizers in Texas with a mortgage, $10,000 gift"
@@ -450,6 +465,14 @@ def test_one_tax_return_one_filer_or_a_couple():
     )
     claimed = with_adult(couple, "student", 20, dependent=True)
     assert household_errors(claimed, 2026) == []
+    dependent_donor = copy.deepcopy(SINGLE["household"])
+    dependent_donor["people"]["adult-1"]["is_tax_unit_dependent"] = {
+        "2026": True
+    }
+    assert any(
+        "the donor, must not be a dependent" in e
+        for e in household_errors(dependent_donor, 2026)
+    )
 
 
 JSON = st.recursive(

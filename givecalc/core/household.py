@@ -148,14 +148,20 @@ def _members(record, people: dict):
 def _filer_errors(household: dict) -> list:
     """GiveCalc models one tax unit: one filer, or a married couple.
 
-    Runs only on a household with no other errors, so every record and
-    group has the shape the checks above require.
+    The donor, the first person, must be a filer. Runs only on a household
+    with no other errors, so every record and group has the shape the checks
+    above require.
     """
     filers = sorted(
         person_id
         for person_id, record in household["people"].items()
         if True not in record.get("is_tax_unit_dependent", {}).values()
     )
+    if donor_id(household) not in filers:
+        return [
+            "the first person, the donor, must not be a dependent "
+            "(is_tax_unit_dependent true)"
+        ]
     if len(filers) > 2:
         return [
             "household has more than two people who are not dependents; "
@@ -167,7 +173,8 @@ def _filer_errors(household: dict) -> list:
     ):
         return [
             "two people who are not dependents must be a married couple "
-            "in one marital unit"
+            "in one marital unit; mark children and other dependents with "
+            "is_tax_unit_dependent"
         ]
     return []
 
