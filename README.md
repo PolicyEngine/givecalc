@@ -107,11 +107,22 @@ unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy modal_app.py
 `/api/calculate` and `/api/target-donation` take the household as
 `household`: the PolicyEngine US situation that
 [policyengine-household-wizard](https://github.com/PolicyEngine/policyengine-household-wizard)'s
-`toV1HouseholdSituation` builds, with every value keyed by `year`. The wizard
-maps each answer to a PolicyEngine US input variable, and its property tests
-check that mapping against the model's variable graph. The API adds only the
-gift, as `charitable_cash_donations` on the first person, so the household
-must not set that variable.
+`toV1HouseholdSituation` builds, with every value keyed by `year` and the
+donor first. The wizard maps each answer to a PolicyEngine US input variable,
+or to one of a few reviewed computed ones (wages, self-employment income and
+long-term capital gains, which the model's Simulation moves onto inputs, and
+reported SSI), and its property tests check that mapping against the model's
+variable graph. The API adds only the gift, as `charitable_cash_donations` on
+the first person, so the household must not set that variable.
+
+The API checks the household's shape before simulating: input variables (and
+those reviewed computed ones) on their own entities, values of each
+variable's type for `year` only, one household, family, tax unit and SPM unit
+holding everyone, and at most two people who are not dependents, two only as
+a married couple. The curve runs from no gift to the household's market
+income plus benefits, or to the gift if that is larger. `baseline_net_tax`
+is taxes minus benefits, so benefits the household enters (such as Social
+Security) count against it.
 
 ```json
 {

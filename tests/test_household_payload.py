@@ -1,19 +1,26 @@
 """The API's wizard household path.
 
-The frontend sends households built by policyengine-household-wizard
-(``frontend/src/lib/__fixtures__/forms.ts``; ``bun run fixtures`` writes
-their requests to ``tests/fixtures/wizard_households.json``).
+``tests/fixtures/wizard_households.json`` holds requests built by
+policyengine-household-wizard. The frontend PR (#88) adds their source
+(``frontend/src/lib/__fixtures__/forms.ts``) and ``bun run fixtures``, which
+rewrites the file.
 
 Invariants:
 - Differential: a household both request shapes describe gets the same
-  taxes from each, with and without the gift.
+  taxes from each, at the endpoint, with and without the gift.
 - Accounting and bounds, for every fixture: net income after the gift is
   baseline net income minus the gift plus the savings, and the savings are
   between zero and the gift.
+- The axis varies the donor: the curve at the gift equals the point run.
+- Person order does not change the result, given the donor.
+- Target donation: the reduction reported is the one the gift reaches, and
+  an unreachable target is a 400, not a clamped answer.
 - The payload reaches the model: a mortgage counts, tips count for the tip
   deduction only with a listed occupation, and a county in New York City
   brings in the city's income tax.
-- Shape checks reject what the API should not run, without simulating.
+- ``household_errors`` returns a list for any JSON and never raises; shape,
+  type, group and filer checks reject what the API should not run, without
+  simulating.
 """
 
 import copy
@@ -23,6 +30,8 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 os.environ.setdefault("USE_MODAL", "false")
 
@@ -33,6 +42,7 @@ from givecalc.core.household import (  # noqa: E402
     DONATION_VARIABLE,
     MAX_PEOPLE,
     household_errors,
+    household_gross_income,
     situation_from_household,
 )
 from givecalc.core.simulation import create_donation_simulation  # noqa: E402
@@ -79,6 +89,12 @@ def legacy_metrics(legacy, donation):
     return calculate_donation_metrics(situation, donation)
 
 
+def legacy_body(fixture):
+    legacy = dict(fixture["legacy"])
+    legacy["donation_amount"] = fixture["request"]["donation_amount"]
+    return legacy
+
+
 def household_value(request, variable, donation=0, period=None):
     situation = situation_from_household(
         request["household"], request["year"], request["donation_amount"]
@@ -99,6 +115,25 @@ def test_both_request_shapes_give_the_same_taxes(fixture):
             assert float(new[key][0]) == pytest.approx(
                 float(old[key][0]), abs=TOLERANCE
             ), (fixture["name"], donation, key)
+
+
+@pytest.mark.parametrize(
+    "fixture", LEGACY, ids=[fixture["name"] for fixture in LEGACY]
+)
+def test_both_request_shapes_agree_at_the_endpoint(fixture):
+    new = client.post("/api/calculate", json=fixture["request"])
+    old = client.post("/api/calculate", json=legacy_body(fixture))
+    assert new.status_code == old.status_code == 200, (new.text, old.text)
+    for key in (
+        "baseline_net_tax",
+        "net_tax_at_donation",
+        "tax_savings",
+        "baseline_net_income",
+        "net_income_after_donation",
+    ):
+        assert new.json()[key] == pytest.approx(
+            old.json()[key], abs=TOLERANCE
+        ), key
 
 
 @pytest.mark.parametrize(
@@ -159,12 +194,86 @@ def test_capital_loss_reduces_income():
     assert household_value(request, "adjusted_gross_income") == 77_000
 
 
-def test_curve_runs_to_market_income_or_the_gift():
+def test_curve_runs_to_gross_income_or_the_gift():
     request = BY_NAME["single New Yorker, $150,000, 10% pledge"]["request"]
+    gross = household_gross_income(request["household"], 2026)
+    assert gross >= 150_000
     axis = situation_from_household(request["household"], 2026, 0)["axes"]
-    assert axis[0][0]["max"] == pytest.approx(150_000)
+    assert axis[0][0]["max"] == pytest.approx(gross)
     bigger = situation_from_household(request["household"], 2026, 400_000)
     assert bigger["axes"][0][0]["max"] == 400_000
+
+
+def test_curve_reaches_benefit_income():
+    """Social Security is not market income but can fund a gift."""
+    retiree = copy.deepcopy(SINGLE["household"])
+    person = retiree["people"]["adult-1"]
+    person["age"] = {"2026": 70}
+    del person["employment_income"]
+    person["social_security_retirement"] = {"2026": 60_000}
+    assert household_gross_income(retiree, 2026) >= 60_000
+    response = client.post(
+        "/api/target-donation",
+        json={"household": retiree, "year": 2026, "target_reduction": 5_000},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["required_donation"] >= 5_000 - TOLERANCE
+    assert body["actual_reduction"] == pytest.approx(5_000, abs=50)
+
+
+def test_curve_at_the_gift_equals_the_point_run():
+    """A gift above income ends the axis, so the last point is the gift."""
+    request = copy.deepcopy(
+        BY_NAME["married itemizers in Texas with a mortgage, $10,000 gift"][
+            "request"
+        ]
+    )
+    request["donation_amount"] = 300_000
+    body = client.post("/api/calculate", json=request).json()
+    assert body["curve"][-1]["donation"] == pytest.approx(300_000)
+    assert body["curve"][-1]["net_tax"] == pytest.approx(
+        body["net_tax_at_donation"], abs=TOLERANCE
+    )
+
+
+def test_person_order_after_the_donor_does_not_matter():
+    fixture = BY_NAME[
+        "married Californians with two children and investment income"
+    ]
+    request = fixture["request"]
+    people = request["household"]["people"]
+    donor, *others = list(people)
+    reordered = copy.deepcopy(request)
+    reordered["household"]["people"] = {
+        person: people[person] for person in [donor, *reversed(others)]
+    }
+    new = client.post("/api/calculate", json=reordered).json()
+    old = client.post("/api/calculate", json=request).json()
+    for key in ("baseline_net_tax", "tax_savings"):
+        assert new[key] == pytest.approx(old[key], abs=TOLERANCE)
+
+
+def test_target_reduction_is_reached_or_refused():
+    single = {"household": SINGLE["household"], "year": 2026}
+    reached = client.post(
+        "/api/target-donation", json={**single, "target_reduction": 8_000}
+    )
+    assert reached.status_code == 200, reached.text
+    body = reached.json()
+    point = client.post(
+        "/api/calculate",
+        json={**single, "donation_amount": body["required_donation"]},
+    ).json()
+    reduction = (
+        point["baseline_net_income"] - point["net_income_after_donation"]
+    )
+    assert reduction == pytest.approx(body["actual_reduction"], abs=1)
+    assert reduction == pytest.approx(8_000, abs=50)
+    refused = client.post(
+        "/api/target-donation", json={**single, "target_reduction": 10**7}
+    )
+    assert refused.status_code == 400, refused.text
 
 
 def test_donor_is_the_first_person():
@@ -230,7 +339,7 @@ def mutated(change):
             lambda h: h["people"]["adult-1"].update(
                 {"employment_income": {"2026": None}}
             ),
-            "number, boolean or string",
+            "must be a number",
         ),
         (
             lambda h: h["people"]["adult-1"].update(
@@ -247,6 +356,58 @@ def mutated(change):
             "must hold every person",
         ),
         (lambda h: h.pop("families"), "families is required"),
+        (
+            lambda h: h["people"]["adult-1"].update(
+                {"employment_income": {"2026": "1e12"}}
+            ),
+            "must be a number",
+        ),
+        (
+            lambda h: h["people"]["adult-1"].update(
+                {"employment_income": {"2026": 10**400}}
+            ),
+            "out of range",
+        ),
+        (
+            lambda h: h["people"]["adult-1"].update(
+                {"is_disabled": {"2026": 1}}
+            ),
+            "must be true or false",
+        ),
+        (
+            lambda h: h["households"]["household"].update(
+                {"state_name": {"2026": "XX"}}
+            ),
+            "enum's names",
+        ),
+        (
+            lambda h: h["households"]["household"].update(
+                {"state_name": {"2026": True}}
+            ),
+            "enum's names",
+        ),
+        (
+            lambda h: h["households"]["household"].update(
+                {"household_tax": {"2026": 0}}
+            ),
+            "computed by policyengine-us",
+        ),
+        (
+            lambda h: h["families"]["family"].update(
+                {"members": [["adult-1"]]}
+            ),
+            "members must list people",
+        ),
+        (
+            lambda h: h["marital_units"].update({"m": {"members": []}}),
+            "one or two people",
+        ),
+        (
+            lambda h: h["marital_units"].update(
+                {f"m{n}": {"members": ["adult-1"]} for n in range(3)}
+            ),
+            "more groups than people",
+        ),
         (lambda h: h.update({"axes": []}), "not a PolicyEngine US entity"),
         (
             lambda h: h["people"].update(
@@ -259,6 +420,84 @@ def mutated(change):
 def test_household_errors(change, message):
     errors = household_errors(mutated(change), 2026)
     assert any(message in error for error in errors), errors
+
+
+def with_adult(household, person_id, age, dependent=False, married=False):
+    household = copy.deepcopy(household)
+    household["people"][person_id] = {
+        "age": {"2026": age},
+        "is_tax_unit_dependent": {"2026": dependent},
+        "employment_income": {"2026": 80_000},
+    }
+    for collection in ("families", "tax_units", "spm_units", "households"):
+        group = next(iter(household[collection].values()))
+        group["members"].append(person_id)
+    if married:
+        household["marital_units"] = {
+            "marital_unit": {"members": ["adult-1", person_id]}
+        }
+    return household
+
+
+def test_one_tax_return_one_filer_or_a_couple():
+    roommate = with_adult(SINGLE["household"], "roommate", 30)
+    assert any("married couple" in e for e in household_errors(roommate, 2026))
+    couple = with_adult(SINGLE["household"], "spouse", 30, married=True)
+    assert household_errors(couple, 2026) == []
+    adult_child = with_adult(couple, "adult-child", 22)
+    assert any(
+        "more than two" in e for e in household_errors(adult_child, 2026)
+    )
+    claimed = with_adult(couple, "student", 20, dependent=True)
+    assert household_errors(claimed, 2026) == []
+
+
+JSON = st.recursive(
+    st.none()
+    | st.booleans()
+    | st.integers(min_value=-(10**500), max_value=10**500)
+    | st.floats()
+    | st.text(max_size=8),
+    lambda children: st.lists(children, max_size=4)
+    | st.dictionaries(st.text(max_size=8), children, max_size=4),
+    max_leaves=30,
+)
+
+
+@settings(
+    max_examples=300,
+    derandomize=True,
+    suppress_health_check=[HealthCheck.too_slow],
+)
+@given(JSON)
+def test_household_errors_never_raises_on_any_json(value):
+    errors = household_errors(value, 2026)
+    assert isinstance(errors, list)
+    assert all(isinstance(error, str) for error in errors)
+
+
+LEAVES = st.none() | st.booleans() | st.integers() | st.text(max_size=6)
+
+
+@settings(
+    max_examples=300,
+    derandomize=True,
+    suppress_health_check=[HealthCheck.too_slow],
+)
+@given(st.data())
+def test_household_errors_never_raises_on_a_damaged_fixture(data):
+    """Swap one value deep inside a real household for arbitrary JSON."""
+    household = copy.deepcopy(
+        data.draw(st.sampled_from(FIXTURES))["request"]["household"]
+    )
+    node = household
+    while isinstance(node, dict) and node:
+        key = data.draw(st.sampled_from(sorted(node)))
+        if not isinstance(node[key], dict) or data.draw(st.booleans()):
+            node[key] = data.draw(JSON | LEAVES)
+            break
+        node = node[key]
+    assert isinstance(household_errors(household, 2026), list)
 
 
 def test_fixtures_have_no_errors():
@@ -279,8 +518,14 @@ def test_fixtures_have_no_errors():
             "year": 2026,
         },
         {"donation_amount": 1, "year": 2026},
+        {
+            "household": SINGLE["household"],
+            "is_married": False,
+            "donation_amount": 1,
+            "year": 2026,
+        },
     ],
-    ids=["wrong year", "both shapes", "neither shape"],
+    ids=["wrong year", "both shapes", "neither shape", "legacy field too"],
 )
 def test_endpoint_rejects_bad_requests(body):
     response = client.post("/api/calculate", json=body)

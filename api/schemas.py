@@ -70,14 +70,27 @@ class DeductionsInput(BaseModel):
     )
 
 
+# Fields a household replaces.
+LEGACY_FIELDS = frozenset(
+    {
+        "income",
+        "state_code",
+        "is_married",
+        "num_children",
+        "in_nyc",
+        "deductions",
+    }
+)
+
+
 class USHouseholdInputs(BaseModel):
     """A US household, as the wizard's V1 payload or as legacy fields.
 
     ``household`` is the output of policyengine-household-wizard's
-    ``toV1HouseholdSituation``, keyed by ``year``. When it is sent, the
-    legacy fields (``income``, ``state_code``, ``is_married``,
-    ``num_children``, ``in_nyc``, ``deductions``) are not allowed or are
-    ignored; they remain for clients that predate the wizard.
+    ``toV1HouseholdSituation``, keyed by ``year``, with the donor first.
+    When it is sent, the legacy fields (``income``, ``state_code``,
+    ``is_married``, ``num_children``, ``in_nyc``, ``deductions``) are not
+    allowed; they remain for clients that predate the wizard.
     """
 
     household: Optional[dict[str, Any]] = Field(
@@ -123,9 +136,11 @@ class USHouseholdInputs(BaseModel):
             if self.income is None or self.state_code is None:
                 raise ValueError("Send household, or income and state_code.")
             return self
-        if self.income is not None or self.state_code is not None:
+        legacy = sorted(LEGACY_FIELDS & self.model_fields_set)
+        if legacy:
             raise ValueError(
-                "Send household or income and state_code, not both."
+                "household replaces the legacy fields; do not send "
+                + ", ".join(legacy)
             )
         errors = household_errors(self.household, self.year)
         if errors:

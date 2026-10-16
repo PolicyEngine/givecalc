@@ -1,3 +1,4 @@
+import numpy as np
 from scipy.interpolate import interp1d
 
 from givecalc.calculations.tax import calculate_donation_metrics
@@ -16,10 +17,16 @@ def calculate_target_donation(
         is_percentage (bool): Whether target_reduction is a percentage
 
     Returns:
-        tuple: (required_donation, actual_reduction, actual_percentage)
+        tuple: (required_donation, net_income_after, actual_reduction,
+        actual_percentage), with the reduction measured at the required
+        donation; or None when the curve never reduces net income that much.
     """
-    baseline_net_income = baseline_metrics["baseline_net_income"]
-    baseline_tax = baseline_metrics["baseline_income_tax"]
+    baseline_net_income = float(
+        np.asarray(baseline_metrics["baseline_net_income"]).ravel()[0]
+    )
+    baseline_tax = float(
+        np.asarray(baseline_metrics["baseline_income_tax"]).ravel()[0]
+    )
 
     # Convert percentage to amount if needed
     if is_percentage:
@@ -40,6 +47,11 @@ def calculate_target_donation(
         df["net_income_reduction"] / baseline_net_income
     ) * 100
 
+    # A target past the end of the curve cannot be met. Interpolating would
+    # clamp to the largest gift on the curve and report the target anyway.
+    if target_amount > df["net_income_reduction"].max() + 1:
+        return None
+
     # Create interpolation functions
     f_donation = interp1d(
         df["net_income_reduction"],
@@ -49,17 +61,6 @@ def calculate_target_donation(
         fill_value=(
             df["charitable_cash_donations"].min(),
             df["charitable_cash_donations"].max(),
-        ),
-    )
-
-    f_percentage = interp1d(
-        df["net_income_reduction"],
-        df["reduction_percentage"],
-        kind="linear",
-        bounds_error=False,
-        fill_value=(
-            df["reduction_percentage"].min(),
-            df["reduction_percentage"].max(),
         ),
     )
 
@@ -76,12 +77,10 @@ def calculate_target_donation(
         required_donation_metrics["baseline_net_income"][0] - required_donation
     )
 
-    actual_reduction = target_amount  # Since we're interpolating, we can achieve the exact target
-    actual_percentage = float(
-        f_percentage(target_amount).item()
-        if hasattr(f_percentage(target_amount), "item")
-        else f_percentage(target_amount)
+    actual_reduction = baseline_net_income - float(
+        required_donation_net_income
     )
+    actual_percentage = actual_reduction / baseline_net_income * 100
 
     return (
         required_donation,
