@@ -5,10 +5,12 @@ they start with PolicyEngine imported and warmed instead of paying for it on
 a user's request.
 
 Forked workers share the server's memory until they write to it, and a
-garbage collection writes to every object it scans. So the server collects
-nothing while it loads, then freezes what it loaded: collections in the
-workers skip those objects, and their pages stay shared (see the ``gc``
-module's documentation of ``gc.freeze``).
+garbage collection writes to every object it scans. Following the ``gc``
+module's advice for fork without exec, the server loads with collection
+off, collects the warm-up's garbage once, and freezes the rest, so the
+workers' collections skip it (``api.simulations._start_worker`` turns
+collection back on). On Modal this cut the container from 11.8 to about
+7.4 GiB.
 """
 
 import gc
