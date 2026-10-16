@@ -1,0 +1,704 @@
+[
+  {
+    "name": "single New Yorker, $150,000, 10% pledge",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 150000
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "marital_units": {},
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1"
+            ],
+            "state_name": {
+              "2026": "NY"
+            }
+          }
+        }
+      },
+      "donation_amount": 15000,
+      "year": 2026
+    },
+    "legacy": {
+      "income": {
+        "wages_and_salaries": 150000
+      },
+      "state_code": "NY",
+      "year": 2026
+    }
+  },
+  {
+    "name": "single New York City resident, $150,000, 10% pledge",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 150000
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "marital_units": {},
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1"
+            ],
+            "state_name": {
+              "2026": "NY"
+            },
+            "county": {
+              "2026": "NEW_YORK_COUNTY_NY"
+            }
+          }
+        }
+      },
+      "donation_amount": 15000,
+      "year": 2026
+    },
+    "legacy": {
+      "income": {
+        "wages_and_salaries": 150000
+      },
+      "state_code": "NY",
+      "in_nyc": true,
+      "year": 2026
+    }
+  },
+  {
+    "name": "married itemizers in Texas with a mortgage, $10,000 gift",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 200000
+            },
+            "home_mortgage_interest": {
+              "2026": 30000
+            },
+            "real_estate_taxes": {
+              "2026": 12000
+            }
+          },
+          "adult-2": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "marital_units": {
+          "marital_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ],
+            "state_name": {
+              "2026": "TX"
+            }
+          }
+        }
+      },
+      "donation_amount": 10000,
+      "year": 2026
+    },
+    "legacy": {
+      "income": {
+        "wages_and_salaries": 200000
+      },
+      "state_code": "TX",
+      "is_married": true,
+      "deductions": {
+        "mortgage_interest": 30000,
+        "real_estate_taxes": 12000
+      },
+      "year": 2026
+    }
+  },
+  {
+    "name": "married Californians with two children and investment income",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 120000
+            },
+            "self_employment_income": {
+              "2026": 20000
+            },
+            "qualified_dividend_income": {
+              "2026": 3000
+            },
+            "non_qualified_dividend_income": {
+              "2026": 1000
+            },
+            "short_term_capital_gains": {
+              "2026": 5000
+            },
+            "long_term_capital_gains": {
+              "2026": 10000
+            },
+            "taxable_interest_income": {
+              "2026": 2000
+            }
+          },
+          "adult-2": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            }
+          },
+          "dependent-1": {
+            "age": {
+              "2026": 10
+            },
+            "is_tax_unit_dependent": {
+              "2026": true
+            }
+          },
+          "dependent-2": {
+            "age": {
+              "2026": 10
+            },
+            "is_tax_unit_dependent": {
+              "2026": true
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1",
+              "dependent-2"
+            ]
+          }
+        },
+        "marital_units": {
+          "marital_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1",
+              "dependent-2"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1",
+              "dependent-2"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1",
+              "dependent-2"
+            ],
+            "state_name": {
+              "2026": "CA"
+            }
+          }
+        }
+      },
+      "donation_amount": 8050,
+      "year": 2026
+    },
+    "legacy": {
+      "income": {
+        "wages_and_salaries": 120000,
+        "self_employment_income": 20000,
+        "interest_income": 2000,
+        "dividends": 4000,
+        "qualified_dividends": 3000,
+        "short_term_capital_gains": 5000,
+        "long_term_capital_gains": 10000
+      },
+      "state_code": "CA",
+      "is_married": true,
+      "num_children": 2,
+      "year": 2026
+    }
+  },
+  {
+    "name": "server in Nevada with tips outside a listed occupation",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 42000
+            },
+            "tip_income": {
+              "2026": 12000
+            },
+            "treasury_tipped_occupation_code": {
+              "2026": 0
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "marital_units": {},
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1"
+            ],
+            "state_name": {
+              "2026": "NV"
+            }
+          }
+        }
+      },
+      "donation_amount": 2000,
+      "year": 2026
+    },
+    "legacy": {
+      "income": {
+        "wages_and_salaries": 30000,
+        "tips": 12000
+      },
+      "state_code": "NV",
+      "year": 2026
+    }
+  },
+  {
+    "name": "server in Nevada with tips as wait staff",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 30
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 42000
+            },
+            "tip_income": {
+              "2026": 12000
+            },
+            "treasury_tipped_occupation_code": {
+              "2026": 102
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "marital_units": {},
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1"
+            ],
+            "state_name": {
+              "2026": "NV"
+            }
+          }
+        }
+      },
+      "donation_amount": 2000,
+      "year": 2026
+    }
+  },
+  {
+    "name": "single filer with a short-term capital loss",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 45
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 80000
+            },
+            "short_term_capital_gains": {
+              "2026": -3000
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "marital_units": {},
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1"
+            ],
+            "state_name": {
+              "2026": "IL"
+            }
+          }
+        }
+      },
+      "donation_amount": 5000,
+      "year": 2026
+    }
+  },
+  {
+    "name": "married Marylanders in Montgomery County, both earning",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 52
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 90000
+            }
+          },
+          "adult-2": {
+            "age": {
+              "2026": 49
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 60000
+            }
+          },
+          "dependent-1": {
+            "age": {
+              "2026": 15
+            },
+            "is_tax_unit_dependent": {
+              "2026": true
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1"
+            ]
+          }
+        },
+        "marital_units": {
+          "marital_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1",
+              "adult-2",
+              "dependent-1"
+            ],
+            "state_name": {
+              "2026": "MD"
+            },
+            "county": {
+              "2026": "MONTGOMERY_COUNTY_MD"
+            }
+          }
+        }
+      },
+      "donation_amount": 15000,
+      "year": 2026
+    }
+  },
+  {
+    "name": "retired couple over 65 in Florida",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 70
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "long_term_capital_gains": {
+              "2026": 60000
+            },
+            "taxable_interest_income": {
+              "2026": 40000
+            }
+          },
+          "adult-2": {
+            "age": {
+              "2026": 67
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "qualified_dividend_income": {
+              "2026": 20000
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "marital_units": {
+          "marital_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ]
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1",
+              "adult-2"
+            ],
+            "state_name": {
+              "2026": "FL"
+            }
+          }
+        }
+      },
+      "donation_amount": 15000,
+      "year": 2026
+    }
+  }
+]

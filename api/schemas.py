@@ -1,9 +1,11 @@
 """Pydantic schemas for GiveCalc API request/response validation."""
 
 from datetime import date
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field, model_validator
+
+from givecalc.core.household import household_errors
 
 # Gifts count in the year they are made, so the useful years run to next
 # year. The bound is checked against today's date on each request, so a
@@ -68,32 +70,74 @@ class DeductionsInput(BaseModel):
     )
 
 
-class CalculateRequest(BaseModel):
-    """Request body for donation calculation."""
+class USHouseholdInputs(BaseModel):
+    """A US household, as the wizard's V1 payload or as legacy fields.
 
-    income: IncomeInput = Field(..., description="Income sources")
-    state_code: str = Field(
-        ..., min_length=2, max_length=2, description="Two-letter state code"
+    ``household`` is the output of policyengine-household-wizard's
+    ``toV1HouseholdSituation``, keyed by ``year``. When it is sent, the
+    legacy fields (``income``, ``state_code``, ``is_married``,
+    ``num_children``, ``in_nyc``, ``deductions``) are not allowed or are
+    ignored; they remain for clients that predate the wizard.
+    """
+
+    household: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "PolicyEngine US V1 household situation from "
+            "policyengine-household-wizard. The first person is the donor."
+        ),
+    )
+    income: Optional[IncomeInput] = Field(
+        default=None, description="Income sources (legacy)"
+    )
+    state_code: Optional[str] = Field(
+        default=None,
+        min_length=2,
+        max_length=2,
+        description="Two-letter state code (legacy)",
     )
     is_married: bool = Field(
-        default=False, description="Filing as married joint"
+        default=False, description="Filing as married joint (legacy)"
     )
     num_children: int = Field(
-        default=0, ge=0, le=20, description="Number of dependent children"
+        default=0,
+        ge=0,
+        le=20,
+        description="Number of dependent children (legacy)",
     )
     in_nyc: bool = Field(
-        default=False, description="Subject to NYC income tax"
-    )
-    donation_amount: float = Field(
-        ..., ge=0, description="Charitable donation amount"
+        default=False, description="Subject to NYC income tax (legacy)"
     )
     deductions: Optional[DeductionsInput] = Field(
         default_factory=DeductionsInput,
-        description="Itemized deductions",
+        description="Itemized deductions (legacy)",
     )
     year: TaxYear = Field(
         default_factory=lambda: date.today().year,
         description="Tax year for calculations",
+    )
+
+    @model_validator(mode="after")
+    def _one_household(self):
+        if self.household is None:
+            if self.income is None or self.state_code is None:
+                raise ValueError("Send household, or income and state_code.")
+            return self
+        if self.income is not None or self.state_code is not None:
+            raise ValueError(
+                "Send household or income and state_code, not both."
+            )
+        errors = household_errors(self.household, self.year)
+        if errors:
+            raise ValueError("; ".join(errors))
+        return self
+
+
+class CalculateRequest(USHouseholdInputs):
+    """Request body for donation calculation."""
+
+    donation_amount: float = Field(
+        ..., ge=0, description="Charitable donation amount"
     )
 
 
@@ -124,36 +168,15 @@ class CalculateResponse(BaseModel):
     curve: list[DonationDataPoint]
 
 
-class TargetDonationRequest(BaseModel):
+class TargetDonationRequest(USHouseholdInputs):
     """Request body for target donation calculation."""
 
-    income: IncomeInput = Field(..., description="Income sources")
-    state_code: str = Field(
-        ..., min_length=2, max_length=2, description="Two-letter state code"
-    )
-    is_married: bool = Field(
-        default=False, description="Filing as married joint"
-    )
-    num_children: int = Field(
-        default=0, ge=0, le=20, description="Number of dependent children"
-    )
-    in_nyc: bool = Field(
-        default=False, description="Subject to NYC income tax"
-    )
-    deductions: Optional[DeductionsInput] = Field(
-        default_factory=DeductionsInput,
-        description="Itemized deductions",
-    )
     target_reduction: float = Field(
         ..., gt=0, description="Target net income reduction"
     )
     is_percentage: bool = Field(
         default=False,
         description="If true, target_reduction is a percentage",
-    )
-    year: TaxYear = Field(
-        default_factory=lambda: date.today().year,
-        description="Tax year for calculations",
     )
 
 

@@ -102,6 +102,35 @@ unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy modal_app.py
 | `/api/uk/regions` | GET | List UK regions |
 | `/api/health` | GET | Health check |
 
+### US households
+
+`/api/calculate` and `/api/target-donation` take the household as
+`household`: the PolicyEngine US situation that
+[policyengine-household-wizard](https://github.com/PolicyEngine/policyengine-household-wizard)'s
+`toV1HouseholdSituation` builds, with every value keyed by `year`. The wizard
+maps each answer to a PolicyEngine US input variable, and its property tests
+check that mapping against the model's variable graph. The API adds only the
+gift, as `charitable_cash_donations` on the first person, so the household
+must not set that variable.
+
+```json
+{
+  "household": {
+    "people": {"adult-1": {"age": {"2026": 40}, "employment_income": {"2026": 150000}}},
+    "families": {"family": {"members": ["adult-1"]}},
+    "marital_units": {},
+    "tax_units": {"tax_unit": {"members": ["adult-1"]}},
+    "spm_units": {"spm_unit": {"members": ["adult-1"]}},
+    "households": {"household": {"members": ["adult-1"], "state_name": {"2026": "NY"}}}
+  },
+  "donation_amount": 15000,
+  "year": 2026
+}
+```
+
+The older fields (`income`, `state_code`, `is_married`, `num_children`,
+`in_nyc`, `deductions`) still work in place of `household`.
+
 ## License
 
 MIT

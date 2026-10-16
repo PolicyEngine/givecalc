@@ -18,6 +18,7 @@ from givecalc import (
     calculate_target_donation,
     create_situation,
 )
+from givecalc.core.household import situation_from_household
 from givecalc.uk import (
     ENGLAND_REGIONS,
     UK_CURRENT_YEAR,
@@ -29,6 +30,7 @@ from .modal_client import get_donation_effects, get_donation_metrics
 from .schemas import (
     CalculateRequest,
     CalculateResponse,
+    DeductionsInput,
     DonationDataPoint,
     StateInfo,
     StatesResponse,
@@ -199,6 +201,41 @@ async def get_tax_programs(state_code: str):
     return TaxProgramsResponse(federal=federal, state=state)
 
 
+def _us_situation(
+    request: CalculateRequest | TargetDonationRequest,
+    donation_amount: float = 0,
+) -> dict:
+    """The request's household with the donation axis.
+
+    A wizard household goes to policyengine-us as the wizard built it; the
+    legacy fields go through ``create_situation``.
+    """
+    if request.household is not None:
+        return situation_from_household(
+            request.household, request.year, donation_amount
+        )
+    deductions = request.deductions or DeductionsInput()
+    income = request.income
+    return create_situation(
+        is_married=request.is_married,
+        state_code=request.state_code,
+        in_nyc=request.in_nyc,
+        num_children=request.num_children,
+        year=request.year,
+        wages_and_salaries=income.wages_and_salaries,
+        tips=income.tips,
+        dividends=income.dividends,
+        qualified_dividends=income.qualified_dividends,
+        short_term_capital_gains=income.short_term_capital_gains,
+        long_term_capital_gains=income.long_term_capital_gains,
+        interest_income=income.interest_income,
+        self_employment_income=income.self_employment_income,
+        mortgage_interest=deductions.mortgage_interest,
+        real_estate_taxes=deductions.real_estate_taxes,
+        casualty_loss=deductions.casualty_loss,
+    )
+
+
 @app.post("/api/calculate", response_model=CalculateResponse)
 def calculate_donation(request: CalculateRequest):
     """Calculate tax impact of a charitable donation.
@@ -206,37 +243,7 @@ def calculate_donation(request: CalculateRequest):
     Returns tax savings, marginal rates, and full donation curve data.
     """
     try:
-        # Build deductions dict
-        deductions = request.deductions or {}
-        deductions_dict = {
-            "mortgage_interest": getattr(deductions, "mortgage_interest", 0),
-            "real_estate_taxes": getattr(deductions, "real_estate_taxes", 0),
-            "casualty_loss": getattr(deductions, "casualty_loss", 0),
-        }
-
-        # Build income dict
-        income = request.income
-        income_dict = {
-            "wages_and_salaries": income.wages_and_salaries,
-            "tips": income.tips,
-            "dividends": income.dividends,
-            "qualified_dividends": income.qualified_dividends,
-            "short_term_capital_gains": income.short_term_capital_gains,
-            "long_term_capital_gains": income.long_term_capital_gains,
-            "interest_income": income.interest_income,
-            "self_employment_income": income.self_employment_income,
-        }
-
-        # Create situation with axes for donation sweep
-        situation = create_situation(
-            is_married=request.is_married,
-            state_code=request.state_code,
-            in_nyc=request.in_nyc,
-            num_children=request.num_children,
-            year=request.year,
-            **income_dict,
-            **deductions_dict,
-        )
+        situation = _us_situation(request, request.donation_amount)
 
         # Calculate baseline (no donation) metrics
         baseline_metrics = get_donation_metrics(situation, 0, "us")
@@ -308,37 +315,7 @@ def calculate_donation(request: CalculateRequest):
 def calculate_target(request: TargetDonationRequest):
     """Calculate required donation to achieve a target net income reduction."""
     try:
-        # Build deductions dict
-        deductions = request.deductions or {}
-        deductions_dict = {
-            "mortgage_interest": getattr(deductions, "mortgage_interest", 0),
-            "real_estate_taxes": getattr(deductions, "real_estate_taxes", 0),
-            "casualty_loss": getattr(deductions, "casualty_loss", 0),
-        }
-
-        # Build income dict
-        income = request.income
-        income_dict = {
-            "wages_and_salaries": income.wages_and_salaries,
-            "tips": income.tips,
-            "dividends": income.dividends,
-            "qualified_dividends": income.qualified_dividends,
-            "short_term_capital_gains": income.short_term_capital_gains,
-            "long_term_capital_gains": income.long_term_capital_gains,
-            "interest_income": income.interest_income,
-            "self_employment_income": income.self_employment_income,
-        }
-
-        # Create situation
-        situation = create_situation(
-            is_married=request.is_married,
-            state_code=request.state_code,
-            in_nyc=request.in_nyc,
-            num_children=request.num_children,
-            year=request.year,
-            **income_dict,
-            **deductions_dict,
-        )
+        situation = _us_situation(request)
 
         # Calculate baseline metrics
         baseline_metrics = get_donation_metrics(situation, 0, "us")
