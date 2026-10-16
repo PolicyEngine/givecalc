@@ -45,7 +45,7 @@ function CalculatingProgress({ isUK }: { isUK: boolean }) {
         ? "Calculating your taxes with and without Gift Aid..."
         : "Calculating your federal and state taxes with and without your gift...";
     } else if (elapsed < 30) {
-      return "The calculator is starting up. The first answer takes longer.";
+      return "The first answer after a quiet spell can take about a minute.";
     } else {
       return "Almost done. Complex scenarios take a bit longer.";
     }

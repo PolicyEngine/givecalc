@@ -10,10 +10,15 @@ in a PR to move the deployed model.
 
 Simulations run in SIMULATION_WORKERS processes (api.simulations), so a
 request's simulations run at once and concurrent requests do not queue on
-one GIL. Measured on Modal, 2026-10-16: the four workers ran at 85% of a
-single process's speed each, within the 2-CPU reservation's burst; the
-container used about 7.5 GiB. Until the workers are up (about a minute
-after a cold start), simulations run in the request's thread.
+one GIL. Modal lets a container use more CPU than it requests and bills
+the higher of request and use. Measured on Modal, 2026-10-16: four
+processes each ran at 85% of one process's speed, and the container used
+about 7.5 GiB. Until the workers are up (about 1.5 minutes after a cold
+start), simulations run in the request's thread.
+
+A cold start takes about a minute, so an answer in a few seconds needs a
+warm container (``min_containers``); that costs money and is left to a
+decision.
 """
 
 import modal
@@ -58,9 +63,6 @@ app = modal.App("givecalc")
     timeout=300,
     cpu=2.0,
     memory=8192,
-    # A cold start takes over a minute, so keep an idle container for five
-    # minutes after its last request.
-    scaledown_window=300,
 )
 # Up to eight requests share the four workers. Eight headlines are 16
 # simulations, four rounds on four workers (about 10 s at the 2.3 s per
