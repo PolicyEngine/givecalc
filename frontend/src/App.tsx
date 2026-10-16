@@ -5,7 +5,7 @@
  * Powered by PolicyEngine
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Header from "./components/Header";
 import InputForm from "./components/InputForm";
@@ -15,52 +15,68 @@ import TaxInfo from "./components/TaxInfo";
 import {
   useStates,
   useCalculateDonation,
-  useCalculateTargetDonation,
   useCalculateUKDonation,
+  useBunching,
 } from "./hooks/useCalculation";
 import type {
+  CalculateRequest,
   Country,
   FormState,
   UKFormState,
   CalculateResponse,
-  TargetDonationResponse,
   UKCalculateResponse,
 } from "./lib/types";
 import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "./lib/types";
+import { pledgeAmount, pledgeBaseIncome } from "./lib/pledge";
+import {
+  applySearchParams,
+  isReadyToCalculate,
+  toSearchParams,
+} from "./lib/urlState";
 
 // Cache for calculation results
 type CacheEntry = {
   result?: CalculateResponse;
-  targetResult?: TargetDonationResponse;
   ukResult?: UKCalculateResponse;
 };
 type ResultCache = Map<string, CacheEntry>;
 
-// Generate cache key from request parameters
-function getCacheKey(formState: FormState, country: Country): string {
-  const key = {
-    country,
+/** The gift the form describes, in dollars. */
+function giftAmount(formState: FormState): number {
+  return formState.mode === "pledge"
+    ? pledgeAmount(formState.pledge_percent, formState.income)
+    : formState.donation_amount;
+}
+
+function toRequest(formState: FormState): CalculateRequest {
+  return {
     income: formState.income,
     state_code: formState.state_code,
     is_married: formState.is_married,
     num_children: formState.num_children,
     in_nyc: formState.in_nyc,
+    donation_amount: giftAmount(formState),
     deductions: formState.deductions,
     year: formState.year,
-    mode: formState.mode,
-    // Mode-specific fields
-    ...(formState.mode === "amount"
-      ? { donation_amount: formState.donation_amount }
-      : {
-          target_reduction: formState.target_reduction,
-          is_percentage: formState.is_percentage,
-        }),
   };
-  return JSON.stringify(key);
+}
+
+// Generate cache key from request parameters
+function getCacheKey(formState: FormState): string {
+  return JSON.stringify({ country: "us", ...toRequest(formState) });
 }
 
 function getUKCacheKey(formState: UKFormState): string {
   return JSON.stringify({ country: "uk", ...formState });
+}
+
+/** A shared link reproduces the result only when wages are the only income. */
+function shareable(formState: FormState): boolean {
+  return (
+    pledgeBaseIncome(formState.income) ===
+      formState.income.wages_and_salaries &&
+    formState.income.qualified_dividends === 0
+  );
 }
 
 const queryClient = new QueryClient({
@@ -79,9 +95,13 @@ function Calculator() {
   const [ukFormState, setUKFormStateInternal] =
     useState<UKFormState>(DEFAULT_UK_FORM_STATE);
   const [result, setResult] = useState<CalculateResponse | null>(null);
-  const [targetResult, setTargetResult] =
-    useState<TargetDonationResponse | null>(null);
+  const [resultRequest, setResultRequest] = useState<CalculateRequest | null>(
+    null,
+  );
   const [ukResult, setUKResult] = useState<UKCalculateResponse | null>(null);
+  // Bumped when a shared link fills the form, so InputForm opens confirmed.
+  const [prefillKey, setPrefillKey] = useState(0);
+  const [pendingPrefillCalc, setPendingPrefillCalc] = useState(false);
   const cacheRef = useRef<ResultCache>(new Map());
 
   const {
@@ -92,120 +112,101 @@ function Calculator() {
   } = useStates();
 
   const calculateMutation = useCalculateDonation();
-  const targetMutation = useCalculateTargetDonation();
   const ukCalculateMutation = useCalculateUKDonation();
+  const bunching = useBunching(
+    country === "us" ? resultRequest : null,
+    result ? result.tax_savings : null,
+  );
 
   // Check cache and update results when form state changes
   const setFormState = useCallback((newState: FormState) => {
     setFormStateInternal(newState);
-
-    // Check if we have cached results for this state
-    const cacheKey = getCacheKey(newState, "us");
-    const cached = cacheRef.current.get(cacheKey);
-
-    if (cached) {
-      // Restore cached results
-      setResult(cached.result || null);
-      setTargetResult(cached.targetResult || null);
-    } else {
-      // Clear results - need to recalculate
-      setResult(null);
-      setTargetResult(null);
-    }
+    const cached = cacheRef.current.get(getCacheKey(newState));
+    setResult(cached?.result || null);
+    setResultRequest(cached?.result ? toRequest(newState) : null);
   }, []);
 
   const setUKFormState = useCallback((newState: UKFormState) => {
     setUKFormStateInternal(newState);
-
-    // Check if we have cached results for this state
-    const cacheKey = getUKCacheKey(newState);
-    const cached = cacheRef.current.get(cacheKey);
-
-    if (cached) {
-      setUKResult(cached.ukResult || null);
-    } else {
-      setUKResult(null);
-    }
+    const cached = cacheRef.current.get(getUKCacheKey(newState));
+    setUKResult(cached?.ukResult || null);
   }, []);
 
-  const handleCalculate = async () => {
-    if (country === "uk") {
-      const cacheKey = getUKCacheKey(ukFormState);
-      const cached = cacheRef.current.get(cacheKey);
-      if (cached?.ukResult) {
-        setUKResult(cached.ukResult);
+  const handleCalculate = useCallback(
+    async (stateOverride?: FormState) => {
+      if (country === "uk") {
+        const cacheKey = getUKCacheKey(ukFormState);
+        const cached = cacheRef.current.get(cacheKey);
+        if (cached?.ukResult) {
+          setUKResult(cached.ukResult);
+          return;
+        }
+
+        setUKResult(null);
+        const response = await ukCalculateMutation.mutateAsync({
+          income: ukFormState.income,
+          region: ukFormState.region,
+          gift_aid: ukFormState.gift_aid,
+          is_married: ukFormState.is_married,
+          num_children: ukFormState.num_children,
+          year: ukFormState.year,
+        });
+        setUKResult(response);
+        cacheRef.current.set(cacheKey, { ukResult: response });
         return;
       }
 
-      setUKResult(null);
-      const response = await ukCalculateMutation.mutateAsync({
-        income: ukFormState.income,
-        region: ukFormState.region,
-        gift_aid: ukFormState.gift_aid,
-        is_married: ukFormState.is_married,
-        num_children: ukFormState.num_children,
-        year: ukFormState.year,
-      });
-      setUKResult(response);
-      cacheRef.current.set(cacheKey, { ukResult: response });
-      return;
-    }
+      const state = stateOverride ?? formState;
+      const request = toRequest(state);
+      const cacheKey = getCacheKey(state);
+      const cached = cacheRef.current.get(cacheKey);
+      if (cached?.result) {
+        setResult(cached.result);
+        setResultRequest(request);
+        return;
+      }
 
-    const cacheKey = getCacheKey(formState, "us");
-
-    // Check cache first
-    const cached = cacheRef.current.get(cacheKey);
-    if (cached) {
-      setResult(cached.result || null);
-      setTargetResult(cached.targetResult || null);
-      return;
-    }
-
-    setResult(null);
-    setTargetResult(null);
-
-    if (formState.mode === "amount") {
-      const response = await calculateMutation.mutateAsync({
-        income: formState.income,
-        state_code: formState.state_code,
-        is_married: formState.is_married,
-        num_children: formState.num_children,
-        in_nyc: formState.in_nyc,
-        donation_amount: formState.donation_amount,
-        deductions: formState.deductions,
-        year: formState.year,
-      });
+      setResult(null);
+      setResultRequest(null);
+      const response = await calculateMutation.mutateAsync(request);
       setResult(response);
-      // Cache the result
+      setResultRequest(request);
       cacheRef.current.set(cacheKey, { result: response });
-    } else {
-      const response = await targetMutation.mutateAsync({
-        income: formState.income,
-        state_code: formState.state_code,
-        is_married: formState.is_married,
-        num_children: formState.num_children,
-        in_nyc: formState.in_nyc,
-        deductions: formState.deductions,
-        target_reduction: formState.target_reduction,
-        is_percentage: formState.is_percentage,
-        year: formState.year,
-      });
-      setTargetResult(response);
-      // Cache the result
-      cacheRef.current.set(cacheKey, { targetResult: response });
+
+      if (shareable(state)) {
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}?${toSearchParams(state)}`,
+        );
+      }
+    },
+    [country, formState, ukFormState, calculateMutation, ukCalculateMutation],
+  );
+
+  // Fill the form from a shared link once, then calculate.
+  useEffect(() => {
+    const prefilled = applySearchParams(
+      DEFAULT_FORM_STATE,
+      window.location.search,
+    );
+    if (isReadyToCalculate(prefilled)) {
+      setFormStateInternal(prefilled);
+      setPrefillKey((k) => k + 1);
+      setPendingPrefillCalc(true);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (pendingPrefillCalc) {
+      setPendingPrefillCalc(false);
+      handleCalculate(formState).catch(() => undefined);
+    }
+  }, [pendingPrefillCalc, formState, handleCalculate]);
 
   const isCalculating =
-    calculateMutation.isPending ||
-    targetMutation.isPending ||
-    ukCalculateMutation.isPending;
-  const hasError =
-    calculateMutation.isError ||
-    targetMutation.isError ||
-    ukCalculateMutation.isError;
-  const error =
-    calculateMutation.error || targetMutation.error || ukCalculateMutation.error;
+    calculateMutation.isPending || ukCalculateMutation.isPending;
+  const hasError = calculateMutation.isError || ukCalculateMutation.isError;
 
   // Only show loading for US states - UK doesn't need to load regions
   if (country === "us" && statesLoading) {
@@ -255,6 +256,11 @@ function Calculator() {
       }
     : null;
 
+  const taxInfo =
+    country === "us" && formState.state_code ? (
+      <TaxInfo stateCode={formState.state_code} />
+    ) : null;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -264,144 +270,111 @@ function Calculator() {
           {/* Left Column - Input Form */}
           <div className="lg:col-span-1 space-y-6">
             {/* Country Selector - full width of input column */}
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <div
+              className="flex rounded-lg border border-gray-300 overflow-hidden"
+              role="group"
+              aria-label="Country"
+            >
               <button
                 type="button"
                 onClick={() => setCountry("us")}
-                className={`flex-1 py-2 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                aria-pressed={country === "us"}
+                className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
                   country === "us"
                     ? "bg-teal-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <span>🇺🇸</span> United States
+                United States
               </button>
               <button
                 type="button"
                 onClick={() => setCountry("uk")}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors flex items-center justify-center gap-2 ${
+                aria-pressed={country === "uk"}
+                className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors ${
                   country === "uk"
                     ? "bg-teal-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <span>🇬🇧</span> United Kingdom
+                United Kingdom
               </button>
             </div>
             {country === "us" ? (
               <>
                 <InputForm
+                  key={prefillKey}
                   formState={formState}
                   setFormState={setFormState}
                   states={states}
-                  onCalculate={handleCalculate}
+                  onCalculate={() => {
+                    handleCalculate().catch(() => undefined);
+                  }}
                   isCalculating={isCalculating}
+                  prefilled={prefillKey > 0}
                 />
-                {formState.state_code && <TaxInfo stateCode={formState.state_code} />}
+                {/* On small screens the programs follow the results. */}
+                <div className="hidden lg:block">{taxInfo}</div>
               </>
             ) : (
               <UKInputForm
                 formState={ukFormState}
                 setFormState={setUKFormState}
-                onCalculate={handleCalculate}
+                onCalculate={() => {
+                  handleCalculate().catch(() => undefined);
+                }}
                 isCalculating={isCalculating}
               />
             )}
           </div>
 
           {/* Right Column - Results */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             {hasError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-700">
-                  {error instanceof Error
-                    ? error.message
-                    : "An error occurred. Please try again."}
+                  The calculation didn&apos;t finish. The server may be busy;
+                  please try again in a moment.
                 </p>
               </div>
             )}
             <Results
               result={country === "uk" ? ukResultAsUS : result}
-              targetResult={country === "us" ? targetResult : null}
-              mode={country === "uk" ? "amount" : formState.mode}
               isCalculating={isCalculating}
               currency={country === "uk" ? "GBP" : "USD"}
+              year={country === "uk" ? ukFormState.year : formState.year}
+              pledgePercent={
+                country === "us" && formState.mode === "pledge"
+                  ? formState.pledge_percent
+                  : null
+              }
+              bunching={
+                country === "us"
+                  ? {
+                      data: bunching.data ?? null,
+                      isLoading: bunching.isLoading && bunching.fetchStatus !== "idle",
+                      isError: bunching.isError,
+                    }
+                  : null
+              }
             />
+            <div className="lg:hidden">{taxInfo}</div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-t from-gray-50 to-white border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {/* CTA Section */}
-          <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl p-6 mb-8 border border-primary-200/50">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
-                  <span className="text-xl">💚</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    GiveCalc is free, forever
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Support open-source tax and benefit analysis
-                  </p>
-                </div>
-              </div>
-              <a
-                href="https://www.policyengine.org/us/donate"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-md shadow-primary-500/20"
-              >
-                Support PolicyEngine
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </a>
-            </div>
-          </div>
-
-          {/* Bottom Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <p className="text-sm text-gray-500">
-                Tax calculations powered by{" "}
-                <a
-                  href="https://policyengine.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  PolicyEngine
-                </a>
-              </p>
-              <span className="hidden sm:inline text-gray-300">•</span>
-              <a
-                href="https://github.com/PolicyEngine/givecalc"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path
-                    fillRule="evenodd"
-                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                View source
-              </a>
-            </div>
-            <p className="text-xs text-gray-400 text-center sm:text-right max-w-md">
-              This calculator provides estimates only. Consult a tax professional
-              for your specific situation. Your information is not stored.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <p className="max-w-7xl mx-auto px-4 pb-8 sm:px-6 lg:px-8 w-full text-xs text-gray-500">
+        Estimates from PolicyEngine&apos;s open-source tax models. Consult a tax
+        professional for your situation.{" "}
+        <a
+          href="https://github.com/PolicyEngine/givecalc"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary-600 hover:text-primary-700"
+        >
+          View source
+        </a>
+      </p>
     </div>
   );
 }

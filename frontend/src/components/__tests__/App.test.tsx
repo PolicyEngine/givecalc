@@ -9,13 +9,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import * as api from "../../lib/api";
 
-// Mock the API module - only calculateDonation and calculateTargetDonation make real API calls now
+// Mock the API module - calculateDonation is the only US call that hits the API
 vi.mock("../../lib/api", async (importOriginal) => {
   const actual = (await importOriginal()) as typeof api;
   return {
     ...actual,
     calculateDonation: vi.fn(),
-    calculateTargetDonation: vi.fn(),
   };
 });
 

@@ -99,4 +99,30 @@ describe("InputForm - Wizard Flow", () => {
     expect(options.length).toBe(1);
     expect(screen.getByText("Select a state...")).toBeInTheDocument();
   });
+
+  it("asks for a share of income by default", () => {
+    render(<InputForm {...defaultProps} />);
+    expect(
+      screen.getByLabelText("What share of your income do you give?"),
+    ).toHaveValue(10);
+  });
+
+  it("opens both steps confirmed when a shared link filled the form", () => {
+    render(
+      <InputForm
+        {...defaultProps}
+        prefilled
+        formState={{
+          ...DEFAULT_FORM_STATE,
+          income: { ...DEFAULT_FORM_STATE.income, wages_and_salaries: 150000 },
+          state_code: "NY",
+        }}
+      />,
+    );
+    expect(screen.getByText("10% of income ($15,000)")).toBeInTheDocument();
+    expect(screen.getByText("$150,000 income, NY")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Complete previous section first"),
+    ).not.toBeInTheDocument();
+  });
 });

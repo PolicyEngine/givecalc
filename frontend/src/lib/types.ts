@@ -13,6 +13,8 @@ export const TAX_YEAR_OPTIONS = [
   CURRENT_YEAR,
   CURRENT_YEAR + 1,
 ];
+/** The latest year the API accepts. */
+export const MAX_TAX_YEAR = CURRENT_YEAR + 1;
 
 /**
  * The UK tax year in progress on `date`, named by the year it starts
@@ -70,27 +72,6 @@ export interface CalculateResponse {
   curve: DonationDataPoint[];
 }
 
-export interface TargetDonationRequest {
-  income: Income;
-  state_code: string;
-  is_married: boolean;
-  num_children: number;
-  in_nyc: boolean;
-  deductions: Deductions;
-  target_reduction: number;
-  is_percentage: boolean;
-  year: number;
-}
-
-export interface TargetDonationResponse {
-  required_donation: number;
-  actual_reduction: number;
-  actual_percentage: number;
-  baseline_net_income: number;
-  net_income_after_donation: number;
-  curve: DonationDataPoint[];
-}
-
 export interface StateInfo {
   code: string;
   name: string;
@@ -120,9 +101,9 @@ export interface FormState {
   in_nyc: boolean;
   donation_amount: number;
   deductions: Deductions;
-  mode: "amount" | "target";
-  target_reduction: number;
-  is_percentage: boolean;
+  /** "pledge" gives pledge_percent of income; "amount" gives donation_amount. */
+  mode: "pledge" | "amount";
+  pledge_percent: number;
   year: number;
 }
 
@@ -149,9 +130,8 @@ export const DEFAULT_FORM_STATE: FormState = {
     real_estate_taxes: 0,
     casualty_loss: 0,
   },
-  mode: "amount",
-  target_reduction: 10,
-  is_percentage: true,
+  mode: "pledge",
+  pledge_percent: 10,
   year: CURRENT_YEAR,
 };
 
