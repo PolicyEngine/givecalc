@@ -93,13 +93,14 @@ class TestCalculateUKDonationEffects:
         assert df["gift_aid"].iloc[-1] == income
 
     def test_marginal_savings_positive(self):
-        """Marginal savings should be positive for taxpayers."""
-        situation = create_uk_situation(employment_income=50000)
+        """A higher-rate taxpayer saves 25p per £1 until the band extends."""
+        situation = create_uk_situation(employment_income=80000)
         df = calculate_uk_donation_effects(situation)
 
-        # Most marginal savings should be positive (excluding edge effects)
-        middle_savings = df["marginal_savings"].iloc[100:-100]
-        assert (middle_savings > 0).mean() > 0.8
+        # Gifts up to £16,000 (the first 20% of the £0-£80,000 grid) keep
+        # the donor in the higher-rate band.
+        early = df["marginal_savings"].iloc[1:200]
+        assert early.to_numpy() == pytest.approx(0.25, abs=0.01)
 
     def test_higher_rate_taxpayer_higher_savings(self):
         """Higher rate taxpayer should have higher marginal savings at low donations."""
