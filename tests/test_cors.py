@@ -35,7 +35,7 @@ def test_production_frontend_origins_can_call_api(origin):
 
 
 def test_vercel_preview_origin_can_call_api():
-    origin = "https://givecalc-git-some-branch-max-ghenis-projects.vercel.app"
+    origin = "https://givecalc-git-some-branch-policy-engine.vercel.app"
     response = client.options(
         "/api/calculate",
         headers={"Origin": origin, "Access-Control-Request-Method": "POST"},
@@ -48,7 +48,7 @@ def test_other_vercel_origin_is_rejected():
     response = client.options(
         "/api/calculate",
         headers={
-            "Origin": "https://other-app-max-ghenis-projects.vercel.app",
+            "Origin": "https://other-app-policy-engine.vercel.app",
             "Access-Control-Request-Method": "POST",
         },
     )

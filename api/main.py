@@ -60,7 +60,7 @@ app = FastAPI(
 
 # Vercel preview deployments of this repo's frontend.
 VERCEL_PREVIEW_ORIGINS = (
-    r"https://givecalc-[a-z0-9-]+-max-ghenis-projects\.vercel\.app"
+    r"https://givecalc-[a-z0-9-]+-policy-engine\.vercel\.app"
 )
 
 # CORS configuration for frontend
