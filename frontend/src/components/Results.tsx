@@ -327,7 +327,8 @@ function MethodologyExplainer({ currency }: { currency: "USD" | "GBP" }) {
                     <p className="text-gray-600">
                       If you pay 40% or 45% tax, you can claim the difference between
                       your rate and the basic rate (20%) on your Self Assessment.
-                      For a £1,000 donation, a 40% taxpayer claims back £200.
+                      For a £1,000 donation, a 40% taxpayer claims back £250: 20% of the
+                      £1,250 the charity receives.
                     </p>
                   </div>
                 </div>
@@ -434,9 +435,10 @@ function MethodologyExplainer({ currency }: { currency: "USD" | "GBP" }) {
                       State and local tax interactions
                     </p>
                     <p className="text-gray-600">
-                      State income taxes, the SALT cap, and state-specific
-                      charitable credits all interact with federal taxes. GiveCalc
-                      models all 50 states plus DC.
+                      State income taxes and the SALT cap interact with federal
+                      taxes. GiveCalc models income taxes in all 50 states and DC.
+                      It leaves out credits that depend on which charity you give
+                      to, such as Arizona&apos;s and Mississippi&apos;s.
                     </p>
                   </div>
                 </div>

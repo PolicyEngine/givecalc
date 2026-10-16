@@ -1,6 +1,6 @@
 """UK-specific constants for GiveCalc."""
 
-# Current UK tax year (2024/25 tax year - use 2025 as PolicyEngine convention)
+# Default UK tax year. PolicyEngine-UK's 2025 is the 2025/26 tax year.
 UK_CURRENT_YEAR = 2025
 
 # Default adult age

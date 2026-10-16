@@ -119,7 +119,8 @@ class TestCalculateUKDonationEffects:
         higher_early = higher_df["marginal_savings"].iloc[10:50].mean()
 
         # Higher rate taxpayer should have higher marginal savings
-        # Basic rate relief: ~20%, Higher rate relief: ~40%
+        # Basic-rate donors get no relief (it goes to the charity);
+        # higher-rate donors get 25p per £1.
         assert higher_early > basic_early
 
 

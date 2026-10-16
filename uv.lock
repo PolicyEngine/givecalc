@@ -424,7 +424,7 @@ requires-dist = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "policyengine-uk", specifier = ">=2.134.6" },
-    { name = "policyengine-us", specifier = ">=2.49.1" },
+    { name = "policyengine-us", specifier = ">=2.49.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pyyaml" },

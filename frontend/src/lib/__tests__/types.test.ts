@@ -7,6 +7,7 @@ import {
   DEFAULT_FORM_STATE,
   DEFAULT_UK_FORM_STATE,
   TAX_YEAR_OPTIONS,
+  ukTaxYear,
 } from "../types";
 
 describe("Year consistency", () => {
@@ -15,9 +16,15 @@ describe("Year consistency", () => {
     expect(DEFAULT_FORM_STATE.year).toBe(currentYear);
   });
 
-  it("DEFAULT_UK_FORM_STATE defaults to the current system year", () => {
-    const currentYear = new Date().getFullYear();
-    expect(DEFAULT_UK_FORM_STATE.year).toBe(currentYear);
+  it("DEFAULT_UK_FORM_STATE defaults to the UK tax year in progress", () => {
+    expect(DEFAULT_UK_FORM_STATE.year).toBe(ukTaxYear(new Date()));
+  });
+
+  it("starts UK tax years on 6 April", () => {
+    expect(ukTaxYear(new Date(2027, 0, 15))).toBe(2026);
+    expect(ukTaxYear(new Date(2027, 3, 5))).toBe(2026);
+    expect(ukTaxYear(new Date(2027, 3, 6))).toBe(2027);
+    expect(ukTaxYear(new Date(2026, 9, 16))).toBe(2026);
   });
 
   it("offers last year, this year and next year", () => {
