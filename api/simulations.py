@@ -241,29 +241,38 @@ def stop_workers() -> None:
         _worker_settings.clear()
 
 
-def _replace_broken_workers() -> None:
-    """Replace a pool that lost a worker (killed, say, out of memory).
+def _replace_broken_workers(unusable: bool = False) -> None:
+    """Drop a pool that lost a worker (killed, say, out of memory), or one
+    that is ``unusable`` because it refused work.
 
-    New workers fork from the same server process, so this is quick.
+    Runs go back to the calling thread at once, and a new pool starts in
+    the background; it takes over once its workers are up.
     """
     global _executor
     with _executor_lock:
         broken = _executor
-        if broken is None or not getattr(broken, "_broken", False):
+        if broken is None or not (
+            unusable or getattr(broken, "_broken", False)
+        ):
             return
-        broken.shutdown(wait=False, cancel_futures=True)
-        _executor = _new_pool(_worker_settings["count"])
+        _executor = None
+        count, preload = _worker_settings["count"], _worker_settings["preload"]
+    broken.shutdown(wait=False, cancel_futures=True)
+    threading.Thread(
+        target=start_workers, args=(count, preload), daemon=True
+    ).start()
 
 
 def _submit(function: Callable, *args) -> Future:
     executor = _executor
-    if executor is None:
-        return _run_now(lambda: function(*args))
-    try:
-        return executor.submit(function, *args)
-    except BrokenProcessPool:
-        _replace_broken_workers()
-        return _run_now(lambda: function(*args))
+    if executor is not None:
+        try:
+            return executor.submit(function, *args)
+        except Exception:
+            # A pool that cannot take work (broken, or shut down) must not
+            # fail the request.
+            _replace_broken_workers(unusable=True)
+    return _run_now(lambda: function(*args))
 
 
 # A run in progress: how to start it, and the future it was started as.
@@ -277,9 +286,9 @@ def _started(start: Callable[[], Future]) -> Started:
 def _results(runs: Sequence[Started]) -> list:
     """Wait for each started run.
 
-    A run lost with a dead worker is started once more, on a new pool. The
-    cache forgets a failed run before reporting it, so starting it again
-    submits it again.
+    A run lost with a dead worker is started once more: in this thread, or
+    on the new pool once it is up. The cache forgets a failed run before
+    reporting it, so starting it again runs it again.
     """
     results = []
     for start, future in runs:
@@ -352,7 +361,8 @@ def cache_info() -> dict:
 
 
 def worker_count() -> int:
-    return _worker_settings.get("count", 0)
+    """How many worker processes take runs now (0: the calling thread)."""
+    return _worker_settings.get("count", 0) if _executor is not None else 0
 
 
 def clear_caches() -> None:

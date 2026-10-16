@@ -1,12 +1,14 @@
 """Simulation workers must return exactly what an in-thread run returns.
 
 Differential: the same households run through worker processes and in the
-calling thread give equal results. A worker that dies is replaced, and the
-request it was serving still gets its answer.
+calling thread give equal results. A worker that dies, or a pool that
+refuses work, is replaced, and the request it was serving still gets its
+answer.
 """
 
 import os
 import signal
+import time
 
 import pytest
 
@@ -77,8 +79,25 @@ def test_a_killed_worker_is_replaced_and_the_request_answered(workers):
         _run_point("us", situation, 0),
         _run_point("us", situation, 5_000),
     ]
+    # A new pool comes up in the background and takes the next runs.
+    deadline = time.monotonic() + 60
+    while worker_count() == 0 and time.monotonic() < deadline:
+        time.sleep(0.5)
+    assert worker_count() == 2
     clear_caches()
     assert point_metrics_many("us", [(situation, 1_000)]) == [
         _run_point("us", situation, 1_000)
     ]
-    assert simulations._executor is not None
+
+
+def test_a_pool_that_refuses_work_is_replaced(workers):
+    clear_caches()
+    simulations._executor.shutdown(wait=True)
+    situation = us(98_765)
+    assert point_metrics_many("us", [(situation, 2_000)]) == [
+        _run_point("us", situation, 2_000)
+    ]
+    deadline = time.monotonic() + 60
+    while worker_count() == 0 and time.monotonic() < deadline:
+        time.sleep(0.5)
+    assert worker_count() == 2
