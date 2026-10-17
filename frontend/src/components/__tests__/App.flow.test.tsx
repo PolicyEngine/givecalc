@@ -102,6 +102,34 @@ describe("App result publishing", () => {
     expect(screen.queryByText(/^Your \d+% pledge/)).not.toBeInTheDocument();
   });
 
+  it("labels a result with the current inputs after an equivalent edit", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?pledge=10&income=160000&state=NY&year=2026",
+    );
+    const App = (await import("../../App")).default;
+    render(<App />);
+    await waitFor(() => expect(calls.length).toBe(1));
+
+    // Rewrite 10% of $160,000 as a $16,000 amount while it calculates.
+    fireEvent.click(screen.getByText("10% of income ($16,000)"));
+    fireEvent.click(screen.getByRole("button", { name: "Specific amount" }));
+    fireEvent.change(
+      screen.getByLabelText("How much are you planning to donate?"),
+      { target: { value: "16000" } },
+    );
+
+    await resolveMain(0, 1_600);
+    await waitFor(() =>
+      expect(
+        screen.getByText("Your $16,000 gift costs you $14,400 in 2026."),
+      ).toBeInTheDocument(),
+    );
+    expect(window.location.search).toContain("amount=16000");
+    expect(window.location.search).not.toContain("pledge=");
+  });
+
   it("points the URL at a restored cached result", async () => {
     window.history.replaceState(
       null,

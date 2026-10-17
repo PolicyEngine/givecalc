@@ -194,9 +194,10 @@ function Calculator() {
           year: ukState.year,
         });
         cacheRef.current.set(cacheKey, { ukResult: response });
-        // Publish only if the inputs still match what was calculated.
+        // Publish only if the inputs still match what was calculated, and
+        // label it with the current inputs.
         if (getUKCacheKey(ukFormRef.current) === cacheKey) {
-          setUKPublished({ result: response, form: ukState });
+          setUKPublished({ result: response, form: ukFormRef.current });
         }
         return;
       }
@@ -213,9 +214,11 @@ function Calculator() {
       setPublished(null);
       const response = await calculateMutation.mutateAsync(request);
       cacheRef.current.set(cacheKey, { result: response });
-      // Publish only if the inputs still match what was calculated.
+      // Publish only if the inputs still match what was calculated. An
+      // equivalent edit (10% of $160,000 rewritten as $16,000) keeps the
+      // same request, so label the result with the current inputs.
       if (getCacheKey(formRef.current) === cacheKey) {
-        publishUS(state, response);
+        publishUS(formRef.current, response);
       }
     },
     [
