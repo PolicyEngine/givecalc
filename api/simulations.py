@@ -21,9 +21,11 @@ instead of starting another.
 
 A simulation of one household is pure-Python work that holds the GIL, so
 threads run one at a time. ``start_workers`` moves the runs into worker
-processes: a request's runs then go at once (``point_metrics_many``), and
-concurrent requests do not queue behind one another. Without workers (tests,
-local development) every run happens in the calling thread.
+processes: a request submits all its runs before waiting on any
+(``point_metrics_many``), and they run in parallel up to the number of
+workers; runs beyond that, from this request or others, queue for the next
+free worker. Without workers (tests, local development) every run happens
+in the calling thread.
 """
 
 import json
@@ -151,9 +153,11 @@ class PointMetrics:
     gross_income: float | None = None
 
 
-# A point result is two floats and a key of 0.9-3.3 KB (one adult to a
-# married couple with 20 children), so 4,096 entries take under 15 MB. A
-# curve is a 1,001-row frame of about 40 KB.
+# A point result is two floats plus its key, the situation's JSON. Legacy
+# keys measured 0.9-3.3 KB (one adult to a married couple with 20
+# children), about 15 MB for 4,096 entries; wizard households with long ids
+# or many people make larger keys, which nothing bounds but the request
+# size. A curve is a 1,001-row frame of about 40 KB.
 POINT_CACHE = LRUCache(maxsize=4096)
 CURVE_CACHE = LRUCache(maxsize=128)
 
@@ -347,46 +351,62 @@ def stop_workers() -> None:
         executor.shutdown(wait=True)
 
 
-def _replace_broken_workers(unusable: bool = False) -> None:
+def _replace_broken_workers(
+    failed: ProcessPoolExecutor | None = None, unusable: bool = False
+) -> None:
     """Drop a pool that lost a worker (killed, say, out of memory), or one
     that is ``unusable`` because it refused work.
 
+    ``failed`` is the pool that failed, when known: a late failure from a
+    pool that has already been replaced must not retire its replacement.
     Runs go back to the calling thread at once, and a new pool starts in
     the background; it takes over once its workers are up.
     """
     global _executor
     with _executor_lock:
         broken = _executor
-        if broken is None or not (
-            unusable or getattr(broken, "_broken", False)
-        ):
+        if broken is None or (failed is not None and broken is not failed):
+            return
+        if not (unusable or getattr(broken, "_broken", False)):
             return
         _executor = None
         count, preload = _worker_settings["count"], _worker_settings["preload"]
         epoch = _pool_epoch
     broken.shutdown(wait=False)
+    _restart_in_background(count, preload, epoch)
+
+
+def _restart_in_background(count: int, preload: list, epoch: int) -> None:
     threading.Thread(
         target=start_workers, args=(count, preload, epoch), daemon=True
     ).start()
 
 
-def _submit(function: Callable, *args) -> Future:
-    executor = _executor
+def _submit(function: Callable, *args, inline: bool = False) -> Future:
+    """Run ``function(*args)`` on a worker, or here when there is no pool,
+    the pool refuses work, or ``inline`` is set."""
+    executor = None if inline else _executor
     if executor is not None:
         try:
             return executor.submit(_in_worker, function, *args)
         except Exception:
             # A pool that cannot take work (broken, or shut down) must not
             # fail the request.
-            _replace_broken_workers(unusable=True)
+            _replace_broken_workers(executor, unusable=True)
     return _run_now(lambda: function(*args))
 
 
-# A run in progress: how to start it, and the future it was started as.
-Started = tuple[Callable[[], Future], Future]
+# A run in progress: how to start it (``start(inline=True)`` runs it in
+# the calling thread), and the future it was first started as.
+Started = tuple[Callable[..., Future], Future]
+POOL_FAILURES = (BrokenProcessPool, CancelledError)
+# After the first rerun fails with its pool too, keep trying in this
+# thread; each try either runs here or shares a run that is still going,
+# and a shared run that fails is forgotten before it reports, so this ends.
+INLINE_TRIES = 5
 
 
-def _started(start: Callable[[], Future]) -> Started:
+def _started(start: Callable[..., Future]) -> Started:
     return start, start()
 
 
@@ -395,16 +415,29 @@ def _results(runs: Sequence[Started]) -> list:
 
     A run lost with its pool (a dead worker, or a pool shut down with work
     queued) is started once more: in this thread, or on the new pool once
-    it is up. The cache forgets a failed run before reporting it, so
-    starting it again runs it again.
+    it is up. If that pool fails too, the run goes to this thread. The
+    cache forgets a failed run before reporting it, so starting it again
+    runs it again.
     """
     results = []
     for start, future in runs:
         try:
             results.append(future.result())
-        except (BrokenProcessPool, CancelledError):
+            continue
+        except POOL_FAILURES:
             _replace_broken_workers()
+        try:
             results.append(start().result())
+            continue
+        except POOL_FAILURES:
+            _replace_broken_workers()
+        for attempt in range(INLINE_TRIES):
+            try:
+                results.append(start(inline=True).result())
+                break
+            except POOL_FAILURES:
+                if attempt == INLINE_TRIES - 1:
+                    raise
     return results
 
 
@@ -419,11 +452,15 @@ def point_metrics_many(
     return _results(
         [
             _started(
-                lambda situation=situation, donation=donation: (
+                lambda inline=False, situation=situation, donation=donation: (
                     POINT_CACHE.get_or_submit(
                         point_key(country, situation, donation),
                         lambda: _submit(
-                            _run_point, country, situation, donation
+                            _run_point,
+                            country,
+                            situation,
+                            donation,
+                            inline=inline,
                         ),
                     )
                 )
@@ -447,8 +484,9 @@ def start_curve(country: Country, situation: dict) -> Started:
     """
     key = (country, situation_key(situation))
     return _started(
-        lambda: CURVE_CACHE.get_or_submit(
-            key, lambda: _submit(_run_curve, country, situation)
+        lambda inline=False: CURVE_CACHE.get_or_submit(
+            key,
+            lambda: _submit(_run_curve, country, situation, inline=inline),
         )
     )
 

@@ -10,15 +10,15 @@ The pool must also keep serving after bursts: recycling workers with
 (found in review of PolicyEngine/givecalc#89).
 """
 
-import time
-from concurrent.futures import wait
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
 from api import simulations
 from api.simulations import (
-    _in_worker,
-    _new_pool,
     _run_point,
     _submit,
     _worker_census,
@@ -63,13 +63,42 @@ def test_uk_runs_leave_no_objects_or_modules_behind(one_worker):
     assert objects_after_all - objects_after_one < 5_000
 
 
-def test_the_pool_keeps_serving_after_a_burst(one_worker):
+BURST = """
+import time
+from concurrent.futures import wait
+from api.simulations import _in_worker, _new_pool
+
+if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.get_context("forkserver").set_forkserver_preload(
+        ["api.simulations"]
+    )
     pool = _new_pool(1)
+    wait([pool.submit(_in_worker, time.sleep, 0.05) for _ in range(3)])
+    for _ in range(40):
+        pool.submit(_in_worker, time.sleep, 0.01).result(timeout=10)
+    pool.shutdown()
+    print("served all 40")
+"""
+
+
+def test_the_pool_keeps_serving_after_a_burst(tmp_path):
+    """Three runs at once, then 40 one at a time. With recycling
+    (max_tasks_per_child=20) this hung on the 18th run; the subprocess and
+    its timeout keep a hang from hanging the test run."""
+    script = tmp_path / "burst.py"
+    script.write_text(BURST)
+    root = Path(__file__).resolve().parents[1]
     try:
-        wait([pool.submit(_in_worker, time.sleep, 0.05) for _ in range(3)])
-        for _ in range(40):
-            pool.submit(_in_worker, time.sleep, 0.01).result(timeout=10)
-    finally:
-        # Without waiting: a hung pool would otherwise hang the test run
-        # instead of failing it.
-        pool.shutdown(wait=False, cancel_futures=True)
+        done = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=root,
+            env={**os.environ, "PYTHONPATH": str(root)},
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+    except subprocess.TimeoutExpired:
+        pytest.fail("the pool stopped serving after a burst")
+    assert done.returncode == 0, done.stderr[-2000:]
+    assert "served all 40" in done.stdout

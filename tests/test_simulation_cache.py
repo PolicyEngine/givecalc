@@ -29,6 +29,7 @@ from api.simulations import (
     donation_curve,
     point_key,
     point_metrics,
+    point_metrics_many,
     situation_key,
 )
 from api.warmup import warm_up, warm_up_years
@@ -141,6 +142,59 @@ def test_a_cancelled_run_is_started_again():
 
     assert simulations._results([simulations._started(start)]) == ["answer"]
     assert len(starts) == 2
+
+
+class DeadPool:
+    """A pool whose every run is lost, as if its workers died."""
+
+    _broken = "a worker died"
+
+    def submit(self, *args):
+        from concurrent.futures.process import BrokenProcessPool
+
+        future = Future()
+        future.set_exception(BrokenProcessPool("a worker died"))
+        return future
+
+    def shutdown(self, wait=True, cancel_futures=False):
+        pass
+
+
+def test_two_pool_generations_dying_in_one_request_still_answer(monkeypatch):
+    """A request's runs survive their pool dying and its replacement dying
+    too: the last try runs in the request's thread."""
+    ran_here = []
+
+    def fake_point(country, situation, donation):
+        ran_here.append(donation)
+        return simulations.PointMetrics(donation, -donation)
+
+    def restart_dead(count, preload, epoch):
+        simulations._executor = DeadPool()
+
+    monkeypatch.setattr(simulations, "_run_point", fake_point)
+    monkeypatch.setattr(simulations, "_restart_in_background", restart_dead)
+    monkeypatch.setattr(simulations, "_executor", DeadPool())
+    monkeypatch.setattr(
+        simulations, "_worker_settings", {"count": 1, "preload": []}
+    )
+    clear_caches()
+    situation = create_situation(wages_and_salaries=70_000, year=2026)
+    assert point_metrics_many("us", [(situation, 0), (situation, 5)]) == [
+        simulations.PointMetrics(0, 0),
+        simulations.PointMetrics(5, -5),
+    ]
+    assert sorted(ran_here) == [0, 5]
+
+
+def test_a_late_failure_does_not_retire_the_replacement(monkeypatch):
+    replacement = object()
+    monkeypatch.setattr(simulations, "_executor", replacement)
+    monkeypatch.setattr(
+        simulations, "_worker_settings", {"count": 1, "preload": []}
+    )
+    simulations._replace_broken_workers(DeadPool(), unusable=True)
+    assert simulations._executor is replacement
 
 
 INPUT_STRATEGIES = {
