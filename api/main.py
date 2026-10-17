@@ -18,6 +18,11 @@ from givecalc import (
     calculate_target_donation,
     create_situation,
 )
+from givecalc.core.household import (
+    curve_top,
+    donation_axes,
+    household_for_year,
+)
 from givecalc.uk import (
     ENGLAND_REGIONS,
     UK_CURRENT_YEAR,
@@ -214,12 +219,26 @@ async def get_tax_programs(state_code: str):
 
 
 def us_situation(
-    request: CalculateRequest | TargetDonationRequest, year: int = None
+    request: CalculateRequest | TargetDonationRequest,
+    year: int = None,
+    top: float = None,
 ) -> dict:
     """The household in a US request, with the donation-sweep axes.
 
-    ``year`` overrides the request's tax year.
+    ``year`` overrides the request's tax year. A wizard household
+    (policyengine-household-wizard's V1 payload) goes to policyengine-us as
+    the wizard built it, moved to ``year`` with everyone that much older;
+    the legacy fields go through ``create_situation``.
+
+    A wizard household's curve ends at its gross income, which only a
+    simulation gives, so its axis ends at ``top`` (see ``with_curve_top``).
+    Point runs read only the axis's year, so they need no ``top``.
     """
+    year = request.year if year is None else year
+    if request.household is not None:
+        situation = household_for_year(request.household, request.year, year)
+        situation["axes"] = donation_axes(year, top if top else 1)
+        return situation
     deductions = request.deductions or {}
     income = request.income
     return create_situation(
@@ -238,7 +257,27 @@ def us_situation(
         mortgage_interest=getattr(deductions, "mortgage_interest", 0),
         real_estate_taxes=getattr(deductions, "real_estate_taxes", 0),
         casualty_loss=getattr(deductions, "casualty_loss", 0),
-        year=year if year is not None else request.year,
+        year=year,
+    )
+
+
+def with_curve_top(
+    request: CalculateRequest | TargetDonationRequest,
+    situation: dict,
+    baseline: PointMetrics,
+    donation: float,
+) -> dict:
+    """The situation whose curve the request needs.
+
+    A legacy situation's axis already ends at its total income. A wizard
+    household's ends at its gross income from the no-gift run, or at the
+    gift if larger (as ``situation_from_household`` sets it, without that
+    function's extra simulation).
+    """
+    if request.household is None:
+        return situation
+    return us_situation(
+        request, top=curve_top(baseline.gross_income, donation)
     )
 
 
@@ -300,11 +339,20 @@ def calculate_donation(request: CalculateRequest):
     Runs three simulations: $0, the donation, and the donation sweep.
     """
     try:
+        gift = request.donation_amount
         situation = us_situation(request)
-        curve = start_curve("us", situation)
+        # A legacy curve can start with the point runs; a wizard
+        # household's needs the no-gift run's gross income first.
+        curve = None
+        if request.household is None:
+            curve = start_curve("us", situation)
         baseline, at_donation = point_metrics_many(
-            "us", [(situation, 0), (situation, request.donation_amount)]
+            "us", [(situation, 0), (situation, gift)]
         )
+        if curve is None:
+            curve = start_curve(
+                "us", with_curve_top(request, situation, baseline, gift)
+            )
         df = add_net_income_columns(
             curve_result(curve), baseline_metrics_dict(baseline)
         )
@@ -396,10 +444,9 @@ def calculate_savings(request: SavingsRequest):
 def calculate_target(request: TargetDonationRequest):
     """Calculate required donation to achieve a target net income reduction."""
     try:
-        situation = us_situation(request)
-        baseline_metrics = baseline_metrics_dict(
-            point_metrics("us", situation, 0)
-        )
+        baseline = point_metrics("us", us_situation(request), 0)
+        situation = with_curve_top(request, us_situation(request), baseline, 0)
+        baseline_metrics = baseline_metrics_dict(baseline)
         baseline_net_income = baseline_metrics["baseline_net_income"]
 
         df = donation_curve("us", situation)

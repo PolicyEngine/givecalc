@@ -145,6 +145,9 @@ class PointMetrics:
     # household_tax minus household_benefits.
     net_tax: float
     household_net_income: float
+    # US only: household_market_income plus household_benefits, where a
+    # wizard household's donation curve ends.
+    gross_income: float | None = None
 
 
 # A point result is two floats and a key of 0.9-3.3 KB (one adult to a
@@ -159,6 +162,26 @@ def situation_key(situation: dict) -> str:
     return json.dumps(situation, sort_keys=True, separators=(",", ":"))
 
 
+def point_key(country: Country, situation: dict, donation: float) -> tuple:
+    """The cache key of one point run.
+
+    A point run drops the situation's axes and reads only their year, so
+    the key holds the situation without axes, the year and the donation.
+    The axis's end can then be set after the no-gift run (a wizard
+    household's comes from it) without missing the cache.
+    """
+    axes = situation.get("axes") or [[{}]]
+    without_axes = {
+        name: value for name, value in situation.items() if name != "axes"
+    }
+    return (
+        country,
+        situation_key(without_axes),
+        axes[0][0].get("period"),
+        float(donation),
+    )
+
+
 def _run_point(
     country: Country, situation: dict, donation: float
 ) -> PointMetrics:
@@ -166,13 +189,19 @@ def _run_point(
         from givecalc.uk.tax import calculate_uk_donation_metrics
 
         result = calculate_uk_donation_metrics(situation, donation)
+        gross_income = None
     else:
         from givecalc.calculations.tax import calculate_donation_metrics
 
         result = calculate_donation_metrics(situation, donation)
+        # As givecalc.core.household.household_gross_income sums them.
+        gross_income = float(result["household_market_income"][0]) + float(
+            result["household_benefits"][0]
+        )
     return PointMetrics(
         net_tax=float(result["baseline_income_tax"][0]),
         household_net_income=float(result["baseline_net_income"][0]),
+        gross_income=gross_income,
     )
 
 
@@ -384,7 +413,7 @@ def point_metrics_many(
             _started(
                 lambda situation=situation, donation=donation: (
                     POINT_CACHE.get_or_submit(
-                        (country, situation_key(situation), float(donation)),
+                        point_key(country, situation, donation),
                         lambda: _submit(
                             _run_point, country, situation, donation
                         ),

@@ -3,6 +3,7 @@ import copy
 from policyengine_us import Simulation
 
 from givecalc.constants import CURRENT_YEAR
+from givecalc.core.household import DONATION_VARIABLE, donor_id
 
 
 def get_year_from_situation(situation):
@@ -38,8 +39,8 @@ def create_donation_simulation(situation, donation_amount):
     # people dict.
     donation_situation = copy.deepcopy(situation)
 
-    # Add the donation amount
-    donation_situation["people"]["you"]["charitable_cash_donations"] = {
+    # The donor is the person the donation axis varies.
+    donation_situation["people"][donor_id(situation)][DONATION_VARIABLE] = {
         year: donation_amount
     }
 

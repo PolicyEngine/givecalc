@@ -11,6 +11,7 @@ Invariants:
   run that fails caches nothing.
 """
 
+import copy
 import threading
 import time
 from concurrent.futures import CancelledError, Future
@@ -25,6 +26,7 @@ from api.simulations import (
     _run_point,
     clear_caches,
     donation_curve,
+    point_key,
     point_metrics,
     situation_key,
 )
@@ -215,6 +217,37 @@ def test_cached_point_equals_a_fresh_simulation(a, field, donation):
     again = point_metrics("us", situation, donation)
     assert again is cached
     assert cached == _run_point("us", situation, donation)
+
+
+@settings(max_examples=200, derandomize=True)
+@given(inputs, inputs)
+def test_point_keys_ignore_only_the_axis_end(a, b):
+    """A point run reads the situation without its axes, plus their year."""
+    situation_a = create_situation(**a)
+    situation_b = create_situation(**b)
+    same_key = point_key("us", situation_a, 500) == point_key(
+        "us", situation_b, 500
+    )
+
+    def point_input(situation):
+        return (
+            {k: v for k, v in situation.items() if k != "axes"},
+            situation["axes"][0][0]["period"],
+        )
+
+    assert same_key == (point_input(situation_a) == point_input(situation_b))
+
+
+def test_point_key_drops_the_axis_end_but_keeps_its_year():
+    situation = create_situation(wages_and_salaries=60_000, year=2026)
+    longer = copy.deepcopy(situation)
+    longer["axes"][0][0]["max"] = 999_999
+    assert point_key("us", situation, 0) == point_key("us", longer, 0)
+    other_year = copy.deepcopy(situation)
+    other_year["axes"][0][0]["period"] = 2027
+    assert point_key("us", situation, 0) != point_key("us", other_year, 0)
+    assert point_key("us", situation, 0) != point_key("us", situation, 1)
+    assert point_key("us", situation, 0) != point_key("uk", situation, 0)
 
 
 def test_curve_cache_returns_independent_copies():

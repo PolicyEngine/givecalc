@@ -113,3 +113,16 @@ def test_add_net_income_columns_does_not_modify_original():
     # Original should not have new columns
     assert "net_income" not in df.columns
     assert "net_income" in df_with_net.columns
+
+
+def test_calculate_target_donation_refuses_an_unreachable_target():
+    """A target beyond the curve returns None instead of a clamped gift."""
+    situation = create_situation(wages_and_salaries=100000)
+    baseline_metrics = calculate_donation_metrics(situation, donation_amount=0)
+    df = calculate_donation_effects(situation)
+    assert (
+        calculate_target_donation(
+            situation, df, baseline_metrics, 10**7, is_percentage=False
+        )
+        is None
+    )
