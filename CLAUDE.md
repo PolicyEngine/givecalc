@@ -94,7 +94,8 @@ givecalc/                       # Repository root
 │   ├── constants.py           # CURRENT_YEAR, colors
 │   ├── config.py              # YAML config loader
 │   ├── core/
-│   │   ├── situation.py       # PolicyEngine situation builder
+│   │   ├── household.py       # Wizard V1 household checks + donation axis
+│   │   ├── situation.py       # PolicyEngine situation builder (legacy fields)
 │   │   └── simulation.py      # Single-point simulation helper
 │   └── calculations/
 │       ├── tax.py             # Tax calculation logic
@@ -132,6 +133,10 @@ givecalc/                       # Repository root
 - **API URL**: `https://policyengine--givecalc-fastapi-app.modal.run`
 - **Endpoints**: `/api/calculate`, `/api/target-donation`, `/api/uk/calculate`, `/api/uk/regions`, `/api/health`
 - **givecalc/ package**: Core calculation engine using PolicyEngine-US and PolicyEngine-UK
+- **US households**: `/api/calculate` and `/api/target-donation` take
+  `household`, the situation policyengine-household-wizard builds;
+  `givecalc/core/household.py` checks its shape and adds the donation axis. `tests/fixtures/wizard_households.json`
+  holds wizard-built requests the Python tests run.
 
 ## Styling
 
