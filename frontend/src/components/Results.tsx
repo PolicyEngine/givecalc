@@ -3,17 +3,81 @@
  */
 
 import { useState, useEffect } from "react";
-import type { CalculateResponse, TargetDonationResponse } from "../lib/types";
+import type { CalculateResponse } from "../lib/types";
+import type { BunchingComparison } from "../lib/pledge";
 import { formatCurrency, formatPercent } from "../lib/format";
 import TaxChart from "./TaxChart";
 import MarginalChart from "./MarginalChart";
 
+export interface BunchingState {
+  data: BunchingComparison | null;
+  isLoading: boolean;
+  isError: boolean;
+}
+
 interface Props {
   result: CalculateResponse | null;
-  targetResult: TargetDonationResponse | null;
-  mode: "amount" | "target";
   isCalculating?: boolean;
   currency?: "USD" | "GBP";
+  /** Tax year of the result. */
+  year: number;
+  /** The gift's share of income, when the gift was given as one. */
+  pledgePercent?: number | null;
+  bunching?: BunchingState | null;
+}
+
+/** The answer in one sentence: what the gift costs after tax. */
+export function costHeadline(
+  result: CalculateResponse,
+  currency: "USD" | "GBP",
+  year: number,
+  pledgePercent?: number | null,
+): { headline: string; detail: string } {
+  const fmt = (value: number) => formatCurrency(value, currency);
+  const gift = result.donation_amount;
+  const cost = gift - result.tax_savings;
+  if (currency === "GBP") {
+    // Gift Aid grosses the gift up at the 20% basic rate for the charity.
+    const toCharity = gift / 0.8;
+    return {
+      headline: `Your ${fmt(gift)} gift is worth ${fmt(toCharity)} to a charity that claims Gift Aid, and costs you ${fmt(cost)}.`,
+      detail:
+        result.tax_savings > 0
+          ? `You reclaim ${fmt(result.tax_savings)} through your tax return.`
+          : "The basic-rate relief goes to the charity, so your own tax does not change.",
+    };
+  }
+  const subject =
+    pledgePercent != null
+      ? `Giving ${pledgePercent}% of your income (${fmt(gift)})`
+      : `Your ${fmt(gift)} gift`;
+  const share = gift > 0 ? result.tax_savings / gift : 0;
+  return {
+    headline: `${subject} costs you ${fmt(cost)} in ${year}.`,
+    detail:
+      result.tax_savings > 0
+        ? `Lower taxes cover ${fmt(result.tax_savings)}, or ${formatPercent(share, 0)} of the gift.`
+        : "Your taxes don't change at this gift size.",
+  };
+}
+
+/** Bunching in one sentence, or null while there is nothing to say. */
+export function bunchingSentence(
+  bunching: BunchingComparison,
+  gift: number,
+  year: number,
+): string {
+  const fmt = (value: number) => formatCurrency(value);
+  const gain = Math.round(bunching.gain);
+  const bunched = `Giving ${fmt(2 * gift)} in ${year} and nothing in ${year + 1}`;
+  const everyYear = `giving ${fmt(gift)} in each year`;
+  if (gain > 0) {
+    return `${bunched} saves ${fmt(gain)} more in tax than ${everyYear}.`;
+  }
+  if (gain < 0) {
+    return `${bunched} costs ${fmt(-gain)} more in tax than ${everyYear}.`;
+  }
+  return `${bunched} leaves your taxes the same as ${everyYear}.`;
 }
 
 // Progress bar with elapsed time for calculating state
@@ -58,18 +122,18 @@ function CalculatingProgress({ isUK }: { isUK: boolean }) {
 
 export default function Results({
   result,
-  targetResult,
-  mode,
   isCalculating,
   currency = "USD",
+  year,
+  pledgePercent = null,
+  bunching = null,
 }: Props) {
   const fmt = (value: number) => formatCurrency(value, currency);
-  const currencySymbol = currency === "GBP" ? "£" : "$";
   if (isCalculating) {
     return <CalculatingProgress isUK={currency === "GBP"} />;
   }
 
-  if (!result && !targetResult) {
+  if (!result) {
     return (
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg shadow-gray-200/50 p-10 text-center border border-gray-100">
         <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
@@ -88,100 +152,97 @@ export default function Results({
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-3">
-          Calculate your tax impact
+          What does your gift really cost?
         </h2>
         <p className="text-gray-500 max-w-sm mx-auto leading-relaxed">
-          Enter your information and click{" "}
-          <span className="font-semibold text-primary-600">"Calculate tax impact"</span>{" "}
-          to see how charitable giving affects your taxes.
+          Enter your gift and household to see what it costs you after tax.
         </p>
       </div>
     );
   }
 
-  const data = mode === "target" && targetResult ? targetResult : result;
-  if (!data) return null;
-
-  const isTarget = mode === "target" && targetResult;
+  const data = result;
+  const { headline, detail } = costHeadline(
+    result,
+    currency,
+    year,
+    pledgePercent,
+  );
 
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* The answer */}
       <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 p-6 border border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-md shadow-primary-500/20">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            {isTarget ? "Required donation" : "Tax impact summary"}
-          </h2>
-        </div>
+        <p className="text-2xl font-semibold text-gray-900 leading-snug">
+          {headline}
+        </p>
+        <p className="text-gray-600 mt-2">{detail}</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {isTarget && targetResult ? (
+        {bunching && result.donation_amount > 0 && (
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <p className="text-sm font-medium text-gray-900">
+              Give two years at once?
+            </p>
+            <p className="text-sm text-gray-600 mt-1" aria-live="polite">
+              {bunching.data
+                ? bunchingSentence(
+                    bunching.data,
+                    result.donation_amount,
+                    year,
+                  )
+                : bunching.isLoading
+                  ? "Running two more simulations to check…"
+                  : bunching.isError
+                    ? "The bunching check didn't finish; try again in a moment."
+                    : "Pick an earlier tax year to compare it with giving across two years."}
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          {currency === "GBP" ? (
             <>
               <MetricCard
-                label="Required donation"
-                value={fmt(targetResult.required_donation)}
-                description="To achieve your target reduction"
+                label="Your net cost"
+                value={fmt(result.donation_amount - result.tax_savings)}
+                description="What you pay after claiming relief"
                 highlight
               />
               <MetricCard
-                label="Net income reduction"
-                value={fmt(targetResult.actual_reduction)}
-                description={`${formatPercent(targetResult.actual_percentage / 100)} of net income`}
+                label="Charity receives"
+                value={fmt(result.donation_amount / 0.8)}
+                description="Your gift grossed up at the 20% basic rate"
               />
               <MetricCard
-                label="Net income after"
-                value={fmt(targetResult.net_income_after_donation)}
-                description="Your take-home after donation"
+                label="Your tax relief"
+                value={fmt(result.tax_savings)}
+                description={
+                  result.tax_savings > 0
+                    ? "Higher- or additional-rate relief"
+                    : "Basic-rate taxpayers: no personal relief"
+                }
               />
             </>
-          ) : result ? (
-            currency === "GBP" ? (
-              // UK-specific metrics showing Gift Aid breakdown
-              <>
-                <MetricCard
-                  label="Charity receives"
-                  value={fmt(result.donation_amount * 1.25)}
-                  description="Your donation + 25% Gift Aid reclaim"
-                  highlight
-                />
-                <MetricCard
-                  label="Your tax relief"
-                  value={fmt(result.tax_savings)}
-                  description={result.tax_savings > 0 ? "Higher/additional rate relief" : "Basic rate taxpayers: no personal relief"}
-                />
-                <MetricCard
-                  label="Your net cost"
-                  value={fmt(result.donation_amount - result.tax_savings)}
-                  description="What you pay after claiming relief"
-                />
-              </>
-            ) : (
-              // US metrics
-              <>
-                <MetricCard
-                  label="Tax savings"
-                  value={fmt(result.tax_savings)}
-                  description="Your total tax reduction"
-                  highlight
-                />
-                <MetricCard
-                  label="Marginal savings rate"
-                  value={formatPercent(result.marginal_savings_rate)}
-                  description={`Tax saved per ${currencySymbol}1 donated`}
-                />
-                <MetricCard
-                  label="Net cost of donation"
-                  value={fmt(result.donation_amount - result.tax_savings)}
-                  description="Donation minus tax savings"
-                />
-              </>
-            )
-          ) : null}
+          ) : (
+            <>
+              <MetricCard
+                label="Your net cost"
+                value={fmt(result.donation_amount - result.tax_savings)}
+                description="Gift minus the tax it saves"
+                highlight
+              />
+              <MetricCard
+                label="Tax savings"
+                value={fmt(result.tax_savings)}
+                description="Federal, state and local"
+              />
+              <MetricCard
+                label="Saved on the next $1"
+                value={formatPercent(result.marginal_savings_rate)}
+                description="Tax saved if you gave a little more"
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -194,11 +255,7 @@ export default function Results({
           </h3>
           <TaxChart
             curve={data.curve}
-            currentDonation={
-              isTarget && targetResult
-                ? targetResult.required_donation
-                : result?.donation_amount || 0
-            }
+            currentDonation={result.donation_amount}
             currency={currency}
           />
         </div>
@@ -210,18 +267,14 @@ export default function Results({
           </h3>
           <MarginalChart
             curve={data.curve}
-            currentDonation={
-              isTarget && targetResult
-                ? targetResult.required_donation
-                : result?.donation_amount || 0
-            }
+            currentDonation={result.donation_amount}
             currency={currency}
           />
         </div>
       </div>
 
       {/* Detailed Breakdown */}
-      {result && !isTarget && (
+      {result && (
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Detailed breakdown
@@ -274,7 +327,7 @@ function MethodologyExplainer({ currency }: { currency: "USD" | "GBP" }) {
         className="flex items-center justify-between w-full text-left"
       >
         <h3 className="text-lg font-semibold text-gray-900">
-          {isUK ? "How Gift Aid works" : "Why GiveCalc is more accurate"}
+          {isUK ? "How Gift Aid works" : "How GiveCalc calculates"}
         </h3>
         <svg
           className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -491,9 +544,9 @@ function MethodologyExplainer({ currency }: { currency: "USD" | "GBP" }) {
               >
                 PolicyEngine
               </a>
-              's microsimulation model, which implements the full {isUK ? "UK" : "U.S."} tax and
-              benefit system—the same model used by {isUK ? "government departments" : "congressional offices"} and
-              think tanks to analyze policy impacts.
+              &apos;s open-source microsimulation model of the{" "}
+              {isUK ? "UK" : "U.S."} tax and benefit system. Its code is public
+              on GitHub.
             </p>
           </div>
         </div>
@@ -518,13 +571,6 @@ function MetricCard({ label, value, description, highlight }: MetricCardProps) {
           : "bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-md"
       }`}
     >
-      {highlight && (
-        <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden">
-          <div className="absolute top-2 right-[-20px] w-[70px] bg-primary-500 text-white text-[10px] font-bold text-center py-0.5 rotate-45 shadow-sm">
-            KEY
-          </div>
-        </div>
-      )}
       <p className={`text-sm font-medium mb-1 ${highlight ? "text-primary-700" : "text-gray-600"}`}>
         {label}
       </p>

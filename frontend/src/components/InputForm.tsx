@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import type { FormState, StateInfo, Income } from "../lib/types";
 import { TAX_YEAR_OPTIONS } from "../lib/types";
 import { formatCurrency } from "../lib/format";
+import { pledgeAmount, pledgeBaseIncome } from "../lib/pledge";
 
 interface Props {
   formState: FormState;
@@ -13,6 +14,8 @@ interface Props {
   states: StateInfo[];
   onCalculate: () => void;
   isCalculating: boolean;
+  /** True when a shared link filled the form; both steps open confirmed. */
+  prefilled?: boolean;
 }
 
 // Section states
@@ -107,11 +110,12 @@ export default function InputForm({
   states,
   onCalculate,
   isCalculating,
+  prefilled = false,
 }: Props) {
   // Track which sections are confirmed (user clicked Continue)
-  const [donationConfirmed, setDonationConfirmed] = useState(false);
-  const [detailsConfirmed, setDetailsConfirmed] = useState(false);
-  const [editingDonation, setEditingDonation] = useState(true);
+  const [donationConfirmed, setDonationConfirmed] = useState(prefilled);
+  const [detailsConfirmed, setDetailsConfirmed] = useState(prefilled);
+  const [editingDonation, setEditingDonation] = useState(!prefilled);
   const [editingDetails, setEditingDetails] = useState(false);
   const [showOtherIncome, setShowOtherIncome] = useState(false);
   const [showDeductions, setShowDeductions] = useState(false);
@@ -141,14 +145,15 @@ export default function InputForm({
     });
   };
 
-  // Calculate total income for display
-  const totalIncome = Object.values(formState.income).reduce(
-    (a, b) => a + b,
-    0,
-  );
+  // Qualified dividends are part of dividends, so they are not added again.
+  const totalIncome = pledgeBaseIncome(formState.income);
+  const pledgeGift = pledgeAmount(formState.pledge_percent, formState.income);
 
   // Section completion checks
-  const donationComplete = formState.donation_amount > 0;
+  const donationComplete =
+    formState.mode === "pledge"
+      ? formState.pledge_percent > 0
+      : formState.donation_amount > 0;
   const detailsComplete = totalIncome > 0 && formState.state_code !== "";
 
   // Section states - details only unlocks after user clicks Continue on donation
@@ -213,7 +218,11 @@ export default function InputForm({
         state={donationState}
         summary={
           donationComplete
-            ? formatCurrency(formState.donation_amount)
+            ? formState.mode === "pledge"
+              ? `${formState.pledge_percent}% of income${
+                  pledgeGift > 0 ? ` (${formatCurrency(pledgeGift)})` : ""
+                }`
+              : formatCurrency(formState.donation_amount)
             : undefined
         }
         onEdit={() => {
@@ -222,12 +231,17 @@ export default function InputForm({
         }}
       >
         <div className="space-y-4">
-          {/* Calculation mode */}
+          {/* Amount (the default) or a share of income, as pledgers give */}
           <div>
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden mb-4">
+            <div
+              className="flex rounded-lg border border-gray-300 overflow-hidden mb-4"
+              role="group"
+              aria-label="How you describe your gift"
+            >
               <button
                 type="button"
                 onClick={() => updateField("mode", "amount")}
+                aria-pressed={formState.mode === "amount"}
                 className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
                   formState.mode === "amount"
                     ? "bg-primary-600 text-white"
@@ -238,20 +252,64 @@ export default function InputForm({
               </button>
               <button
                 type="button"
-                onClick={() => updateField("mode", "target")}
+                onClick={() => updateField("mode", "pledge")}
+                aria-pressed={formState.mode === "pledge"}
                 className={`flex-1 py-2 px-3 text-sm font-medium border-l border-gray-300 transition-colors ${
-                  formState.mode === "target"
+                  formState.mode === "pledge"
                     ? "bg-primary-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                Target reduction
+                Share of income
               </button>
             </div>
 
-            {formState.mode === "amount" ? (
+            {formState.mode === "pledge" ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="pledge-percent"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  What share of your income do you give?
+                </label>
+                <div className="relative">
+                  <input
+                    id="pledge-percent"
+                    type="number"
+                    value={formState.pledge_percent || ""}
+                    onChange={(e) =>
+                      updateField(
+                        "pledge_percent",
+                        Math.max(0, Math.min(100, Number(e.target.value))),
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && donationComplete) {
+                        e.preventDefault();
+                        handleDonationContinue();
+                      }
+                    }}
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="w-full pl-3 pr-8 py-3 text-lg border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    %
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  {pledgeGift > 0
+                    ? `${formatCurrency(pledgeGift)} on your income below`
+                    : "You'll enter your income next."}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <label
+                  htmlFor="donation-amount"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   How much are you planning to donate?
                 </label>
                 <div className="relative">
@@ -259,6 +317,7 @@ export default function InputForm({
                     $
                   </span>
                   <input
+                    id="donation-amount"
                     type="number"
                     value={formState.donation_amount || ""}
                     onChange={(e) =>
@@ -281,60 +340,6 @@ export default function InputForm({
                     {formatCurrency(formState.donation_amount)}
                   </p>
                 )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => updateField("is_percentage", true)}
-                    className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
-                      formState.is_percentage
-                        ? "bg-primary-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    Percentage
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateField("is_percentage", false)}
-                    className={`flex-1 py-2 px-3 text-sm font-medium border-l border-gray-300 transition-colors ${
-                      !formState.is_percentage
-                        ? "bg-primary-600 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    Dollar amount
-                  </button>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Target net income reduction
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                      {formState.is_percentage ? "%" : "$"}
-                    </span>
-                    <input
-                      type="number"
-                      value={formState.target_reduction || ""}
-                      onChange={(e) =>
-                        updateField("target_reduction", Number(e.target.value))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && donationComplete) {
-                          e.preventDefault();
-                          handleDonationContinue();
-                        }
-                      }}
-                      min={0}
-                      step={formState.is_percentage ? 1 : 100}
-                      placeholder="Enter target"
-                      className="w-full pl-7 pr-3 py-3 text-lg border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                </div>
               </div>
             )}
           </div>
@@ -498,7 +503,7 @@ export default function InputForm({
           {/* Marital Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Filing status
+              Marital status
             </label>
             <div className="flex rounded-lg border border-gray-300 overflow-hidden">
               <button
