@@ -24,7 +24,9 @@ def _check_year(year: int) -> int:
     return year
 
 
-TaxYear = Annotated[int, AfterValidator(_check_year)]
+# ge shows the fixed lower bound in the OpenAPI schema; the upper bound
+# moves with today's date, so only _check_year enforces it.
+TaxYear = Annotated[int, Field(ge=MIN_YEAR), AfterValidator(_check_year)]
 
 
 class IncomeInput(BaseModel):

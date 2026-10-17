@@ -35,9 +35,8 @@ jobs:
 
       - name: Check formatting
         run: |
-          pip install black isort
-          black --check givecalc/ tests/ api/ --line-length 79
-          isort --check givecalc/ tests/ api/
+          uv run black --check givecalc/ tests/ api/ --line-length 79
+          uv run isort --check givecalc/ tests/ api/
 
   frontend-build:
     name: Frontend build

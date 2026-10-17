@@ -37,6 +37,7 @@ image = (
         "pandas==3.0.6",
         "scipy==1.16.2",
         "fastapi==0.124.2",
+        "pydantic==2.12.5",
         "pyyaml==6.0.3",
     )
     .env(

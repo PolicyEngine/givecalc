@@ -6,7 +6,7 @@ export type Country = "us" | "uk";
 
 // US-specific types
 // Gifts count in the year they are made, so offer last year (for filing),
-// this year and next year. The API accepts up to next year.
+// this year and next year. The API accepts up to two years ahead.
 export const CURRENT_YEAR = new Date().getFullYear();
 export const TAX_YEAR_OPTIONS = [
   CURRENT_YEAR - 1,
