@@ -36,6 +36,7 @@ from hypothesis import strategies as st
 os.environ.setdefault("USE_MODAL", "false")
 
 from api.main import app  # noqa: E402
+from api.simulations import clear_caches  # noqa: E402
 from givecalc import create_situation  # noqa: E402
 from givecalc.calculations.tax import calculate_donation_metrics  # noqa: E402
 from givecalc.core.household import (  # noqa: E402
@@ -248,7 +249,10 @@ def test_person_order_after_the_donor_does_not_matter():
     reordered["household"]["people"] = {
         person: people[person] for person in [donor, *reversed(others)]
     }
+    # Each request runs its own simulations, not the other's cached ones.
+    clear_caches()
     new = client.post("/api/calculate", json=reordered).json()
+    clear_caches()
     old = client.post("/api/calculate", json=request).json()
     for key in ("baseline_net_tax", "tax_savings"):
         assert new[key] == pytest.approx(old[key], abs=TOLERANCE)

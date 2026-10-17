@@ -2,7 +2,8 @@
 
 Invariants:
 - Key completeness: two situations get the same cache key only if they are
-  equal, so a cached result is always for the household asked about.
+  identical, order included (the first person is the donor), so a cached
+  result is always for the household and donor asked about.
 - Determinism: a cached point result equals a fresh simulation of the same
   household and donation, whatever ran before it.
 - LRU bounds: the cache holds at most ``maxsize`` entries and evicts the
@@ -169,6 +170,8 @@ def test_key_is_equal_only_for_equal_situations(a, b):
     situation_a = create_situation(**a)
     situation_b = create_situation(**b)
     same_key = situation_key(situation_a) == situation_key(situation_b)
+    # create_situation lists people in a fixed order, so here equal
+    # situations are identical in order too.
     assert same_key == (situation_a == situation_b)
 
 
@@ -248,6 +251,40 @@ def test_point_key_drops_the_axis_end_but_keeps_its_year():
     assert point_key("us", situation, 0) != point_key("us", other_year, 0)
     assert point_key("us", situation, 0) != point_key("us", situation, 1)
     assert point_key("us", situation, 0) != point_key("uk", situation, 0)
+
+
+def wizard_fixtures():
+    import json
+    from pathlib import Path
+
+    path = Path(__file__).parent / "fixtures" / "wizard_households.json"
+    return json.loads(path.read_text())
+
+
+def test_keys_tell_donors_apart():
+    """The first person is the donor, so person order is part of the key;
+    the axis's end still is not part of a point key."""
+    from api.main import us_situation
+    from api.schemas import CalculateRequest
+
+    for fixture in wizard_fixtures():
+        request = fixture["request"]
+        people = request["household"]["people"]
+        if len(people) < 2:
+            continue
+        swapped = copy.deepcopy(request)
+        order = list(people)
+        order[0], order[1] = order[1], order[0]
+        swapped["household"]["people"] = {p: people[p] for p in order}
+        original = us_situation(CalculateRequest(**request))
+        reordered = us_situation(CalculateRequest(**swapped))
+        assert original == reordered  # dict equality ignores order
+        assert situation_key(original) != situation_key(reordered)
+        assert point_key("us", original, 0) != point_key("us", reordered, 0)
+
+        longer = us_situation(CalculateRequest(**request), top=123_456)
+        assert point_key("us", original, 0) == point_key("us", longer, 0)
+        assert situation_key(original) != situation_key(longer)
 
 
 def test_curve_cache_returns_independent_copies():

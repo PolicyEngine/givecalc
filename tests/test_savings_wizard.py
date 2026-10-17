@@ -174,3 +174,57 @@ def test_wizard_bunching_runs_next_year_a_year_older():
         same_age["tax_savings"],
         older["tax_savings"],
     )
+
+
+def couple(state, first):
+    """Two earners; whoever is listed first gives (the review's case)."""
+    year = "2026"
+    people = {
+        "adult-1": {
+            "age": {year: 45},
+            "is_tax_unit_dependent": {year: False},
+            "employment_income": {year: 150_000},
+            "home_mortgage_interest": {year: 18_000},
+            "real_estate_taxes": {year: 6_000},
+        },
+        "adult-2": {
+            "age": {year: 45},
+            "is_tax_unit_dependent": {year: False},
+            "employment_income": {year: 20_000},
+        },
+    }
+    order = ["adult-1", "adult-2"]
+    if first == "adult-2":
+        order.reverse()
+    members = ["adult-1", "adult-2"]
+    return {
+        "household": {
+            "people": {person: people[person] for person in order},
+            "families": {"family": {"members": members}},
+            "marital_units": {"marital_unit": {"members": members}},
+            "tax_units": {"tax_unit": {"members": members}},
+            "spm_units": {"spm_unit": {"members": members}},
+            "households": {
+                "household": {
+                    "members": members,
+                    "state_name": {year: state},
+                }
+            },
+        },
+        "donation_amount": 15_000,
+        "year": 2026,
+    }
+
+
+def test_a_warm_cache_never_answers_for_another_donor():
+    """In Delaware the donor changes the savings ($4,046.90 if the first
+    earner gives, $3,744.00 if the second does, policyengine-us 2.49.2).
+    One donor's cached runs must not answer for the other."""
+    second_gives = fresh("/api/savings", couple("DE", "adult-2"))
+    first_gives = fresh("/api/savings", couple("DE", "adult-1"))
+    assert first_gives["tax_savings"] != second_gives["tax_savings"]
+
+    # The cache now holds the first earner's runs.
+    warm = client.post("/api/savings", json=couple("DE", "adult-2")).json()
+    for field in HEADLINE_FIELDS:
+        assert warm[field] == second_gives[field], field

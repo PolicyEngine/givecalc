@@ -9,8 +9,9 @@ uncached run, in givecalc.calculations.donations):
   donation grid in its situation's axes.
 
 Both are pure functions of the situation dict and the donation, so their
-results are cached under a key made from the situation's canonical JSON:
-two situations share a key only if every input in them is equal. The tax
+results are cached under a key made from the situation's JSON in its own
+order: two situations share a key only if they are identical, order
+included (the first person is the donor). The tax
 model is fixed for the life of a process, so it needs no place in the key.
 
 The caches live in each process. On Modal each container keeps its own, so
@@ -158,8 +159,15 @@ CURVE_CACHE = LRUCache(maxsize=128)
 
 
 def situation_key(situation: dict) -> str:
-    """Canonical JSON of a situation: equal only for equal inputs."""
-    return json.dumps(situation, sort_keys=True, separators=(",", ":"))
+    """The situation's JSON, in its own order: equal only for identical
+    inputs, order included.
+
+    Order matters: the first person is the donor (the donation axis's index
+    0), so sorting the keys would let two households with different donors
+    share an answer. The same household from the same client always comes
+    in the same order, so this costs no hits.
+    """
+    return json.dumps(situation, separators=(",", ":"))
 
 
 def point_key(country: Country, situation: dict, donation: float) -> tuple:
