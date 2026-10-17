@@ -100,8 +100,25 @@ describe("InputForm - Wizard Flow", () => {
     expect(screen.getByText("Select a state...")).toBeInTheDocument();
   });
 
-  it("asks for a share of income by default", () => {
-    render(<InputForm {...defaultProps} />);
+  it("asks for an amount by default and offers a share of income", () => {
+    const setFormState = vi.fn();
+    render(<InputForm {...defaultProps} setFormState={setFormState} />);
+    expect(
+      screen.getByLabelText("How much are you planning to donate?"),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Share of income" }));
+    expect(setFormState).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: "pledge" }),
+    );
+  });
+
+  it("asks what share of income when that option is chosen", () => {
+    render(
+      <InputForm
+        {...defaultProps}
+        formState={{ ...DEFAULT_FORM_STATE, mode: "pledge" }}
+      />,
+    );
     expect(
       screen.getByLabelText("What share of your income do you give?"),
     ).toHaveValue(10);
@@ -114,6 +131,7 @@ describe("InputForm - Wizard Flow", () => {
         prefilled
         formState={{
           ...DEFAULT_FORM_STATE,
+          mode: "pledge",
           income: { ...DEFAULT_FORM_STATE.income, wages_and_salaries: 150000 },
           state_code: "NY",
         }}

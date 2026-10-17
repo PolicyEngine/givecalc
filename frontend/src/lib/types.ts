@@ -130,7 +130,8 @@ export const DEFAULT_FORM_STATE: FormState = {
     real_estate_taxes: 0,
     casualty_loss: 0,
   },
-  mode: "pledge",
+  // General audiences think in amounts; share of income suits pledgers.
+  mode: "amount",
   pledge_percent: 10,
   year: CURRENT_YEAR,
 };

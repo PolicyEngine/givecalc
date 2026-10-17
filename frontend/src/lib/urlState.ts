@@ -1,8 +1,9 @@
 /**
  * Shareable URL state for the US calculator.
  *
- * `?pledge=10&income=150000&state=NY` opens GiveCalc with a 10% pledge on
- * $150,000 in New York and calculates straight away. Unknown or invalid
+ * `?pledge=10&income=150000&state=NY` opens GiveCalc giving 10% of a
+ * $150,000 income in New York and calculates straight away. `pledge` selects
+ * the share-of-income option; `amount` selects a specific amount. Unknown or invalid
  * values are ignored, so a bad link falls back to the empty form.
  */
 

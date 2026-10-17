@@ -21,7 +21,7 @@ interface Props {
   currency?: "USD" | "GBP";
   /** Tax year of the result. */
   year: number;
-  /** The pledge's share of income, when the gift was given as one. */
+  /** The gift's share of income, when the gift was given as one. */
   pledgePercent?: number | null;
   bunching?: BunchingState | null;
 }
@@ -49,7 +49,7 @@ export function costHeadline(
   }
   const subject =
     pledgePercent != null
-      ? `Your ${pledgePercent}% pledge (${fmt(gift)})`
+      ? `Giving ${pledgePercent}% of your income (${fmt(gift)})`
       : `Your ${fmt(gift)} gift`;
   const share = gift > 0 ? result.tax_savings / gift : 0;
   return {

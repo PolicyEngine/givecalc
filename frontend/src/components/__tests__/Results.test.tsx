@@ -23,14 +23,16 @@ function response(gift: number, savings: number): CalculateResponse {
 }
 
 describe("costHeadline", () => {
-  it("states a US pledge's cost and the share taxes cover", () => {
+  it("states the cost of giving a share of income", () => {
     const { headline, detail } = costHeadline(
       response(15_000, 1_589),
       "USD",
       2026,
       10,
     );
-    expect(headline).toBe("Your 10% pledge ($15,000) costs you $13,411 in 2026.");
+    expect(headline).toBe(
+      "Giving 10% of your income ($15,000) costs you $13,411 in 2026.",
+    );
     expect(detail).toBe("Lower taxes cover $1,589, or 11% of the gift.");
   });
 

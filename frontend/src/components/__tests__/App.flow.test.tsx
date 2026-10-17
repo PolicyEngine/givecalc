@@ -99,7 +99,9 @@ describe("App result publishing", () => {
         screen.getByText("What does your gift really cost?"),
       ).toBeInTheDocument(),
     );
-    expect(screen.queryByText(/^Your \d+% pledge/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/^Giving \d+% of your income/),
+    ).not.toBeInTheDocument();
   });
 
   it("labels a result with the current inputs after an equivalent edit", async () => {
@@ -142,7 +144,7 @@ describe("App result publishing", () => {
     await resolveMain(0, 500);
     await waitFor(() =>
       expect(
-        screen.getByText("Your 10% pledge ($10,000) costs you $9,500 in 2026."),
+        screen.getByText("Giving 10% of your income ($10,000) costs you $9,500 in 2026."),
       ).toBeInTheDocument(),
     );
 
@@ -173,7 +175,7 @@ describe("App result publishing", () => {
       target: { value: "100000" },
     });
     expect(
-      screen.getByText("Your 10% pledge ($10,000) costs you $9,500 in 2026."),
+      screen.getByText("Giving 10% of your income ($10,000) costs you $9,500 in 2026."),
     ).toBeInTheDocument();
     expect(window.location.search).toContain("income=100000");
   });

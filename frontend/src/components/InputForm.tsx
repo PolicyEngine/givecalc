@@ -231,7 +231,7 @@ export default function InputForm({
         }}
       >
         <div className="space-y-4">
-          {/* Pledge or amount */}
+          {/* Amount (the default) or a share of income, as pledgers give */}
           <div>
             <div
               className="flex rounded-lg border border-gray-300 overflow-hidden mb-4"
@@ -240,27 +240,27 @@ export default function InputForm({
             >
               <button
                 type="button"
-                onClick={() => updateField("mode", "pledge")}
-                aria-pressed={formState.mode === "pledge"}
-                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
-                  formState.mode === "pledge"
-                    ? "bg-primary-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Share of income
-              </button>
-              <button
-                type="button"
                 onClick={() => updateField("mode", "amount")}
                 aria-pressed={formState.mode === "amount"}
-                className={`flex-1 py-2 px-3 text-sm font-medium border-l border-gray-300 transition-colors ${
+                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors ${
                   formState.mode === "amount"
                     ? "bg-primary-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Specific amount
+              </button>
+              <button
+                type="button"
+                onClick={() => updateField("mode", "pledge")}
+                aria-pressed={formState.mode === "pledge"}
+                className={`flex-1 py-2 px-3 text-sm font-medium border-l border-gray-300 transition-colors ${
+                  formState.mode === "pledge"
+                    ? "bg-primary-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Share of income
               </button>
             </div>
 
