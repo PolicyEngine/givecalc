@@ -86,14 +86,16 @@ vi.mock("../../lib/api", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../lib/api")>();
   return {
     ...original,
-    calculateSavings: vi.fn((req: { donation_amount: number }) =>
-      slow.savingsA && req.donation_amount === 1000
-        ? wait("savings 1000")
-        : Promise.resolve(headline(req.donation_amount)),
-    ),
-    calculateDonation: vi.fn((req: { donation_amount: number }) =>
-      wait(`full ${req.donation_amount}`),
-    ),
+    calculateSavings: vi.fn((req: { donation_amount: number }) => {
+      if (!(slow.savingsA && req.donation_amount === 1000)) {
+        return Promise.resolve(headline(req.donation_amount));
+      }
+      return wait(pending["savings 1000"] ? "savings 1000 again" : "savings 1000");
+    }),
+    calculateDonation: vi.fn((req: { donation_amount: number }) => {
+      const name = `full ${req.donation_amount}`;
+      return wait(pending[name] ? `${name} again` : name);
+    }),
   };
 });
 
@@ -158,5 +160,26 @@ describe("curve status per form", () => {
     await settle(() => pending["full 2000"].resolve(full(2000)));
     expect(screen.getByTestId("tax-chart")).toBeInTheDocument();
     expect(screen.queryAllByText(LOADING)).toHaveLength(0);
+  });
+
+  it("ignores an earlier request's failure when Calculate is clicked twice", async () => {
+    slow.savingsA = true;
+    render(<App />);
+    await click("form A");
+    await click("calc");
+    await click("calc");
+    await settle(() => {
+      pending["savings 1000"].resolve(headline(1000));
+      pending["savings 1000 again"].resolve(headline(1000));
+    });
+    expect(pending["full 1000"]).toBeDefined();
+    expect(pending["full 1000 again"]).toBeDefined();
+
+    await settle(() => pending["full 1000"].reject(new Error("first failed")));
+    expect(screen.getAllByText(LOADING)).toHaveLength(2);
+    expect(screen.queryAllByText(FAILED)).toHaveLength(0);
+
+    await settle(() => pending["full 1000 again"].resolve(full(1000)));
+    expect(screen.getByTestId("tax-chart")).toBeInTheDocument();
   });
 });

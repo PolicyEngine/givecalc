@@ -28,6 +28,8 @@ local development) every run happens in the calling thread.
 import json
 import multiprocessing
 import os
+import re
+import sys
 import threading
 from collections import OrderedDict
 from concurrent.futures import CancelledError, Future, ProcessPoolExecutor
@@ -192,13 +194,14 @@ _worker_settings: dict = {}
 # a stop shuts itself down instead of taking over.
 _pool_epoch = 0
 GC_THRESHOLD_0 = 50_000
-# Each worker is replaced after this many tasks, by a fresh fork of the
-# warmed server process (about 0.05 s more on its first run, measured
-# locally). This bounds what a leak can hold: policyengine-core registers
-# every variable module of every new tax-benefit system in sys.modules, and
-# policyengine-uk builds a new system per simulation, so each UK run leaves
-# about 14,000 objects (9-13 MB) behind for good.
-WORKER_TASKS = 20
+# policyengine-core loads each variable file of a new tax-benefit system as
+# a module named "<id(system)>_<hash(path)>_<file>" and keeps it in
+# sys.modules. policyengine-uk builds a new system for every simulation, so
+# each UK run would leave ~1,160 modules (~14,000 objects, 9-13 MB) behind
+# for good. Workers drop the ones their run added (see _in_worker).
+# Recycling workers instead (max_tasks_per_child) can leave a pool with no
+# processes on Python 3.13, so runs would wait forever.
+VARIABLE_MODULE = re.compile(r"\d+_-?\d+_\w+")
 
 
 def _start_worker() -> None:
@@ -217,16 +220,23 @@ def _start_worker() -> None:
 
 
 def _in_worker(function: Callable, *args):
-    """Run ``function`` in a worker, then collect its garbage.
+    """Run ``function`` in a worker, then drop what the run left behind.
 
-    The objects inherited from the server process are frozen, so a full
-    collection scans only what this run left behind.
+    First the variable modules a new tax-benefit system registered (see
+    VARIABLE_MODULE), then the run's garbage: the objects inherited from
+    the server process are frozen, so a full collection scans only objects
+    created since the fork. A worker runs one task at a time, so nothing
+    else is using those modules.
     """
     import gc
 
+    before = set(sys.modules)
     try:
         return function(*args)
     finally:
+        for name in set(sys.modules) - before:
+            if VARIABLE_MODULE.fullmatch(name):
+                del sys.modules[name]
         gc.collect()
 
 
@@ -243,15 +253,14 @@ def _new_pool(count: int) -> ProcessPoolExecutor:
         max_workers=count,
         mp_context=multiprocessing.get_context("forkserver"),
         initializer=_start_worker,
-        max_tasks_per_child=WORKER_TASKS,
     )
 
 
-def _worker_census() -> tuple[int, int]:
-    """A worker's process id and tracked-object count (for tests)."""
+def _worker_census() -> tuple[int, int, int]:
+    """A worker's process id, tracked objects and modules (for tests)."""
     import gc
 
-    return os.getpid(), len(gc.get_objects())
+    return os.getpid(), len(gc.get_objects()), len(sys.modules)
 
 
 def start_workers(

@@ -113,6 +113,14 @@ function Calculator() {
   // arrives after the form has changed fills the cache but not the screen.
   const usKeyRef = useRef<string | null>(null);
   const ukKeyRef = useRef<string | null>(null);
+  // The latest request per cache key, so an earlier request for the same
+  // form (Calculate clicked twice) cannot overwrite the chart's status.
+  const latestRequestRef = useRef(new Map<string, number>());
+  const startRequest = (key: string) => {
+    const id = (latestRequestRef.current.get(key) ?? 0) + 1;
+    latestRequestRef.current.set(key, id);
+    return () => latestRequestRef.current.get(key) === id;
+  };
 
   const {
     data: statesData,
@@ -190,6 +198,7 @@ function Calculator() {
     setUKResult(null);
     setUKHeadline(cached?.ukHeadline || null);
     setUKCurveStatus(null);
+    const isLatest = startRequest(cacheKey);
     await fetchHeadlineFirst({
       cachedHeadline: cached?.ukHeadline,
       fetchHeadline: async () =>
@@ -197,12 +206,13 @@ function Calculator() {
       fetchFull: () => ukCalculateMutation.mutateAsync(request),
       storeHeadline: (ukHeadline) => cacheUpdate(cacheKey, { ukHeadline }),
       storeFull: (ukResult) => cacheUpdate(cacheKey, { ukResult }),
-      storeFullStatus: (ukCurveStatus) =>
-        cacheUpdate(cacheKey, { ukCurveStatus }),
+      storeFullStatus: (ukCurveStatus) => {
+        if (isLatest()) cacheUpdate(cacheKey, { ukCurveStatus });
+      },
       showHeadline: setUKHeadline,
       showFull: setUKResult,
       showFullStatus: setUKCurveStatus,
-      isCurrent: () => ukKeyRef.current === cacheKey,
+      isCurrent: () => ukKeyRef.current === cacheKey && isLatest(),
     });
   };
 
@@ -253,17 +263,20 @@ function Calculator() {
     setResult(null);
     setHeadline(cached?.headline || null);
     setCurveStatus(null);
+    const isLatest = startRequest(cacheKey);
     await fetchHeadlineFirst({
       cachedHeadline: cached?.headline,
       fetchHeadline: () => savingsMutation.mutateAsync(request),
       fetchFull: () => calculateMutation.mutateAsync(request),
       storeHeadline: (headline) => cacheUpdate(cacheKey, { headline }),
       storeFull: (result) => cacheUpdate(cacheKey, { result }),
-      storeFullStatus: (curveStatus) => cacheUpdate(cacheKey, { curveStatus }),
+      storeFullStatus: (curveStatus) => {
+        if (isLatest()) cacheUpdate(cacheKey, { curveStatus });
+      },
       showHeadline: setHeadline,
       showFull: setResult,
       showFullStatus: setCurveStatus,
-      isCurrent: isShown,
+      isCurrent: () => isShown() && isLatest(),
     });
   };
 
