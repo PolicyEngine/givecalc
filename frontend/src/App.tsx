@@ -206,12 +206,25 @@ function Calculator() {
       fetchFull: () => ukCalculateMutation.mutateAsync(request),
       storeHeadline: (ukHeadline) => cacheUpdate(cacheKey, { ukHeadline }),
       storeFull: (ukResult) => cacheUpdate(cacheKey, { ukResult }),
-      storeFullStatus: (ukCurveStatus) => {
-        if (isLatest()) cacheUpdate(cacheKey, { ukCurveStatus });
+      storeFullStatus: (status) => {
+        if (!isLatest()) return;
+        // An earlier request for this form may already have the curve.
+        const kept = cacheRef.current.get(cacheKey)?.ukResult;
+        cacheUpdate(cacheKey, {
+          ukCurveStatus: status === "failed" && kept ? null : status,
+        });
       },
       showHeadline: setUKHeadline,
       showFull: setUKResult,
-      showFullStatus: setUKCurveStatus,
+      showFullStatus: (status) => {
+        const kept = cacheRef.current.get(cacheKey)?.ukResult;
+        if (status === "failed" && kept) {
+          setUKResult(kept);
+          setUKCurveStatus(null);
+        } else {
+          setUKCurveStatus(status);
+        }
+      },
       isCurrent: () => ukKeyRef.current === cacheKey && isLatest(),
     });
   };
@@ -270,12 +283,25 @@ function Calculator() {
       fetchFull: () => calculateMutation.mutateAsync(request),
       storeHeadline: (headline) => cacheUpdate(cacheKey, { headline }),
       storeFull: (result) => cacheUpdate(cacheKey, { result }),
-      storeFullStatus: (curveStatus) => {
-        if (isLatest()) cacheUpdate(cacheKey, { curveStatus });
+      storeFullStatus: (status) => {
+        if (!isLatest()) return;
+        // An earlier request for this form may already have the curve.
+        const kept = cacheRef.current.get(cacheKey)?.result;
+        cacheUpdate(cacheKey, {
+          curveStatus: status === "failed" && kept ? null : status,
+        });
       },
       showHeadline: setHeadline,
       showFull: setResult,
-      showFullStatus: setCurveStatus,
+      showFullStatus: (status) => {
+        const kept = cacheRef.current.get(cacheKey)?.result;
+        if (status === "failed" && kept) {
+          setResult(kept);
+          setCurveStatus(null);
+        } else {
+          setCurveStatus(status);
+        }
+      },
       isCurrent: () => isShown() && isLatest(),
     });
   };

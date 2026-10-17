@@ -70,4 +70,6 @@ def test_the_pool_keeps_serving_after_a_burst(one_worker):
         for _ in range(40):
             pool.submit(_in_worker, time.sleep, 0.01).result(timeout=10)
     finally:
-        pool.shutdown()
+        # Without waiting: a hung pool would otherwise hang the test run
+        # instead of failing it.
+        pool.shutdown(wait=False, cancel_futures=True)

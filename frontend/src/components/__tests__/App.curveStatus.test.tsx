@@ -182,4 +182,22 @@ describe("curve status per form", () => {
     await settle(() => pending["full 1000 again"].resolve(full(1000)));
     expect(screen.getByTestId("tax-chart")).toBeInTheDocument();
   });
+
+  it("shows an earlier request's chart when the later one fails", async () => {
+    slow.savingsA = true;
+    render(<App />);
+    await click("form A");
+    await click("calc");
+    await click("calc");
+    await settle(() => {
+      pending["savings 1000"].resolve(headline(1000));
+      pending["savings 1000 again"].resolve(headline(1000));
+    });
+    await settle(() => pending["full 1000"].resolve(full(1000)));
+    await settle(() =>
+      pending["full 1000 again"].reject(new Error("second failed")),
+    );
+    expect(screen.getByTestId("tax-chart")).toBeInTheDocument();
+    expect(screen.queryAllByText(FAILED)).toHaveLength(0);
+  });
 });
