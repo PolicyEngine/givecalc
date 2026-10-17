@@ -1,10 +1,30 @@
 """Pydantic schemas for GiveCalc API request/response validation."""
 
-from typing import Optional
+from datetime import date
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
 
-from givecalc.constants import CURRENT_YEAR
+# Gifts count in the year they are made, so the useful years run to next
+# year. The bound is checked against today's date on each request, so a
+# container started in December keeps accepting next year in January, and
+# one more year covers browsers already in the next year (ahead of UTC).
+MIN_YEAR = 2024
+YEARS_AHEAD = 2
+
+
+def max_year() -> int:
+    """The latest tax year a request may ask for."""
+    return date.today().year + YEARS_AHEAD
+
+
+def _check_year(year: int) -> int:
+    if not MIN_YEAR <= year <= max_year():
+        raise ValueError(f"year must be between {MIN_YEAR} and {max_year()}")
+    return year
+
+
+TaxYear = Annotated[int, AfterValidator(_check_year)]
 
 
 class IncomeInput(BaseModel):
@@ -71,10 +91,8 @@ class CalculateRequest(BaseModel):
         default_factory=DeductionsInput,
         description="Itemized deductions",
     )
-    year: int = Field(
-        default=CURRENT_YEAR,
-        ge=2024,
-        le=2026,
+    year: TaxYear = Field(
+        default_factory=lambda: date.today().year,
         description="Tax year for calculations",
     )
 
@@ -133,10 +151,8 @@ class TargetDonationRequest(BaseModel):
         default=False,
         description="If true, target_reduction is a percentage",
     )
-    year: int = Field(
-        default=CURRENT_YEAR,
-        ge=2024,
-        le=2026,
+    year: TaxYear = Field(
+        default_factory=lambda: date.today().year,
         description="Tax year for calculations",
     )
 
@@ -222,10 +238,8 @@ class UKCalculateRequest(BaseModel):
     num_children: int = Field(
         default=0, ge=0, le=20, description="Number of dependent children"
     )
-    year: int = Field(
-        default=CURRENT_YEAR,
-        ge=2024,
-        le=2026,
+    year: TaxYear = Field(
+        default_factory=lambda: date.today().year,
         description="Tax year for calculations",
     )
 

@@ -20,10 +20,6 @@ perf:
 
 # ============= Development =============
 
-# Run the Streamlit app (legacy)
-run-streamlit:
-	streamlit run app.py
-
 # Run the FastAPI backend
 api:
 	PYTHONPATH=. uvicorn api.main:app --reload --port 8000

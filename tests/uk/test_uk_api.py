@@ -71,7 +71,26 @@ class TestUKCalculateEndpoint:
         assert "curve" in data
 
     def test_returns_positive_tax_savings(self):
-        """Donations should result in tax savings."""
+        """Higher-rate taxpayers reclaim the gap between 40% and 20%."""
+        response = client.post(
+            "/api/uk/calculate",
+            json={
+                "income": {"employment_income": 80000},
+                "region": "LONDON",
+                "gift_aid": 5000,
+            },
+        )
+        data = response.json()
+        # 25% of the net gift: grossed up by 1/0.8, relieved at 40% - 20%.
+        assert data["tax_savings"] == pytest.approx(1250, abs=1)
+
+    def test_basic_rate_donor_saves_nothing(self):
+        """Basic-rate relief goes to the charity, not the donor.
+
+        £50,000 sits below the higher-rate threshold, so the charity claims
+        the 25% top-up and the donor's own tax is unchanged. Production's
+        policyengine-uk 2.88.9 returned £1,000 of savings here (2026-10-16).
+        """
         response = client.post(
             "/api/uk/calculate",
             json={
@@ -80,8 +99,7 @@ class TestUKCalculateEndpoint:
                 "gift_aid": 5000,
             },
         )
-        data = response.json()
-        assert data["tax_savings"] > 0
+        assert response.json()["tax_savings"] == pytest.approx(0, abs=1)
 
     def test_higher_income_higher_savings(self):
         """Higher rate taxpayers should have higher marginal savings."""

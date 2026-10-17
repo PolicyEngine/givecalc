@@ -44,6 +44,9 @@ from .schemas import (
     UKTaxProgramsResponse,
 )
 
+# The calculation endpoints are plain functions, so FastAPI runs them in its
+# threadpool and a long simulation does not block health checks or other
+# requests on the same container.
 app = FastAPI(
     title="GiveCalc API",
     description=(
@@ -53,6 +56,11 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+)
+
+# Vercel preview deployments of this repo's frontend.
+VERCEL_PREVIEW_ORIGINS = (
+    r"https://givecalc-[a-z0-9-]+-policy-engine\.vercel\.app"
 )
 
 # CORS configuration for frontend
@@ -69,6 +77,7 @@ app.add_middleware(
         "https://policyengine.org",
         "https://www.policyengine.org",
     ],
+    allow_origin_regex=VERCEL_PREVIEW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -191,7 +200,7 @@ async def get_tax_programs(state_code: str):
 
 
 @app.post("/api/calculate", response_model=CalculateResponse)
-async def calculate_donation(request: CalculateRequest):
+def calculate_donation(request: CalculateRequest):
     """Calculate tax impact of a charitable donation.
 
     Returns tax savings, marginal rates, and full donation curve data.
@@ -296,7 +305,7 @@ async def calculate_donation(request: CalculateRequest):
 
 
 @app.post("/api/target-donation", response_model=TargetDonationResponse)
-async def calculate_target(request: TargetDonationRequest):
+def calculate_target(request: TargetDonationRequest):
     """Calculate required donation to achieve a target net income reduction."""
     try:
         # Build deductions dict
@@ -461,7 +470,7 @@ async def get_uk_tax_programs():
 
 
 @app.post("/api/uk/calculate", response_model=UKCalculateResponse)
-async def calculate_uk_donation(request: UKCalculateRequest):
+def calculate_uk_donation(request: UKCalculateRequest):
     """Calculate UK tax impact of a Gift Aid donation.
 
     Returns tax savings, marginal rates, and full donation curve data.

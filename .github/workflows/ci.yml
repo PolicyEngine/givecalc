@@ -24,13 +24,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
 
+      # Install exactly what uv.lock pins, which is what modal_app.py deploys.
       - name: Install dependencies
         run: |
-          uv pip install --system -e ".[dev]"
+          uv sync --locked --extra dev
 
       - name: Run tests
         run: |
-          pytest tests/ -v --tb=short
+          uv run pytest tests/ -v --tb=short
 
       - name: Check formatting
         run: |
