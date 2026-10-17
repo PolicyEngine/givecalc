@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fetchHeadlineFirst } from "../headlineFirst";
+import { fetchHeadlineFirst, type FullStatus } from "../headlineFirst";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -26,8 +26,14 @@ function steps(overrides = {}) {
       }),
       storeHeadline: vi.fn((h: string) => log.push(`store ${h}`)),
       storeFull: vi.fn((f: string) => log.push(`store ${f}`)),
+      storeFullStatus: vi.fn((status: FullStatus) =>
+        log.push(`store status ${status}`),
+      ),
       showHeadline: vi.fn((h: string) => log.push(`show ${h}`)),
       showFull: vi.fn((f: string) => log.push(`show ${f}`)),
+      showFullStatus: vi.fn((status: FullStatus) =>
+        log.push(`show status ${status}`),
+      ),
       isCurrent: () => true,
       ...overrides,
     },
@@ -42,9 +48,13 @@ describe("fetchHeadlineFirst", () => {
       "fetch headline",
       "store headline",
       "show headline",
+      "store status loading",
+      "show status loading",
       "fetch full",
       "store full",
       "show full",
+      "store status null",
+      "show status null",
     ]);
   });
 
@@ -76,6 +86,25 @@ describe("fetchHeadlineFirst", () => {
     expect(s.storeFull).toHaveBeenCalledWith("full");
     expect(s.showHeadline).not.toHaveBeenCalled();
     expect(s.showFull).not.toHaveBeenCalled();
+    expect(s.storeFullStatus).toHaveBeenLastCalledWith(null);
+    expect(s.showFullStatus).not.toHaveBeenCalled();
+  });
+
+  it("stores a failed curve for its own request, shown only if current", async () => {
+    let current = true;
+    const full = deferred<string>();
+    const { steps: s } = steps({
+      fetchFull: vi.fn(() => full.promise),
+      isCurrent: () => current,
+    });
+    const done = fetchHeadlineFirst(s);
+    await vi.waitFor(() => expect(s.fetchFull).toHaveBeenCalled());
+    expect(s.showFullStatus).toHaveBeenLastCalledWith("loading");
+    current = false; // the user moves to another form
+    full.reject(new Error("curve failed"));
+    await expect(done).rejects.toThrow("curve failed");
+    expect(s.storeFullStatus).toHaveBeenLastCalledWith("failed");
+    expect(s.showFullStatus).toHaveBeenCalledTimes(1);
   });
 
   it("asks for no curve when the headline fails", async () => {
@@ -99,5 +128,6 @@ describe("fetchHeadlineFirst", () => {
     expect(s.showHeadline).toHaveBeenCalledWith("headline");
     expect(s.storeFull).not.toHaveBeenCalled();
     expect(s.showFull).not.toHaveBeenCalled();
+    expect(s.showFullStatus).toHaveBeenLastCalledWith("failed");
   });
 });

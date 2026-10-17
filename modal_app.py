@@ -11,9 +11,9 @@ in a PR to move the deployed model.
 Simulations run in SIMULATION_WORKERS processes (api.simulations), so a
 request's simulations run at once and concurrent requests do not queue on
 one GIL. Modal lets a container use more CPU than it requests and bills
-the higher of request and use. Measured on Modal, 2026-10-16: four
-processes each ran at 85% of one process's speed, and the container used
-about 7.5 GiB. Until the workers are up (about 1.5 minutes after a cold
+the higher of request and use (modal.com/docs/guide/resources). Measured on
+Modal, 2026-10-16: four processes each ran at 85% of one process's speed,
+and the container used 7.3-7.5 GiB. Until the workers are up (about 1.5 minutes after a cold
 start), simulations run in the request's thread.
 
 A cold start takes about a minute, so an answer in a few seconds needs a

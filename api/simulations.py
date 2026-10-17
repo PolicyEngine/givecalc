@@ -1,6 +1,8 @@
 """PolicyEngine runs behind the API, with in-process caches.
 
-Every figure the API reports comes from one of two runs:
+Every figure /api/savings and /api/calculate (and their UK versions) report
+comes from one of two runs (/api/target-donation also makes one direct,
+uncached run, in givecalc.calculations.donations):
 
 - ``point_metrics``: one simulation of the household at one donation.
 - ``donation_curve``: one vectorized simulation of the household across the
@@ -28,7 +30,7 @@ import multiprocessing
 import os
 import threading
 from collections import OrderedDict
-from concurrent.futures import Future, ProcessPoolExecutor
+from concurrent.futures import CancelledError, Future, ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 from typing import Callable, Hashable, Literal, Sequence, TypeVar
@@ -85,16 +87,27 @@ class LRUCache:
         return self.get_or_submit(key, lambda: _run_now(compute)).result()
 
     def _settle(self, key: Hashable, shared: Future, run: Future) -> None:
-        error = run.exception()
+        # Always forget the run and resolve everyone sharing it, even if it
+        # was cancelled (whose .exception() raises instead of returning).
+        value, error = None, None
+        try:
+            if run.cancelled():
+                error = CancelledError()
+            else:
+                error = run.exception()
+                if error is None:
+                    value = run.result()
+        except BaseException as unexpected:
+            error = unexpected
         with self._lock:
-            del self._in_flight[key]
+            self._in_flight.pop(key, None)
             if error is None:
-                self._values[key] = run.result()
+                self._values[key] = value
                 self._values.move_to_end(key)
                 while len(self._values) > self.maxsize:
                     self._values.popitem(last=False)
         if error is None:
-            shared.set_result(run.result())
+            shared.set_result(value)
         else:
             shared.set_exception(error)
 
@@ -132,8 +145,9 @@ class PointMetrics:
     household_net_income: float
 
 
-# A point result is two floats and a key of about 2 KB, so 4,096 entries
-# take under 10 MB. A curve is a 1,001-row frame of about 40 KB.
+# A point result is two floats and a key of 0.9-3.3 KB (one adult to a
+# married couple with 20 children), so 4,096 entries take under 15 MB. A
+# curve is a 1,001-row frame of about 40 KB.
 POINT_CACHE = LRUCache(maxsize=4096)
 CURVE_CACHE = LRUCache(maxsize=128)
 
@@ -174,20 +188,46 @@ def _run_curve(country: Country, situation: dict) -> pd.DataFrame:
 _executor: ProcessPoolExecutor | None = None
 _executor_lock = threading.Lock()
 _worker_settings: dict = {}
+# Bumped by stop_workers, so a pool still starting in the background after
+# a stop shuts itself down instead of taking over.
+_pool_epoch = 0
+GC_THRESHOLD_0 = 50_000
+# Each worker is replaced after this many tasks, by a fresh fork of the
+# warmed server process (about 0.05 s more on its first run, measured
+# locally). This bounds what a leak can hold: policyengine-core registers
+# every variable module of every new tax-benefit system in sys.modules, and
+# policyengine-uk builds a new system per simulation, so each UK run leaves
+# about 14,000 objects (9-13 MB) behind for good.
+WORKER_TASKS = 20
 
 
 def _start_worker() -> None:
     """Runs first in each worker.
 
     The server process loads with collection off (see api.worker_preload);
-    turn it back on. A higher first-generation threshold collects less
-    often: on Modal it cut a UK simulation from 4.2 to 3.0 seconds and left
-    US ones unchanged.
+    turn it back on, with a higher first-generation threshold so a run
+    collects less often while it works. ``_in_worker`` collects fully after
+    each run instead: a policyengine-uk run leaves about 340,000 objects of
+    cyclic garbage, which would otherwise pile up between full collections.
     """
     import gc
 
     gc.enable()
-    gc.set_threshold(50_000, 20, 100)
+    gc.set_threshold(GC_THRESHOLD_0)
+
+
+def _in_worker(function: Callable, *args):
+    """Run ``function`` in a worker, then collect its garbage.
+
+    The objects inherited from the server process are frozen, so a full
+    collection scans only what this run left behind.
+    """
+    import gc
+
+    try:
+        return function(*args)
+    finally:
+        gc.collect()
 
 
 def _worker_pid(_: int) -> int:
@@ -203,11 +243,21 @@ def _new_pool(count: int) -> ProcessPoolExecutor:
         max_workers=count,
         mp_context=multiprocessing.get_context("forkserver"),
         initializer=_start_worker,
+        max_tasks_per_child=WORKER_TASKS,
     )
 
 
+def _worker_census() -> tuple[int, int]:
+    """A worker's process id and tracked-object count (for tests)."""
+    import gc
+
+    return os.getpid(), len(gc.get_objects())
+
+
 def start_workers(
-    count: int, preload: Sequence[str] = ("api.worker_preload",)
+    count: int,
+    preload: Sequence[str] = ("api.worker_preload",),
+    _epoch: int | None = None,
 ) -> list[int]:
     """Run simulations in ``count`` worker processes.
 
@@ -215,7 +265,8 @@ def start_workers(
     each starts with PolicyEngine loaded (and warmed, with the default
     module). Runs stay in the calling thread until every worker is up, so
     this can run in the background while the app serves its first
-    requests. Returns the workers' process ids.
+    requests. Returns the process ids that answered the start-up tasks
+    (usually all ``count``).
     """
     global _executor
     multiprocessing.get_context("forkserver").set_forkserver_preload(
@@ -224,21 +275,30 @@ def start_workers(
     pool = _new_pool(count)
     pids = sorted(set(pool.map(_worker_pid, range(count))))
     with _executor_lock:
-        previous = _executor
-        _executor = pool
-        _worker_settings.update(count=count, preload=list(preload))
+        if _epoch is not None and _epoch != _pool_epoch:
+            stale = True
+        else:
+            stale = False
+            previous = _executor
+            _executor = pool
+            _worker_settings.update(count=count, preload=list(preload))
+    if stale:
+        pool.shutdown(wait=False)
+        return []
     if previous is not None:
-        previous.shutdown(wait=False, cancel_futures=True)
+        # Without cancelling: every queued run has someone waiting on it.
+        previous.shutdown(wait=False)
     return pids
 
 
 def stop_workers() -> None:
-    global _executor
+    global _executor, _pool_epoch
     with _executor_lock:
-        if _executor is not None:
-            _executor.shutdown(wait=True, cancel_futures=True)
-        _executor = None
+        executor, _executor = _executor, None
         _worker_settings.clear()
+        _pool_epoch += 1
+    if executor is not None:
+        executor.shutdown(wait=True)
 
 
 def _replace_broken_workers(unusable: bool = False) -> None:
@@ -257,9 +317,10 @@ def _replace_broken_workers(unusable: bool = False) -> None:
             return
         _executor = None
         count, preload = _worker_settings["count"], _worker_settings["preload"]
-    broken.shutdown(wait=False, cancel_futures=True)
+        epoch = _pool_epoch
+    broken.shutdown(wait=False)
     threading.Thread(
-        target=start_workers, args=(count, preload), daemon=True
+        target=start_workers, args=(count, preload, epoch), daemon=True
     ).start()
 
 
@@ -267,7 +328,7 @@ def _submit(function: Callable, *args) -> Future:
     executor = _executor
     if executor is not None:
         try:
-            return executor.submit(function, *args)
+            return executor.submit(_in_worker, function, *args)
         except Exception:
             # A pool that cannot take work (broken, or shut down) must not
             # fail the request.
@@ -286,15 +347,16 @@ def _started(start: Callable[[], Future]) -> Started:
 def _results(runs: Sequence[Started]) -> list:
     """Wait for each started run.
 
-    A run lost with a dead worker is started once more: in this thread, or
-    on the new pool once it is up. The cache forgets a failed run before
-    reporting it, so starting it again runs it again.
+    A run lost with its pool (a dead worker, or a pool shut down with work
+    queued) is started once more: in this thread, or on the new pool once
+    it is up. The cache forgets a failed run before reporting it, so
+    starting it again runs it again.
     """
     results = []
     for start, future in runs:
         try:
             results.append(future.result())
-        except BrokenProcessPool:
+        except (BrokenProcessPool, CancelledError):
             _replace_broken_workers()
             results.append(start().result())
     return results

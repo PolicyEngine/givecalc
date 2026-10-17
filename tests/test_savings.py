@@ -5,9 +5,14 @@ also runs the donation sweep. Both must give the same headline for every
 household. Each comparison clears the simulation caches before each call,
 so each endpoint runs its own simulations rather than reading the other's.
 
-Bunching mode must equal what the frontend computed before it existed:
-separate /api/calculate runs for next year at the gift and this year at
-twice the gift.
+Bunching mode must equal separate /api/calculate runs for next year at the
+gift and this year at twice the gift: the method of #86's frontend and of
+the 2026-10-16 review's evidence script, whose rounded figures are pinned
+below.
+
+Both endpoints run their simulations through api.simulations, so each
+headline is also checked against an oracle written here, which runs
+policyengine-us directly.
 
 Invariants (property tests at the end):
 - Bounds: 0 <= tax savings <= gift.
@@ -17,15 +22,17 @@ Invariants (property tests at the end):
   year's; the gain = bunched savings - every-year savings.
 """
 
+import copy
 from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from policyengine_us import Simulation
 
-from api.main import app
-from api.schemas import max_year
+from api.main import app, us_situation
+from api.schemas import CalculateRequest, max_year
 from api.simulations import clear_caches
 
 client = TestClient(app)
@@ -129,6 +136,35 @@ US_HOUSEHOLDS = {
 }
 
 
+def oracle(body):
+    """The headline from policyengine-us directly, without api.simulations:
+    net tax (household tax minus benefits) and net income at $0 and the
+    gift."""
+    situation = us_situation(CalculateRequest(**body))
+    del situation["axes"]
+    year = body["year"]
+
+    def run(donation):
+        point = copy.deepcopy(situation)
+        point["people"]["you"]["charitable_cash_donations"] = {year: donation}
+        sim = Simulation(situation=point)
+        net_tax = float(
+            sim.calculate("household_tax", year)[0]
+            - sim.calculate("household_benefits", year)[0]
+        )
+        return net_tax, float(sim.calculate("household_net_income", year)[0])
+
+    gift = body["donation_amount"]
+    (base_tax, base_income), (gift_tax, gift_income) = run(0), run(gift)
+    return {
+        "baseline_net_tax": base_tax,
+        "net_tax_at_donation": gift_tax,
+        "tax_savings": base_tax - gift_tax,
+        "baseline_net_income": base_income,
+        "net_income_after_donation": gift_income - gift,
+    }
+
+
 def fresh(path, body):
     """Post with empty caches, so the endpoint runs its own simulations."""
     clear_caches()
@@ -144,8 +180,10 @@ def test_savings_matches_calculate_to_the_cent(name):
     full = fresh("/api/calculate", body)
     # The same simulations run in both, so the figures are equal exactly,
     # which is stricter than to the cent.
+    reference = oracle(body)
     for field in HEADLINE_FIELDS:
         assert light[field] == full[field], field
+        assert round(light[field], 2) == round(reference[field], 2), field
     assert light["donation_amount"] == full["donation_amount"]
     assert light["year"] == body["year"]
     assert light["bunching"] is None

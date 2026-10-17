@@ -31,7 +31,7 @@ import type {
   UKSavingsResponse,
 } from "./lib/types";
 import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "./lib/types";
-import { fetchHeadlineFirst } from "./lib/headlineFirst";
+import { fetchHeadlineFirst, type FullStatus } from "./lib/headlineFirst";
 
 // Cache for calculation results. The headline arrives first, from
 // /api/savings; the curve (and the marginal rate) follows from
@@ -39,9 +39,11 @@ import { fetchHeadlineFirst } from "./lib/headlineFirst";
 type CacheEntry = {
   headline?: Headline;
   result?: CalculateResponse;
+  curveStatus?: FullStatus;
   targetResult?: TargetDonationResponse;
   ukHeadline?: Headline;
   ukResult?: UKCalculateResponse;
+  ukCurveStatus?: FullStatus;
 };
 type ResultCache = Map<string, CacheEntry>;
 
@@ -102,8 +104,10 @@ function Calculator() {
   const [result, setResult] = useState<CalculateResponse | null>(null);
   const [targetResult, setTargetResult] =
     useState<TargetDonationResponse | null>(null);
+  const [curveStatus, setCurveStatus] = useState<FullStatus>(null);
   const [ukHeadline, setUKHeadline] = useState<Headline | null>(null);
   const [ukResult, setUKResult] = useState<UKCalculateResponse | null>(null);
+  const [ukCurveStatus, setUKCurveStatus] = useState<FullStatus>(null);
   const cacheRef = useRef<ResultCache>(new Map());
   // The cache key of the form each country shows, so a response that
   // arrives after the form has changed fills the cache but not the screen.
@@ -135,6 +139,7 @@ function Calculator() {
     // Restore cached results, or clear them until the next calculation
     setHeadline(cached?.headline || null);
     setResult(cached?.result || null);
+    setCurveStatus(cached?.curveStatus ?? null);
     setTargetResult(cached?.targetResult || null);
   }, []);
 
@@ -148,6 +153,7 @@ function Calculator() {
 
     setUKHeadline(cached?.ukHeadline || null);
     setUKResult(cached?.ukResult || null);
+    setUKCurveStatus(cached?.ukCurveStatus ?? null);
   }, []);
 
   const cacheUpdate = (key: string, entry: CacheEntry) => {
@@ -170,6 +176,7 @@ function Calculator() {
     if (cached?.ukHeadline && cached.ukResult) {
       setUKHeadline(cached.ukHeadline);
       setUKResult(cached.ukResult);
+      setUKCurveStatus(null);
       return;
     }
     const request = {
@@ -182,6 +189,7 @@ function Calculator() {
     };
     setUKResult(null);
     setUKHeadline(cached?.ukHeadline || null);
+    setUKCurveStatus(null);
     await fetchHeadlineFirst({
       cachedHeadline: cached?.ukHeadline,
       fetchHeadline: async () =>
@@ -189,8 +197,11 @@ function Calculator() {
       fetchFull: () => ukCalculateMutation.mutateAsync(request),
       storeHeadline: (ukHeadline) => cacheUpdate(cacheKey, { ukHeadline }),
       storeFull: (ukResult) => cacheUpdate(cacheKey, { ukResult }),
+      storeFullStatus: (ukCurveStatus) =>
+        cacheUpdate(cacheKey, { ukCurveStatus }),
       showHeadline: setUKHeadline,
       showFull: setUKResult,
+      showFullStatus: setUKCurveStatus,
       isCurrent: () => ukKeyRef.current === cacheKey,
     });
   };
@@ -229,6 +240,7 @@ function Calculator() {
     if (cached?.headline && cached.result) {
       setHeadline(cached.headline);
       setResult(cached.result);
+      setCurveStatus(null);
       return;
     }
     const request = {
@@ -240,14 +252,17 @@ function Calculator() {
     // marginal rate, from the donation sweep.
     setResult(null);
     setHeadline(cached?.headline || null);
+    setCurveStatus(null);
     await fetchHeadlineFirst({
       cachedHeadline: cached?.headline,
       fetchHeadline: () => savingsMutation.mutateAsync(request),
       fetchFull: () => calculateMutation.mutateAsync(request),
       storeHeadline: (headline) => cacheUpdate(cacheKey, { headline }),
       storeFull: (result) => cacheUpdate(cacheKey, { result }),
+      storeFullStatus: (curveStatus) => cacheUpdate(cacheKey, { curveStatus }),
       showHeadline: setHeadline,
       showFull: setResult,
+      showFullStatus: setCurveStatus,
       isCurrent: isShown,
     });
   };
@@ -257,16 +272,14 @@ function Calculator() {
     country === "uk"
       ? ukSavingsMutation.isPending
       : savingsMutation.isPending || targetMutation.isPending;
-  const isLoadingCurve =
-    country === "uk"
-      ? ukCalculateMutation.isPending
-      : calculateMutation.isPending;
+  // The curve's status for the form on screen, not for the last request.
+  const shownCurveStatus = country === "uk" ? ukCurveStatus : curveStatus;
+  const isLoadingCurve = shownCurveStatus === "loading";
   const headlineError =
     country === "uk"
       ? ukSavingsMutation.error
       : savingsMutation.error || targetMutation.error;
-  const curveFailed =
-    country === "uk" ? ukCalculateMutation.isError : calculateMutation.isError;
+  const curveFailed = shownCurveStatus === "failed";
   const hasError = !!headlineError;
   const error = headlineError;
 

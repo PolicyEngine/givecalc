@@ -13,6 +13,7 @@ Invariants:
 
 import threading
 import time
+from concurrent.futures import CancelledError, Future
 
 import pytest
 from hypothesis import HealthCheck, given, settings
@@ -108,6 +109,35 @@ def test_failed_run_is_not_cached_and_reaches_every_waiter():
     assert errors == ["boom", "boom"]
     assert cache.info()["size"] == 0
     assert cache.get_or_compute("k", lambda: "ok") == "ok"
+
+
+def test_a_cancelled_run_releases_its_waiters_and_its_key():
+    cache = LRUCache(maxsize=4)
+    run = Future()
+    shared = cache.get_or_submit("k", lambda: run)
+    sharing = cache.get_or_submit("k", lambda: pytest.fail("in flight"))
+    assert run.cancel()
+    for future in (shared, sharing):
+        with pytest.raises(CancelledError):
+            future.result(timeout=1)
+    assert cache._in_flight == {}
+    assert cache.get_or_compute("k", lambda: 7) == 7
+
+
+def test_a_cancelled_run_is_started_again():
+    starts = []
+
+    def start():
+        starts.append(1)
+        future = Future()
+        if len(starts) == 1:
+            future.cancel()
+        else:
+            future.set_result("answer")
+        return future
+
+    assert simulations._results([simulations._started(start)]) == ["answer"]
+    assert len(starts) == 2
 
 
 INPUT_STRATEGIES = {
