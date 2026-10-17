@@ -17,6 +17,9 @@ const STATE_CODES = new Set([
   "WI", "WY", "DC",
 ]);
 
+/** The API caps wages and salaries at $10 million (api/schemas.py). */
+export const MAX_WAGES = 10_000_000;
+
 function nonNegative(value: string | null, max = 100_000_000): number | null {
   if (value === null || value.trim() === "") return null;
   const n = Number(value);
@@ -49,7 +52,7 @@ export function applySearchParams(form: FormState, search: string): FormState {
     next.donation_amount = amount;
   }
 
-  const income = nonNegative(params.get("income"));
+  const income = nonNegative(params.get("income"), MAX_WAGES);
   if (income !== null) next.income.wages_and_salaries = income;
 
   const state = params.get("state")?.toUpperCase();

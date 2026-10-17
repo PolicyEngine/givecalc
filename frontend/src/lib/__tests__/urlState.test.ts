@@ -12,6 +12,7 @@ import fc from "fast-check";
 import {
   applySearchParams,
   isReadyToCalculate,
+  MAX_WAGES,
   toSearchParams,
 } from "../urlState";
 import { DEFAULT_FORM_STATE, TAX_YEAR_OPTIONS, type FormState } from "../types";
@@ -38,6 +39,17 @@ describe("applySearchParams", () => {
     expect(isReadyToCalculate(form)).toBe(false);
   });
 
+  it("caps wages at the API's $10 million limit", () => {
+    expect(
+      applySearchParams(DEFAULT_FORM_STATE, `?income=${MAX_WAGES}`).income
+        .wages_and_salaries,
+    ).toBe(MAX_WAGES);
+    expect(
+      applySearchParams(DEFAULT_FORM_STATE, `?income=${MAX_WAGES + 1}`).income
+        .wages_and_salaries,
+    ).toBe(DEFAULT_FORM_STATE.income.wages_and_salaries);
+  });
+
   it("only sets NYC for New York", () => {
     expect(
       applySearchParams(DEFAULT_FORM_STATE, "?state=CA&nyc=1").in_nyc,
@@ -53,7 +65,7 @@ const shareableForm: fc.Arbitrary<FormState> = fc
     pledge: fc.boolean(),
     pledge_percent: fc.integer({ min: 1, max: 100 }),
     donation_amount: fc.integer({ min: 1, max: 1_000_000 }),
-    wages: fc.integer({ min: 1, max: 5_000_000 }),
+    wages: fc.integer({ min: 1, max: MAX_WAGES }),
     state_code: fc.constantFrom("CA", "NY", "TX", "MA", "DC"),
     is_married: fc.boolean(),
     in_nyc: fc.boolean(),

@@ -69,10 +69,15 @@ export function bunchingSentence(
 ): string {
   const fmt = (value: number) => formatCurrency(value);
   const gain = Math.round(bunching.gain);
-  if (gain >= 50) {
-    return `Giving ${fmt(2 * gift)} in ${year} and nothing in ${year + 1} saves ${fmt(gain)} more in tax than giving ${fmt(gift)} in each year.`;
+  const bunched = `Giving ${fmt(2 * gift)} in ${year} and nothing in ${year + 1}`;
+  const everyYear = `giving ${fmt(gift)} in each year`;
+  if (gain > 0) {
+    return `${bunched} saves ${fmt(gain)} more in tax than ${everyYear}.`;
   }
-  return `Giving two years' gifts in ${year} instead of ${fmt(gift)} in each year changes your taxes by ${fmt(gain)}.`;
+  if (gain < 0) {
+    return `${bunched} costs ${fmt(-gain)} more in tax than ${everyYear}.`;
+  }
+  return `${bunched} leaves your taxes the same as ${everyYear}.`;
 }
 
 // Progress bar with elapsed time for calculating state

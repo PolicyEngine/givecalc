@@ -34,6 +34,17 @@ import {
   toSearchParams,
 } from "./lib/urlState";
 
+/** A result together with the inputs that produced it. */
+interface USPublished {
+  result: CalculateResponse;
+  request: CalculateRequest;
+  form: FormState;
+}
+interface UKPublished {
+  result: UKCalculateResponse;
+  form: UKFormState;
+}
+
 // Cache for calculation results
 type CacheEntry = {
   result?: CalculateResponse;
@@ -79,6 +90,17 @@ function shareable(formState: FormState): boolean {
   );
 }
 
+/** Point the address bar at the inputs behind the result on screen. */
+function syncUrl(formState: FormState) {
+  if (shareable(formState)) {
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}?${toSearchParams(formState)}`,
+    );
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -94,11 +116,12 @@ function Calculator() {
     useState<FormState>(DEFAULT_FORM_STATE);
   const [ukFormState, setUKFormStateInternal] =
     useState<UKFormState>(DEFAULT_UK_FORM_STATE);
-  const [result, setResult] = useState<CalculateResponse | null>(null);
-  const [resultRequest, setResultRequest] = useState<CalculateRequest | null>(
-    null,
-  );
-  const [ukResult, setUKResult] = useState<UKCalculateResponse | null>(null);
+  const [published, setPublished] = useState<USPublished | null>(null);
+  const [ukPublished, setUKPublished] = useState<UKPublished | null>(null);
+  // The latest inputs, read after an await so that a slow response never
+  // lands on inputs the user has since changed.
+  const formRef = useRef<FormState>(formState);
+  const ukFormRef = useRef<UKFormState>(ukFormState);
   // Bumped when a shared link fills the form, so InputForm opens confirmed.
   const [prefillKey, setPrefillKey] = useState(0);
   const [pendingPrefillCalc, setPendingPrefillCalc] = useState(false);
@@ -114,45 +137,67 @@ function Calculator() {
   const calculateMutation = useCalculateDonation();
   const ukCalculateMutation = useCalculateUKDonation();
   const bunching = useBunching(
-    country === "us" ? resultRequest : null,
-    result ? result.tax_savings : null,
+    country === "us" && published ? published.request : null,
+    published ? published.result.tax_savings : null,
+  );
+
+  const publishUS = useCallback(
+    (state: FormState, result: CalculateResponse) => {
+      setPublished({ result, request: toRequest(state), form: state });
+      syncUrl(state);
+    },
+    [],
   );
 
   // Check cache and update results when form state changes
-  const setFormState = useCallback((newState: FormState) => {
-    setFormStateInternal(newState);
-    const cached = cacheRef.current.get(getCacheKey(newState));
-    setResult(cached?.result || null);
-    setResultRequest(cached?.result ? toRequest(newState) : null);
-  }, []);
+  const setFormState = useCallback(
+    (newState: FormState) => {
+      formRef.current = newState;
+      setFormStateInternal(newState);
+      const cached = cacheRef.current.get(getCacheKey(newState));
+      if (cached?.result) {
+        publishUS(newState, cached.result);
+      } else {
+        setPublished(null);
+      }
+    },
+    [publishUS],
+  );
 
   const setUKFormState = useCallback((newState: UKFormState) => {
+    ukFormRef.current = newState;
     setUKFormStateInternal(newState);
     const cached = cacheRef.current.get(getUKCacheKey(newState));
-    setUKResult(cached?.ukResult || null);
+    setUKPublished(
+      cached?.ukResult ? { result: cached.ukResult, form: newState } : null,
+    );
   }, []);
 
   const handleCalculate = useCallback(
     async (stateOverride?: FormState) => {
       if (country === "uk") {
-        const cacheKey = getUKCacheKey(ukFormState);
+        const ukState = ukFormState;
+        const cacheKey = getUKCacheKey(ukState);
         const cached = cacheRef.current.get(cacheKey);
         if (cached?.ukResult) {
-          setUKResult(cached.ukResult);
+          setUKPublished({ result: cached.ukResult, form: ukState });
           return;
         }
 
-        setUKResult(null);
+        setUKPublished(null);
         const response = await ukCalculateMutation.mutateAsync({
-          income: ukFormState.income,
-          region: ukFormState.region,
-          gift_aid: ukFormState.gift_aid,
-          is_married: ukFormState.is_married,
-          num_children: ukFormState.num_children,
-          year: ukFormState.year,
+          income: ukState.income,
+          region: ukState.region,
+          gift_aid: ukState.gift_aid,
+          is_married: ukState.is_married,
+          num_children: ukState.num_children,
+          year: ukState.year,
         });
-        setUKResult(response);
         cacheRef.current.set(cacheKey, { ukResult: response });
+        // Publish only if the inputs still match what was calculated.
+        if (getUKCacheKey(ukFormRef.current) === cacheKey) {
+          setUKPublished({ result: response, form: ukState });
+        }
         return;
       }
 
@@ -161,27 +206,26 @@ function Calculator() {
       const cacheKey = getCacheKey(state);
       const cached = cacheRef.current.get(cacheKey);
       if (cached?.result) {
-        setResult(cached.result);
-        setResultRequest(request);
+        publishUS(state, cached.result);
         return;
       }
 
-      setResult(null);
-      setResultRequest(null);
+      setPublished(null);
       const response = await calculateMutation.mutateAsync(request);
-      setResult(response);
-      setResultRequest(request);
       cacheRef.current.set(cacheKey, { result: response });
-
-      if (shareable(state)) {
-        window.history.replaceState(
-          null,
-          "",
-          `${window.location.pathname}?${toSearchParams(state)}`,
-        );
+      // Publish only if the inputs still match what was calculated.
+      if (getCacheKey(formRef.current) === cacheKey) {
+        publishUS(state, response);
       }
     },
-    [country, formState, ukFormState, calculateMutation, ukCalculateMutation],
+    [
+      country,
+      formState,
+      ukFormState,
+      calculateMutation,
+      ukCalculateMutation,
+      publishUS,
+    ],
   );
 
   // Fill the form from a shared link once, then calculate.
@@ -191,6 +235,7 @@ function Calculator() {
       window.location.search,
     );
     if (isReadyToCalculate(prefilled)) {
+      formRef.current = prefilled;
       setFormStateInternal(prefilled);
       setPrefillKey((k) => k + 1);
       setPendingPrefillCalc(true);
@@ -243,6 +288,7 @@ function Calculator() {
   const states = statesData?.states || [];
 
   // Convert UK result to US-compatible format for Results component
+  const ukResult = ukPublished?.result ?? null;
   const ukResultAsUS: CalculateResponse | null = ukResult
     ? {
         donation_amount: ukResult.gift_aid,
@@ -339,13 +385,19 @@ function Calculator() {
               </div>
             )}
             <Results
-              result={country === "uk" ? ukResultAsUS : result}
+              result={
+                country === "uk" ? ukResultAsUS : (published?.result ?? null)
+              }
               isCalculating={isCalculating}
               currency={country === "uk" ? "GBP" : "USD"}
-              year={country === "uk" ? ukFormState.year : formState.year}
+              year={
+                country === "uk"
+                  ? (ukPublished?.form.year ?? ukFormState.year)
+                  : (published?.form.year ?? formState.year)
+              }
               pledgePercent={
-                country === "us" && formState.mode === "pledge"
-                  ? formState.pledge_percent
+                country === "us" && published?.form.mode === "pledge"
+                  ? published.form.pledge_percent
                   : null
               }
               bunching={

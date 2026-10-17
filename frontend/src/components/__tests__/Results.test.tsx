@@ -80,7 +80,7 @@ describe("bunchingSentence", () => {
     );
   });
 
-  it("states a small difference plainly", () => {
+  it("states a small gain exactly", () => {
     expect(
       bunchingSentence(
         { everyYearSavings: 16_530, bunchedSavings: 16_531, gain: 1 },
@@ -88,7 +88,31 @@ describe("bunchingSentence", () => {
         2026,
       ),
     ).toBe(
-      "Giving two years' gifts in 2026 instead of $30,000 in each year changes your taxes by $1.",
+      "Giving $60,000 in 2026 and nothing in 2027 saves $1 more in tax than giving $30,000 in each year.",
+    );
+  });
+
+  it("says bunching costs tax when the gain is negative", () => {
+    expect(
+      bunchingSentence(
+        { everyYearSavings: 4_000, bunchedSavings: 3_000, gain: -1_000 },
+        10_000,
+        2026,
+      ),
+    ).toBe(
+      "Giving $20,000 in 2026 and nothing in 2027 costs $1,000 more in tax than giving $10,000 in each year.",
+    );
+  });
+
+  it("says when bunching makes no difference", () => {
+    expect(
+      bunchingSentence(
+        { everyYearSavings: 440, bunchedSavings: 440, gain: 0 },
+        1_000,
+        2026,
+      ),
+    ).toBe(
+      "Giving $2,000 in 2026 and nothing in 2027 leaves your taxes the same as giving $1,000 in each year.",
     );
   });
 });
