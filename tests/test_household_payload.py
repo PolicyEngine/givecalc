@@ -35,13 +35,17 @@ from hypothesis import strategies as st
 
 os.environ.setdefault("USE_MODAL", "false")
 
-from api.main import app  # noqa: E402
+from policyengine_us import Simulation  # noqa: E402
+
+from api.main import _printable, app  # noqa: E402
 from api.simulations import clear_caches  # noqa: E402
 from givecalc import create_situation  # noqa: E402
 from givecalc.calculations.tax import calculate_donation_metrics  # noqa: E402
 from givecalc.core.household import (  # noqa: E402
     DONATION_VARIABLE,
     MAX_PEOPLE,
+    MOVED_TOTALS,
+    _period_error,
     household_errors,
     household_gross_income,
     situation_from_household,
@@ -135,6 +139,11 @@ def test_both_request_shapes_agree_at_the_endpoint(fixture):
         assert new.json()[key] == pytest.approx(
             old.json()[key], abs=TOLERANCE
         ), key
+    # The curves' grids differ when benefits raise the top, so the rate is
+    # compared loosely: the same bracket, not the same grid point.
+    assert new.json()["marginal_savings_rate"] == pytest.approx(
+        old.json()["marginal_savings_rate"], abs=0.02
+    )
 
 
 @pytest.mark.parametrize(
@@ -305,8 +314,10 @@ def test_donor_is_the_first_person():
     assert list(by_person) == [5_000, 0]
 
 
-def test_bunching_runs_the_household_next_year():
-    """The frontend moves the household to next year for the bunching check."""
+def test_accepts_a_household_keyed_by_next_year():
+    """A household sent for next year passes the checks and runs. The
+    bunching check's own move to next year, with birthdays, is tested in
+    test_savings_wizard.py."""
     request = copy.deepcopy(
         BY_NAME["single New Yorker, $150,000, 10% pledge"]["request"]
     )
@@ -375,6 +386,23 @@ def mutated(change):
             "must hold every person",
         ),
         (lambda h: h.pop("families"), "families is required"),
+        (lambda h: h.pop("marital_units"), "marital_units is required"),
+        (
+            lambda h: h["marital_units"].update(
+                {"adult-1": {"members": ["adult-1"]}}
+            ),
+            "has a person's id",
+        ),
+        (
+            lambda h: h["households"]["household"].pop("state_name"),
+            "state_name is required",
+        ),
+        (
+            lambda h: h["people"]["adult-1"].update(
+                {"employment_income_before_lsr": {"2026": 1}}
+            ),
+            "is set from employment_income",
+        ),
         (
             lambda h: h["people"]["adult-1"].update(
                 {"employment_income": {"2026": "1e12"}}
@@ -525,6 +553,193 @@ def test_household_errors_never_raises_on_a_damaged_fixture(data):
             break
         node = node[key]
     assert isinstance(household_errors(household, 2026), list)
+
+
+class _Variable:
+    def __init__(self, **attributes):
+        self.is_neutralized = False
+        self.end = None
+        self.definition_period = "year"
+        self.set_input = None
+        self.__dict__.update(attributes)
+
+
+def test_period_error_rejects_values_the_model_would_not_read():
+    assert _period_error(_Variable(), "2026") is None
+    assert (
+        _period_error(_Variable(definition_period="eternity"), "2026") is None
+    )
+    assert "month values" in _period_error(
+        _Variable(definition_period="month"), "2026"
+    )
+    assert (
+        _period_error(
+            _Variable(definition_period="month", set_input=print), "2026"
+        )
+        is None
+    )
+    assert "ended" in _period_error(_Variable(end="2025-12-31"), "2026")
+    assert "switched off" in _period_error(
+        _Variable(is_neutralized=True), "2026"
+    )
+
+
+@pytest.mark.parametrize(
+    "amount", [1e12, float("inf")], ids=["too large", "infinite"]
+)
+def test_endpoint_rejects_an_unbounded_gift(amount):
+    response = client.post(
+        "/api/calculate",
+        content=json.dumps(
+            {
+                "household": SINGLE["household"],
+                "donation_amount": amount,
+                "year": 2026,
+            }
+        ),
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422, response.text
+
+
+MARRIED = BY_NAME[
+    "married Californians with two children and investment income"
+]["request"]["household"]
+
+
+def split_total(total, component):
+    """The married household with a total on one adult and its component
+    on the other."""
+    household = copy.deepcopy(MARRIED)
+    first, second = (
+        household["people"]["adult-1"],
+        household["people"]["adult-2"],
+    )
+    for record in (first, second):
+        record.pop(total, None)
+        record.pop(component, None)
+    first[total] = {"2026": 150_000}
+    second[component] = {"2026": 100_000}
+    return household
+
+
+@pytest.mark.parametrize("total,component", sorted(MOVED_TOTALS.items()))
+def test_rejects_a_total_and_its_component_on_different_people(
+    total, component
+):
+    errors = household_errors(split_total(total, component), 2026)
+    assert any(f"is set from {total}" in e for e in errors), errors
+
+
+def test_a_total_overwrites_its_component_on_everyone():
+    """Why the check spans people: policyengine-us moves the total onto
+    the component for the whole household, so the second adult's wages
+    are lost."""
+    household = split_total(
+        "employment_income", "employment_income_before_lsr"
+    )
+    sim = Simulation(situation=household)
+    wages = sim.calculate("employment_income_before_lsr", 2026)
+    assert list(wages[:2]) == [150_000, 0]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        # An escaped lone surrogate, which UTF-8 can't encode.
+        b'{"household": {"people": {"\\ud800": {}}}, '
+        b'"donation_amount": 1, "year": 2026}',
+        b'{"income": {"wages_and_salaries": 1}, "state_code": "TX", '
+        b'"donation_amount": "\\ud800", "year": 2026}',
+    ],
+    ids=["in a person's id", "as the gift"],
+)
+def test_422_reports_a_lone_surrogate(body):
+    response = client.post(
+        "/api/calculate",
+        content=body,
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422, response.text
+    assert "\\ud800" in response.text
+
+
+def test_422_echoes_a_deeply_nested_input_without_failing():
+    nested = "[" * 3000 + "]" * 3000
+    body = (
+        '{"household": {"people": {"a": {"age": {"2026": '
+        + nested
+        + '}}}}, "donation_amount": 1, "year": 2026}'
+    )
+    response = client.post(
+        "/api/calculate",
+        content=body,
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422, response.text[:200]
+    assert '"..."' in response.text
+
+
+def test_printable_carries_anything_as_json():
+    class Unprintable:
+        def __str__(self):
+            raise RuntimeError
+
+    value = {
+        "bytes": b"\xff",
+        "complex": complex(1, 2),
+        "object": Unprintable(),
+        "set": {float("nan")},
+        "surrogate": "\ud800",
+        1: [float("-inf"), (True, None, 10**400)],
+        Unprintable(): 10**5000,
+    }
+    text = json.dumps(_printable(value), allow_nan=False)
+    text.encode("utf-8")
+    assert json.loads(text)["1"] == ["-inf", [True, None, 10**400]]
+    assert json.loads(text)["object"] == "<Unprintable>"
+    assert json.loads(text)["<Unprintable>"] == "<class 'int'>"
+
+
+def test_axis_varies_only_the_donor():
+    """Each cell of the axis simulation gives only its first person a gift."""
+    request = BY_NAME[
+        "married Californians with two children and investment income"
+    ]["request"]
+    situation = situation_from_household(request["household"], 2026, 10_000)
+    sim = Simulation(situation=situation)
+    gifts = sim.calculate(DONATION_VARIABLE, 2026).reshape(-1, 4)
+    assert (gifts[:, 1:] == 0).all()
+    assert gifts[:, 0].max() > 0
+
+
+def test_single_parent_matches_the_legacy_request():
+    """Head of household, where the two shapes lay out marital units most
+    differently: legacy puts everyone in one unit, the wizard one each."""
+    household = copy.deepcopy(SINGLE["household"])
+    for child in ("dependent-1", "dependent-2"):
+        household["people"][child] = {
+            "age": {"2026": 10},
+            "is_tax_unit_dependent": {"2026": True},
+        }
+        for collection in ("families", "tax_units", "spm_units", "households"):
+            next(iter(household[collection].values()))["members"].append(child)
+    new = client.post(
+        "/api/calculate",
+        json={"household": household, "donation_amount": 15_000, "year": 2026},
+    ).json()
+    old = client.post(
+        "/api/calculate",
+        json={
+            "income": {"wages_and_salaries": 150_000},
+            "state_code": "NY",
+            "num_children": 2,
+            "donation_amount": 15_000,
+            "year": 2026,
+        },
+    ).json()
+    for key in ("baseline_net_tax", "tax_savings", "baseline_net_income"):
+        assert new[key] == pytest.approx(old[key], abs=TOLERANCE), key
 
 
 def test_fixtures_have_no_errors():
