@@ -118,6 +118,21 @@ describe("applySearchParams", () => {
     expect(wages(`&income=${MAX_WAGES + 1}`)).toBeUndefined();
   });
 
+  it("shares a Yes to home costs with no amounts, which a link reads as No", () => {
+    const form = applySearchParams(blankForm(2026), "?amount=1000&income=50000&state=TX");
+    expect(isShareable({ ...form, hasHomeCosts: true })).toBe(true);
+  });
+
+  it("does not share a fractional age, which links do not carry", () => {
+    const form = applySearchParams(blankForm(2026), "?amount=1000&income=50000&state=TX");
+    const person = { ...form.household.people[0], age: 40.5 };
+    const fractional = { ...form, household: { ...form.household, people: [person] } };
+    expect(isShareable(fractional)).toBe(false);
+    expect(
+      applySearchParams(blankForm(2026), "?amount=1000&state=TX&age=40.5").household.people[0].age,
+    ).toBe(LINK_ADULT_AGE);
+  });
+
   it("fills an incomplete link without calculating it", () => {
     const form = applySearchParams(DEFAULT_FORM_STATE, "?pledge=10&state=MD&income=90000");
     expect(form.household.state).toBe("MD");

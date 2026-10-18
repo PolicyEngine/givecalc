@@ -32,7 +32,8 @@ export default function GiftStep({ form, setForm, errors }: Props) {
         <NumberField
           id="pledge-percent"
           label="What share of your income do you give?"
-          value={form.pledge_percent || undefined}
+          // Holds 0, so "0.5" can be typed as written.
+          value={form.pledge_percent}
           onChange={(value) =>
             setForm({
               ...form,

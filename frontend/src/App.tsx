@@ -326,23 +326,24 @@ function Calculator() {
                 United Kingdom
               </button>
             </div>
-            {country === "us" ? (
-              <>
-                <InputForm
-                  key={prefillKey}
-                  formState={formState}
-                  setFormState={setFormState}
-                  states={states}
-                  onCalculate={() => {
-                    handleCalculate().catch(() => undefined);
-                  }}
-                  isCalculating={isCalculating}
-                  prefilled={prefillKey > 0}
-                />
-                {/* On small screens the programs follow the results. */}
-                <div className="hidden lg:block">{taxInfo}</div>
-              </>
-            ) : (
+            {/* Both forms stay mounted, so switching country and back keeps
+                the user's place in each. */}
+            <div hidden={country !== "us"}>
+              <InputForm
+                key={prefillKey}
+                formState={formState}
+                setFormState={setFormState}
+                states={states}
+                onCalculate={() => {
+                  handleCalculate().catch(() => undefined);
+                }}
+                isCalculating={isCalculating}
+                prefilled={prefillKey > 0}
+              />
+              {/* On small screens the programs follow the results. */}
+              <div className="hidden lg:block">{taxInfo}</div>
+            </div>
+            <div hidden={country !== "uk"}>
               <UKInputForm
                 formState={ukFormState}
                 setFormState={setUKFormState}
@@ -351,7 +352,7 @@ function Calculator() {
                 }}
                 isCalculating={isCalculating}
               />
-            )}
+            </div>
           </div>
 
           {/* Right Column - Results */}

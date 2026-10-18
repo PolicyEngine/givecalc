@@ -47,7 +47,7 @@ export default function HomeStep({ form, setForm, errors }: Props) {
         <>
           <NumberField
             id="mortgage-interest"
-            label="Mortgage interest paid this year"
+            label={`Mortgage interest paid in ${form.household.year}`}
             value={holder.mortgageInterest}
             onChange={(mortgageInterest) => set({ mortgageInterest })}
             error={errors[`people[${index}].mortgageInterest`]}
@@ -56,7 +56,7 @@ export default function HomeStep({ form, setForm, errors }: Props) {
           />
           <NumberField
             id="property-tax"
-            label="Property tax paid this year"
+            label={`Property tax paid in ${form.household.year}`}
             value={holder.realEstateTaxes}
             onChange={(realEstateTaxes) => set({ realEstateTaxes })}
             error={errors[`people[${index}].realEstateTaxes`]}

@@ -58,7 +58,7 @@ export function reviewItems(
           ? `${form.pledge_percent}% of income (${formatCurrency(gift)})`
           : formatCurrency(form.donation_amount),
     },
-    { id: "year", step: "gift", label: "Tax year", value: String(draft.year) },
+    { id: "year", step: "gift", label: "Year you give", value: String(draft.year) },
     {
       id: "location",
       step: "household",

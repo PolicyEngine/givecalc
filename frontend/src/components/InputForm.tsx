@@ -4,7 +4,7 @@
  * answer and calculates.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   WizardNavigation,
   WizardProgress,
@@ -16,6 +16,7 @@ import {
   STEP_IDS,
   firstIncompleteStep,
   issuesByStep,
+  type Issue,
   type StepId,
 } from "../lib/household";
 import type { FormState, StateInfo } from "../lib/types";
@@ -81,8 +82,26 @@ export default function InputForm({
   });
   const step = (wizard.currentStep?.id ?? "gift") as StepId;
   const issues = useMemo(() => issuesByStep(formState), [formState]);
+  const { validationStepId, clearValidation } = wizard;
+  // Once the step's problems are all fixed, stop showing them: otherwise
+  // clearing a field to retype it would bring the summary back and move
+  // focus to it mid-word.
+  useEffect(() => {
+    if (validationStepId === step && issues[step].errors.length === 0) {
+      clearValidation();
+    }
+  }, [validationStepId, clearValidation, step, issues]);
   const showErrors =
-    wizard.validationStepId === step && issues[step].errors.length > 0;
+    validationStepId === step && issues[step].errors.length > 0;
+  // The summary lists what was wrong when Continue was pressed, and changes
+  // only on the next attempt, so screen readers announce it once.
+  const [summary, setSummary] = useState<{ attempt: number; errors: Issue[] }>({
+    attempt: -1,
+    errors: [],
+  });
+  if (summary.attempt !== wizard.validationAttempt) {
+    setSummary({ attempt: wizard.validationAttempt, errors: issues[step].errors });
+  }
   const fieldErrors: FieldErrors = showErrors
     ? Object.fromEntries(
         issues[step].errors.map((issue) => [issue.path, issue.message]),
@@ -114,14 +133,17 @@ export default function InputForm({
       className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 space-y-5"
       aria-label="Household and gift"
     >
-      {/* Lets Enter in any field submit the step; the visible buttons are
-          the wizard's navigation. */}
+      {/* Lets Enter in a text or number field submit the step (browsers do
+          not submit on Enter in a select); the visible buttons are the
+          wizard's navigation. */}
       <button type="submit" tabIndex={-1} aria-hidden className="sr-only">
         Continue
       </button>
       <WizardProgress
+        aria-label="Form progress"
         totalSteps={wizard.totalSteps}
         currentStepIndex={wizard.currentStepIndex}
+        currentStepLabel={wizard.currentStep?.label}
       />
       <h2
         ref={headingRef}
@@ -140,7 +162,7 @@ export default function InputForm({
           className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700 scroll-mt-24"
         >
           <ul className="list-disc pl-4 space-y-1">
-            {issues[step].errors.map((issue) => (
+            {summary.errors.map((issue) => (
               <li key={`${issue.path}:${issue.message}`}>{issue.message}</li>
             ))}
           </ul>

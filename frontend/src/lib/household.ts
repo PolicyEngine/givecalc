@@ -179,6 +179,8 @@ function message(draft: USHouseholdDraft, issue: ValidationIssue): string {
       return `Choose an occupation from the list for ${owner} tips.`;
     case "person.tipIncome.negative":
       return "Tips cannot be negative.";
+    case "person.employmentIncome.negative":
+      return "Wages cannot be negative.";
     case "person.mortgageInterest.negative":
       return "Mortgage interest cannot be negative.";
     case "person.realEstateTaxes.negative":
@@ -244,6 +246,20 @@ export function issuesByStep(form: FormState): Record<StepId, StepIssues> {
     });
   }
 
+  // Incomes that cannot be negative; the wizard checks wages and tips, and
+  // capital gains and self-employment income can be losses.
+  draft.people.forEach((person, index) => {
+    for (const [field, label] of NON_NEGATIVE_INCOMES) {
+      const value = person[field];
+      if (typeof value === "number" && value < 0) {
+        result.income.errors.push({
+          path: `people[${index}].${field}`,
+          message: `${label} cannot be negative.`,
+        });
+      }
+    }
+  });
+
   if (householdIncome(draft) <= 0) {
     result.income.errors.push({ path: "income", message: "Enter your household's income." });
   }
@@ -255,6 +271,13 @@ export function issuesByStep(form: FormState): Record<StepId, StepIssues> {
   }
   return result;
 }
+
+/** Incomes GiveCalc asks for that cannot be below zero, with their labels. */
+const NON_NEGATIVE_INCOMES: ReadonlyArray<[PledgeIncomeField, string]> = [
+  ["taxableInterestIncome", "Taxable interest"],
+  ["dividendIncome", "Qualified dividends"],
+  ["nonQualifiedDividendIncome", "Other ordinary dividends"],
+];
 
 /** The first step with a blocking problem, if any. */
 export function firstIncompleteStep(form: FormState): StepId | null {

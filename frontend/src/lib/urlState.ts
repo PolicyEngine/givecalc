@@ -29,7 +29,10 @@
  * - `mortgage` and `property_tax`: mortgage interest and property tax paid.
  *
  * The defaults are the ages GiveCalc's API assumed for every household
- * before the form asked, so links made then keep their results.
+ * before the form asked, so links made then keep their results, with two
+ * exceptions: a Maryland or Indiana link now stops at the county question,
+ * because a blank county there means a particular county's tax; and a link
+ * without a valid state no longer fills wages, marital status or children.
  */
 
 import {

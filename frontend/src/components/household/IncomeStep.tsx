@@ -17,7 +17,11 @@ const OTHER_INCOME: ReadonlyArray<{
   label: string;
   allowNegative?: boolean;
 }> = [
-  { field: "selfEmploymentIncome", label: "Self-employment income" },
+  {
+    field: "selfEmploymentIncome",
+    label: "Self-employment income (negative for a loss)",
+    allowNegative: true,
+  },
   { field: "taxableInterestIncome", label: "Taxable interest" },
   { field: "dividendIncome", label: "Qualified dividends" },
   { field: "nonQualifiedDividendIncome", label: "Other ordinary dividends" },
@@ -60,7 +64,7 @@ function PersonIncome({
   errors,
   incomeError,
 }: PersonIncomeProps) {
-  const [open, setOpen] = useState(() => hasOtherIncome(person));
+  const [userOpen, setOpen] = useState(() => hasOtherIncome(person));
   const set = (changes: Partial<USPersonDraft>) =>
     setForm({
       ...form,
@@ -68,6 +72,12 @@ function PersonIncome({
     });
   const index = form.household.people.findIndex((p) => p.id === person.id);
   const error = (field: string) => errors[`people[${index}].${field}`];
+  // A problem in the extra incomes opens them, so its field is visible.
+  const open =
+    userOpen ||
+    Object.keys(errors).some(
+      (path) => path.startsWith(`people[${index}].`) && !path.endsWith(".employmentIncome"),
+    );
   const prefix = `${person.id}-`;
   const fields = (
     <>
@@ -76,7 +86,7 @@ function PersonIncome({
         label="Wages and salaries, not counting tips"
         value={person.employmentIncome}
         onChange={(employmentIncome) => set({ employmentIncome })}
-        error={incomeError}
+        error={error("employmentIncome") ?? incomeError}
         money
         step={1000}
       />
@@ -148,6 +158,7 @@ function PersonIncome({
               onChange={(value) => set({ [field]: value })}
               money
               allowNegative={allowNegative}
+              error={error(field)}
             />
           ))}
         </div>

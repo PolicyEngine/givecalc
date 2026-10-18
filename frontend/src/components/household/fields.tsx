@@ -95,7 +95,9 @@ export function NumberField({
         <input
           id={inputId}
           type="number"
-          inputMode={allowNegative ? "text" : "numeric"}
+          // Phones need a minus sign for losses and a decimal point for
+          // money and percentages; ages and counts are whole numbers.
+          inputMode={allowNegative ? "text" : money || suffix ? "decimal" : "numeric"}
           value={value ?? ""}
           onChange={(event) => onChange(parse(event.target.value))}
           min={min ?? (allowNegative ? undefined : 0)}

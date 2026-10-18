@@ -85,7 +85,9 @@ describe("App", () => {
     });
     expect(first.household.households?.household.state_name).toEqual({ [year]: "NY" });
 
-    if (CURRENT_YEAR + 1 <= MAX_TAX_YEAR) {
+    // The form offers last, this and next year, so next year is always open.
+    expect(CURRENT_YEAR + 1).toBeLessThanOrEqual(MAX_TAX_YEAR);
+    {
       await waitFor(() => expect(calculate).toHaveBeenCalledTimes(3));
       const requests = calculate.mock.calls.map(([request]) => request);
       const nextYear = requests.find((request) => request.year === CURRENT_YEAR + 1);
@@ -141,6 +143,20 @@ describe("App", () => {
     expect(window.location.search).toBe(
       `?amount=5000&income=150000&state=NY&age=30&year=${CURRENT_YEAR}`,
     );
+  });
+
+  it("keeps the user's place when they switch country and back", async () => {
+    const App = (await import("../../App")).default;
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("How much do you plan to give?"), {
+      target: { value: "5000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("State"), { target: { value: "NY" } });
+    fireEvent.click(screen.getByRole("button", { name: "United Kingdom" }));
+    fireEvent.click(screen.getByRole("button", { name: "United States" }));
+    expect(screen.getByRole("heading", { name: "Your household" })).toBeInTheDocument();
+    expect(screen.getByLabelText("State")).toHaveValue("NY");
   });
 
   it("fills an incomplete link without calculating, on the question it leaves open", async () => {

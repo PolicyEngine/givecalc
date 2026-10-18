@@ -200,10 +200,10 @@ describe("InputForm", () => {
     next();
     type("Wages and salaries, not counting tips", "90000");
     next();
-    expect(screen.queryByLabelText("Mortgage interest paid this year")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Mortgage interest paid in 2026")).not.toBeInTheDocument();
     choose("Yes");
-    type("Mortgage interest paid this year", "18000");
-    type("Property tax paid this year", "7000");
+    type("Mortgage interest paid in 2026", "18000");
+    type("Property tax paid in 2026", "7000");
     expect((onChange.mock.calls.at(-1)?.[0] as FormState).household.people[0]).toMatchObject({
       mortgageInterest: 18000,
       realEstateTaxes: 7000,
@@ -216,7 +216,7 @@ describe("InputForm", () => {
       "home_mortgage_interest",
     );
     choose("Yes");
-    expect(screen.getByLabelText("Mortgage interest paid this year")).toHaveValue(18000);
+    expect(screen.getByLabelText("Mortgage interest paid in 2026")).toHaveValue(18000);
   });
 
   it("brings back the spouse's answers after Married, Single, Married", () => {
@@ -272,7 +272,7 @@ describe("InputForm", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Enter your household's income.");
   });
 
-  it("does not calculate when the review finds a missing answer", () => {
+  it("stops on the household step when an answer is removed", () => {
     const onCalculate = vi.fn();
     const form = applySearchParams(blankForm(2026), "?pledge=10&income=150000&state=NY");
     render(<Harness initial={form} prefilled onCalculate={onCalculate} />);
@@ -281,6 +281,65 @@ describe("InputForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(onCalculate).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent("Enter your age.");
+  });
+
+  it("keeps focus in a field when a fixed answer is cleared to retype", () => {
+    render(<Harness />);
+    next();
+    next(); // shows the household errors
+    type("State", "NY");
+    choose("Single");
+    type("Your age", "40");
+    // Every error is fixed, so the summary goes away.
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const age = screen.getByLabelText("Your age");
+    age.focus();
+    type("Your age", "");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(age);
+  });
+
+  it("rejects negative interest and dividends, and allows a self-employment loss", () => {
+    render(<Harness />);
+    next();
+    type("State", "TX");
+    choose("Single");
+    type("Your age", "40");
+    next();
+    type("Wages and salaries, not counting tips", "50000");
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tips, self-employment and investment income/ }),
+    );
+    type("Self-employment income (negative for a loss)", "-2000");
+    type("Taxable interest", "-500");
+    next();
+    expect(screen.getByRole("alert")).toHaveTextContent("Taxable interest cannot be negative.");
+    expect(screen.getByRole("alert")).not.toHaveTextContent(/Self-employment/);
+    type("Taxable interest", "500");
+    next();
+    expect(screen.getByRole("heading", { name: "Your home" })).toBeInTheDocument();
+  });
+
+  it("opens the extra incomes when one of them has a problem", () => {
+    render(<Harness />);
+    next();
+    type("State", "NV");
+    choose("Single");
+    type("Your age", "30");
+    next();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tips, self-employment and investment income/ }),
+    );
+    type("Tips", "500");
+    // Close the section, then try to continue without the occupation.
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tips, self-employment and investment income/ }),
+    );
+    next();
+    expect(screen.getByLabelText("Occupation you received tips in")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
   });
 
   it("advances and calculates with Enter in any field", async () => {
@@ -297,7 +356,7 @@ describe("InputForm", () => {
     expect(screen.getByRole("heading", { name: "Your income" })).toBeInTheDocument();
     await user.type(screen.getByLabelText("Wages and salaries, not counting tips"), "90000{Enter}");
     choose("Yes");
-    await user.type(screen.getByLabelText("Mortgage interest paid this year"), "9000{Enter}");
+    await user.type(screen.getByLabelText("Mortgage interest paid in 2026"), "9000{Enter}");
     expect(screen.getByRole("heading", { name: "Review and calculate" })).toBeInTheDocument();
     await user.keyboard("{Enter}");
     expect(onCalculate).toHaveBeenCalledTimes(1);
