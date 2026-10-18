@@ -72,12 +72,13 @@ function PersonIncome({
     });
   const index = form.household.people.findIndex((p) => p.id === person.id);
   const error = (field: string) => errors[`people[${index}].${field}`];
-  // A problem in the extra incomes opens them, so its field is visible.
-  const open =
-    userOpen ||
-    Object.keys(errors).some(
-      (path) => path.startsWith(`people[${index}].`) && !path.endsWith(".employmentIncome"),
-    );
+  // A problem in the extra incomes opens them, so its field is visible,
+  // and they stay open once it is fixed, so the field keeps focus.
+  const hasExtraError = Object.keys(errors).some(
+    (path) => path.startsWith(`people[${index}].`) && !path.endsWith(".employmentIncome"),
+  );
+  if (hasExtraError && !userOpen) setOpen(true);
+  const open = userOpen || hasExtraError;
   const prefix = `${person.id}-`;
   const fields = (
     <>

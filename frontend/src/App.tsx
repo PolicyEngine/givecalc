@@ -477,6 +477,7 @@ function Calculator() {
             </div>
             <div hidden={country !== "uk"}>
               <UKInputForm
+                active={country === "uk"}
                 formState={ukFormState}
                 setFormState={setUKFormState}
                 onCalculate={() => {

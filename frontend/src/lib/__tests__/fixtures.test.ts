@@ -4,12 +4,18 @@
  * wizard update, run `bun run fixtures` and rerun the Python tests.
  */
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect } from "vitest";
-import committed from "../../../../tests/fixtures/wizard_households.json";
 import { fixtureRequests } from "../../../scripts/write-wizard-fixtures";
+
+// Read at run time rather than imported: Vercel deploys leave out tests/,
+// and the production build type-checks this file.
+const FIXTURES = resolve(__dirname, "../../../../tests/fixtures/wizard_households.json");
 
 describe("shared household fixtures", () => {
   it("match what the wizard builds", () => {
+    const committed: unknown = JSON.parse(readFileSync(FIXTURES, "utf8"));
     expect(fixtureRequests()).toEqual(committed);
   });
 });

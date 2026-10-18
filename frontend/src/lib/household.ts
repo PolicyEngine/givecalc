@@ -230,7 +230,11 @@ export function issuesByStep(form: FormState): Record<StepId, StepIssues> {
     requireCounty: COUNTY_REQUIRED_STATES.has(draft.state ?? ""),
   });
   for (const issue of validation.ok ? [] : validation.issues) {
-    const bucket = result[stepForIssue(issue)];
+    const step = stepForIssue(issue);
+    // "No" to home costs keeps the amounts, but they are not sent, so
+    // they are not checked either.
+    if (step === "home" && form.hasHomeCosts === false) continue;
+    const bucket = result[step];
     (WARNING_CODES.has(issue.code) ? bucket.warnings : bucket.errors).push({
       path: issue.path,
       message: message(draft, issue),

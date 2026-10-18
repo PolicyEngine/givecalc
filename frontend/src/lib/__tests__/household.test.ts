@@ -2,14 +2,14 @@
  * GiveCalc's household on the shared wizard draft.
  *
  * Invariants:
- * - Pledge income is the sum of the asked incomes over everyone, capital
- *   losses included, and never negative.
- * - A pledge is never negative, is zero at 0%, never exceeds income at
- *   100%, and never falls as the percentage rises.
- * - The request is the wizard's situation for the draft (adults first), at
- *   the request's year with everyone that many years older, and never sets
- *   the donation (the API's) or `mortgage_interest` (a computed total the
- *   federal deduction ignores).
+ * - The income a share is taken of is the sum of the asked incomes over
+ *   everyone, losses included, and never negative.
+ * - A share-of-income gift is never negative, is zero at 0%, never exceeds
+ *   income at 100%, and never falls as the percentage rises.
+ * - The request is the wizard's situation for the draft (adults first),
+ *   keys every value by the request's year (the API moves it to next year
+ *   for the bunching check), and never sets the donation (the API's) or
+ *   `mortgage_interest` (a computed total the federal deduction ignores).
  */
 
 import { describe, it, expect } from "vitest";
@@ -258,6 +258,7 @@ describe("issuesByStep", () => {
     const form = single({ employmentIncome: 50_000, tippedOccupationCode: 999 });
     form.household = { ...form.household, state: null };
     form.household.people[0] = { ...form.household.people[0], mortgageInterest: -5 };
+    form.hasHomeCosts = true;
     const issues = issuesByStep(form);
     expect(issues.household.errors).toEqual([
       { path: "state", message: "Choose your state." },
@@ -271,6 +272,8 @@ describe("issuesByStep", () => {
     expect(issues.home.errors).toEqual([
       { path: "people[0].mortgageInterest", message: "Mortgage interest cannot be negative." },
     ]);
+    // "No" leaves the amounts out of the request, so they are not checked.
+    expect(issuesByStep({ ...form, hasHomeCosts: false }).home.errors).toEqual([]);
   });
 
   it("asks only to confirm a dependent older than 23", () => {

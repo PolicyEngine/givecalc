@@ -342,6 +342,46 @@ describe("InputForm", () => {
     );
   });
 
+  it("keeps the extra incomes open, and focus in the field, once its problem is fixed", () => {
+    render(<Harness />);
+    next();
+    type("State", "TX");
+    choose("Single");
+    type("Your age", "40");
+    next();
+    type("Wages and salaries, not counting tips", "50000");
+    const extras = () =>
+      screen.getByRole("button", { name: /Tips, self-employment and investment income/ });
+    fireEvent.click(extras());
+    type("Taxable interest", "-500");
+    fireEvent.click(extras()); // closed again
+    next(); // the error opens them
+    const interest = screen.getByLabelText("Taxable interest");
+    interest.focus();
+    type("Taxable interest", ""); // cleared to retype
+    expect(screen.getByLabelText("Taxable interest")).toBe(interest);
+    expect(document.activeElement).toBe(interest);
+    expect(extras()).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("does not check home costs after No, which leaves them out", () => {
+    render(<Harness />);
+    next();
+    type("State", "TX");
+    choose("Single");
+    type("Your age", "40");
+    next();
+    type("Wages and salaries, not counting tips", "50000");
+    next();
+    choose("Yes");
+    type("Mortgage interest paid in 2026", "-100");
+    next();
+    expect(screen.getByRole("alert")).toHaveTextContent("Mortgage interest cannot be negative.");
+    choose("No");
+    next();
+    expect(screen.getByRole("heading", { name: "Review and calculate" })).toBeInTheDocument();
+  });
+
   it("advances and calculates with Enter in any field", async () => {
     const user = userEvent.setup();
     const onCalculate = vi.fn();
