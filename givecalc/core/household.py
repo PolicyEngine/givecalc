@@ -70,7 +70,8 @@ WIZARD_COMPUTED_INPUTS = frozenset(
 )
 
 # policyengine-us's Simulation moves an input on each of these totals onto
-# the input beside it, overwriting a value sent for that input.
+# the input beside it for the whole household, so a value sent for that
+# input on anyone is overwritten, even on a person who sent no total.
 MOVED_TOTALS = {
     "employment_income": "employment_income_before_lsr",
     "self_employment_income": "self_employment_income_before_lsr",
@@ -149,11 +150,6 @@ def _record_errors(
             errors.append(f"{where}: {name} {problem}")
         else:
             errors.extend(_values_errors(where, name, values, year))
-    for total, component in MOVED_TOTALS.items():
-        if total in record and component in record:
-            errors.append(
-                f"{where}: {component} is set from {total}; send one"
-            )
     return errors
 
 
@@ -241,6 +237,15 @@ def household_errors(household, year: int) -> list:
         errors.extend(
             _record_errors(f"people.{person_id}", record, "person", year_key)
         )
+    records = [r for r in people.values() if isinstance(r, dict)]
+    for total, component in MOVED_TOTALS.items():
+        if any(total in r for r in records) and any(
+            component in r for r in records
+        ):
+            errors.append(
+                f"people: {component} is set from {total} for everyone; "
+                "send one of them for the whole household"
+            )
 
     everyone = sorted(people)
     for collection, entity in GROUP_ENTITIES.items():

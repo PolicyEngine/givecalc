@@ -37,13 +37,14 @@ os.environ.setdefault("USE_MODAL", "false")
 
 from policyengine_us import Simulation  # noqa: E402
 
-from api.main import app  # noqa: E402
+from api.main import _printable, app  # noqa: E402
 from api.simulations import clear_caches  # noqa: E402
 from givecalc import create_situation  # noqa: E402
 from givecalc.calculations.tax import calculate_donation_metrics  # noqa: E402
 from givecalc.core.household import (  # noqa: E402
     DONATION_VARIABLE,
     MAX_PEOPLE,
+    MOVED_TOTALS,
     _period_error,
     household_errors,
     household_gross_income,
@@ -597,6 +598,87 @@ def test_endpoint_rejects_an_unbounded_gift(amount):
         headers={"content-type": "application/json"},
     )
     assert response.status_code == 422, response.text
+
+
+MARRIED = BY_NAME[
+    "married Californians with two children and investment income"
+]["request"]["household"]
+
+
+def split_total(total, component):
+    """The married household with a total on one adult and its component
+    on the other."""
+    household = copy.deepcopy(MARRIED)
+    first, second = (
+        household["people"]["adult-1"],
+        household["people"]["adult-2"],
+    )
+    for record in (first, second):
+        record.pop(total, None)
+        record.pop(component, None)
+    first[total] = {"2026": 150_000}
+    second[component] = {"2026": 100_000}
+    return household
+
+
+@pytest.mark.parametrize("total,component", sorted(MOVED_TOTALS.items()))
+def test_rejects_a_total_and_its_component_on_different_people(
+    total, component
+):
+    errors = household_errors(split_total(total, component), 2026)
+    assert any(f"is set from {total}" in e for e in errors), errors
+
+
+def test_a_total_overwrites_its_component_on_everyone():
+    """Why the check spans people: policyengine-us moves the total onto
+    the component for the whole household, so the second adult's wages
+    are lost."""
+    household = split_total(
+        "employment_income", "employment_income_before_lsr"
+    )
+    sim = Simulation(situation=household)
+    wages = sim.calculate("employment_income_before_lsr", 2026)
+    assert list(wages[:2]) == [150_000, 0]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        # An escaped lone surrogate, which UTF-8 can't encode.
+        b'{"household": {"people": {"\\ud800": {}}}, '
+        b'"donation_amount": 1, "year": 2026}',
+        b'{"income": {"wages_and_salaries": 1}, "state_code": "TX", '
+        b'"donation_amount": "\\ud800", "year": 2026}',
+    ],
+    ids=["in a person's id", "as the gift"],
+)
+def test_422_reports_a_lone_surrogate(body):
+    response = client.post(
+        "/api/calculate",
+        content=body,
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422, response.text
+    assert "\\ud800" in response.text
+
+
+def test_printable_carries_anything_as_json():
+    class Unprintable:
+        def __str__(self):
+            raise RuntimeError
+
+    value = {
+        "bytes": b"\xff",
+        "complex": complex(1, 2),
+        "object": Unprintable(),
+        "set": {float("nan")},
+        "surrogate": "\ud800",
+        1: [float("-inf"), (True, None, 10**400)],
+    }
+    text = json.dumps(_printable(value), allow_nan=False)
+    text.encode("utf-8")
+    assert json.loads(text)["1"] == ["-inf", [True, None, 10**400]]
+    assert json.loads(text)["object"] == "<Unprintable>"
 
 
 def test_axis_varies_only_the_donor():

@@ -12,7 +12,6 @@ from pathlib import Path
 import numpy as np
 import yaml
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -83,26 +82,41 @@ app = FastAPI(
 
 
 def _printable(value):
-    """``value`` with non-finite floats as strings, which JSON can carry."""
-    if isinstance(value, float) and not math.isfinite(value):
-        return str(value)
+    """``value`` as JSON can carry it.
+
+    Non-finite floats become strings, bytes are decoded, other objects
+    become their text, and lone surrogates (an escaped "\\ud800" in the
+    request), which UTF-8 can't encode, are written as escapes.
+    """
+    if value is None or isinstance(value, (bool, int)):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else str(value)
     if isinstance(value, dict):
-        return {key: _printable(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
+        return {_printable(str(k)): _printable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set, frozenset)):
         return [_printable(item) for item in value]
-    return value
+    if isinstance(value, (bytes, bytearray)):
+        value = bytes(value).decode("utf-8", "backslashreplace")
+    elif not isinstance(value, str):
+        try:
+            value = str(value)
+        except Exception:
+            value = f"<{type(value).__name__}>"
+    return value.encode("utf-8", "backslashreplace").decode("utf-8")
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request: Request, exc: RequestValidationError):
-    """A 422 like FastAPI's, which can also report an infinite input.
+    """A 422 like FastAPI's, which can report any invalid input.
 
-    FastAPI echoes each invalid input; JSON has no infinity, so an infinite
-    gift would otherwise turn the 422 into a 500.
+    FastAPI echoes each invalid input. JSON has no infinity and UTF-8 no
+    lone surrogates, so an infinite gift or an escaped "\\ud800" would
+    otherwise turn the 422 into a 500.
     """
     return JSONResponse(
         status_code=422,
-        content={"detail": _printable(jsonable_encoder(exc.errors()))},
+        content={"detail": _printable(exc.errors())},
     )
 
 
