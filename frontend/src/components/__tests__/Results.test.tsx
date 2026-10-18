@@ -1,125 +1,120 @@
 /**
- * Results shows the headline from /api/savings before the curve arrives.
+ * The cost headline and bunching sentence.
+ *
+ * Figures in these examples come from policyengine-us 2.49.2 and
+ * policyengine-uk 2.134.6 runs (2026-10-16 GiveCalc review).
  */
 
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
-import Results from "../Results";
-import type { CalculateResponse, Headline } from "../../lib/types";
+import { describe, it, expect } from "vitest";
+import { bunchingSentence, costHeadline } from "../Results";
+import type { CalculateResponse } from "../../lib/types";
 
-vi.mock("../TaxChart", () => ({
-  default: () => <div data-testid="tax-chart" />,
-}));
-vi.mock("../MarginalChart", () => ({
-  default: () => <div data-testid="marginal-chart" />,
-}));
+function response(gift: number, savings: number): CalculateResponse {
+  return {
+    donation_amount: gift,
+    baseline_net_tax: 0,
+    net_tax_at_donation: -savings,
+    tax_savings: savings,
+    marginal_savings_rate: 0,
+    baseline_net_income: 0,
+    net_income_after_donation: 0,
+    curve: [],
+  };
+}
 
-// policyengine-us 2.49.2: single, New York, $150,000 wages, $15,000 gift,
-// 2026 (the 2026-10-16 GiveCalc review's pledge example).
-const HEADLINE: Headline = {
-  donation_amount: 15_000,
-  baseline_net_tax: 44_942.11,
-  net_tax_at_donation: 43_353.21,
-  tax_savings: 1_588.9,
-  baseline_net_income: 105_057.89,
-  net_income_after_donation: 91_646.8,
-};
-
-const FULL: CalculateResponse = {
-  ...HEADLINE,
-  marginal_savings_rate: 0.2842,
-  curve: [
-    { donation: 0, net_tax: 44_942.11, marginal_savings: 0.2, net_income: 105_057.89 },
-    { donation: 15_000, net_tax: 43_353.21, marginal_savings: 0.28, net_income: 91_646.8 },
-  ],
-};
-
-afterEach(cleanup);
-
-describe("Results - headline before the curve", () => {
-  it("shows the savings and net cost while the curve loads", () => {
-    render(
-      <Results
-        headline={HEADLINE}
-        result={null}
-        targetResult={null}
-        mode="amount"
-        isLoadingCurve
-      />,
+describe("costHeadline", () => {
+  it("states the cost of giving a share of income", () => {
+    const { headline, detail } = costHeadline(
+      response(15_000, 1_589),
+      "USD",
+      2026,
+      10,
     );
-    expect(screen.getByText("$1,589")).toBeInTheDocument();
-    expect(screen.getByText("$13,411")).toBeInTheDocument();
-    expect(screen.getByText("…")).toBeInTheDocument();
+    expect(headline).toBe(
+      "Giving 10% of your income ($15,000) costs you $13,411 in 2026.",
+    );
+    expect(detail).toBe("Lower taxes cover $1,589, or 11% of the gift.");
+  });
+
+  it("says when taxes don't change", () => {
+    const { headline, detail } = costHeadline(
+      response(1_000, 0),
+      "USD",
+      2025,
+    );
+    expect(headline).toBe("Your $1,000 gift costs you $1,000 in 2025.");
+    expect(detail).toBe("Your taxes don't change at this gift size.");
+  });
+
+  it("credits the charity, not the donor, with basic-rate relief", () => {
+    const { headline, detail } = costHeadline(
+      response(1_000, 0),
+      "GBP",
+      2026,
+    );
+    expect(headline).toBe(
+      "Your £1,000 gift is worth £1,250 to a charity that claims Gift Aid, and costs you £1,000.",
+    );
+    expect(detail).toContain("relief goes to the charity");
+  });
+
+  it("shows a higher-rate donor's reclaim", () => {
+    const { headline, detail } = costHeadline(
+      response(2_000, 500),
+      "GBP",
+      2026,
+    );
+    expect(headline).toContain("costs you £1,500");
+    expect(detail).toBe("You reclaim £500 through your tax return.");
+  });
+});
+
+describe("bunchingSentence", () => {
+  it("states the gain when bunching pays", () => {
     expect(
-      screen.getAllByText("Loading the chart across donation amounts..."),
-    ).toHaveLength(2);
-    expect(screen.queryByTestId("tax-chart")).not.toBeInTheDocument();
+      bunchingSentence(
+        { everyYearSavings: 3_033, bunchedSavings: 5_853, gain: 2_820 },
+        15_000,
+        2026,
+      ),
+    ).toBe(
+      "Giving $30,000 in 2026 and nothing in 2027 saves $2,820 more in tax than giving $15,000 in each year.",
+    );
   });
 
-  it("fills in the marginal rate and charts when the curve arrives", () => {
-    render(
-      <Results
-        headline={HEADLINE}
-        result={FULL}
-        targetResult={null}
-        mode="amount"
-      />,
-    );
-    expect(screen.getByText("$1,589")).toBeInTheDocument();
-    expect(screen.getByText("28.4%")).toBeInTheDocument();
-    expect(screen.getByTestId("tax-chart")).toBeInTheDocument();
-    expect(screen.getByTestId("marginal-chart")).toBeInTheDocument();
-  });
-
-  it("keeps the headline and says so when the curve fails", () => {
-    render(
-      <Results
-        headline={HEADLINE}
-        result={null}
-        targetResult={null}
-        mode="amount"
-        curveFailed
-      />,
-    );
-    expect(screen.getByText("$1,589")).toBeInTheDocument();
+  it("states a small gain exactly", () => {
     expect(
-      screen.getAllByText("The chart could not load. Calculate again to retry."),
-    ).toHaveLength(2);
+      bunchingSentence(
+        { everyYearSavings: 16_530, bunchedSavings: 16_531, gain: 1 },
+        30_000,
+        2026,
+      ),
+    ).toBe(
+      "Giving $60,000 in 2026 and nothing in 2027 saves $1 more in tax than giving $30,000 in each year.",
+    );
   });
 
-  it("shows the spinner only until the headline arrives", () => {
-    render(
-      <Results
-        headline={null}
-        result={null}
-        targetResult={null}
-        mode="amount"
-        isCalculating
-      />,
+  it("says bunching costs tax when the gain is negative", () => {
+    expect(
+      bunchingSentence(
+        { everyYearSavings: 4_000, bunchedSavings: 3_000, gain: -1_000 },
+        10_000,
+        2026,
+      ),
+    ).toBe(
+      "Giving $20,000 in 2026 and nothing in 2027 costs $1,000 more in tax than giving $10,000 in each year.",
     );
-    expect(screen.getByText("Calculating...")).toBeInTheDocument();
   });
 
-  it("shows UK Gift Aid figures from the headline", () => {
-    render(
-      <Results
-        headline={{
-          donation_amount: 2_000,
-          baseline_net_tax: 19_022.65,
-          net_tax_at_donation: 18_522.65,
-          tax_savings: 500,
-          baseline_net_income: 50_977.35,
-          net_income_after_donation: 49_477.35,
-        }}
-        result={null}
-        targetResult={null}
-        mode="amount"
-        isLoadingCurve
-        currency="GBP"
-      />,
+  it("says when bunching makes no difference", () => {
+    expect(
+      bunchingSentence(
+        { everyYearSavings: 440, bunchedSavings: 440, gain: 0 },
+        1_000,
+        2026,
+      ),
+    ).toBe(
+      "Giving $2,000 in 2026 and nothing in 2027 leaves your taxes the same as giving $1,000 in each year.",
     );
-    expect(screen.getByText("£2,500")).toBeInTheDocument();
-    expect(screen.getByText("£500")).toBeInTheDocument();
-    expect(screen.getByText("£1,500")).toBeInTheDocument();
   });
 });

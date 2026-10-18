@@ -6,8 +6,6 @@ import axios from "axios";
 import type {
   CalculateRequest,
   CalculateResponse,
-  TargetDonationRequest,
-  TargetDonationResponse,
   StatesResponse,
   TaxProgramsResponse,
   UKRegionsResponse,
@@ -116,16 +114,6 @@ export async function calculateDonation(
   request: CalculateRequest,
 ): Promise<CalculateResponse> {
   const response = await api.post<CalculateResponse>("/api/calculate", request);
-  return response.data;
-}
-
-export async function calculateTargetDonation(
-  request: TargetDonationRequest,
-): Promise<TargetDonationResponse> {
-  const response = await api.post<TargetDonationResponse>(
-    "/api/target-donation",
-    request,
-  );
   return response.data;
 }
 

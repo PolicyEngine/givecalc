@@ -5,7 +5,7 @@
  * Powered by PolicyEngine
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Header from "./components/Header";
 import InputForm from "./components/InputForm";
@@ -16,31 +16,51 @@ import {
   useStates,
   useCalculateDonation,
   useCalculateSavings,
-  useCalculateTargetDonation,
   useCalculateUKDonation,
   useCalculateUKSavings,
+  useBunching,
 } from "./hooks/useCalculation";
 import type {
+  CalculateRequest,
   Country,
   FormState,
   Headline,
   UKFormState,
   CalculateResponse,
-  TargetDonationResponse,
   UKCalculateResponse,
   UKSavingsResponse,
 } from "./lib/types";
 import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "./lib/types";
+import { pledgeAmount, pledgeBaseIncome } from "./lib/pledge";
+import {
+  applySearchParams,
+  isReadyToCalculate,
+  toSearchParams,
+} from "./lib/urlState";
 import { fetchHeadlineFirst, type FullStatus } from "./lib/headlineFirst";
 
-// Cache for calculation results. The headline arrives first, from
-// /api/savings; the curve (and the marginal rate) follows from
-// /api/calculate.
+/**
+ * A result together with the inputs that produced it. The headline
+ * (/api/savings) arrives first; the curve and marginal rate
+ * (/api/calculate) follow, so `result` is null until then.
+ */
+interface USPublished {
+  headline: Headline;
+  result: CalculateResponse | null;
+  request: CalculateRequest;
+  form: FormState;
+}
+interface UKPublished {
+  headline: Headline;
+  result: UKCalculateResponse | null;
+  form: UKFormState;
+}
+
+// Cache for calculation results, with where each form's curve stands.
 type CacheEntry = {
   headline?: Headline;
   result?: CalculateResponse;
   curveStatus?: FullStatus;
-  targetResult?: TargetDonationResponse;
   ukHeadline?: Headline;
   ukResult?: UKCalculateResponse;
   ukCurveStatus?: FullStatus;
@@ -58,31 +78,53 @@ function ukHeadlineFrom(savings: UKSavingsResponse): Headline {
   };
 }
 
-// Generate cache key from request parameters
-function getCacheKey(formState: FormState, country: Country): string {
-  const key = {
-    country,
+/** The gift the form describes, in dollars. */
+function giftAmount(formState: FormState): number {
+  return formState.mode === "pledge"
+    ? pledgeAmount(formState.pledge_percent, formState.income)
+    : formState.donation_amount;
+}
+
+function toRequest(formState: FormState): CalculateRequest {
+  return {
     income: formState.income,
     state_code: formState.state_code,
     is_married: formState.is_married,
     num_children: formState.num_children,
     in_nyc: formState.in_nyc,
+    donation_amount: giftAmount(formState),
     deductions: formState.deductions,
     year: formState.year,
-    mode: formState.mode,
-    // Mode-specific fields
-    ...(formState.mode === "amount"
-      ? { donation_amount: formState.donation_amount }
-      : {
-          target_reduction: formState.target_reduction,
-          is_percentage: formState.is_percentage,
-        }),
   };
-  return JSON.stringify(key);
+}
+
+// Generate cache key from request parameters
+function getCacheKey(formState: FormState): string {
+  return JSON.stringify({ country: "us", ...toRequest(formState) });
 }
 
 function getUKCacheKey(formState: UKFormState): string {
   return JSON.stringify({ country: "uk", ...formState });
+}
+
+/** A shared link reproduces the result only when wages are the only income. */
+function shareable(formState: FormState): boolean {
+  return (
+    pledgeBaseIncome(formState.income) ===
+      formState.income.wages_and_salaries &&
+    formState.income.qualified_dividends === 0
+  );
+}
+
+/** Point the address bar at the inputs behind the result on screen. */
+function syncUrl(formState: FormState) {
+  if (shareable(formState)) {
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}?${toSearchParams(formState)}`,
+    );
+  }
 }
 
 const queryClient = new QueryClient({
@@ -100,26 +142,29 @@ function Calculator() {
     useState<FormState>(DEFAULT_FORM_STATE);
   const [ukFormState, setUKFormStateInternal] =
     useState<UKFormState>(DEFAULT_UK_FORM_STATE);
-  const [headline, setHeadline] = useState<Headline | null>(null);
-  const [result, setResult] = useState<CalculateResponse | null>(null);
-  const [targetResult, setTargetResult] =
-    useState<TargetDonationResponse | null>(null);
+  const [published, setPublished] = useState<USPublished | null>(null);
+  const [ukPublished, setUKPublished] = useState<UKPublished | null>(null);
+  // Where the curve of the form on screen stands.
   const [curveStatus, setCurveStatus] = useState<FullStatus>(null);
-  const [ukHeadline, setUKHeadline] = useState<Headline | null>(null);
-  const [ukResult, setUKResult] = useState<UKCalculateResponse | null>(null);
   const [ukCurveStatus, setUKCurveStatus] = useState<FullStatus>(null);
+  // The latest inputs, read after an await so that a slow response never
+  // lands on inputs the user has since changed.
+  const formRef = useRef<FormState>(formState);
+  const ukFormRef = useRef<UKFormState>(ukFormState);
+  // Bumped when a shared link fills the form, so InputForm opens confirmed.
+  const [prefillKey, setPrefillKey] = useState(0);
+  const [pendingPrefillCalc, setPendingPrefillCalc] = useState(false);
   const cacheRef = useRef<ResultCache>(new Map());
-  // The cache key of the form each country shows, so a response that
-  // arrives after the form has changed fills the cache but not the screen.
-  const usKeyRef = useRef<string | null>(null);
-  const ukKeyRef = useRef<string | null>(null);
   // The latest request per cache key, so an earlier request for the same
-  // form (Calculate clicked twice) cannot overwrite the chart's status.
+  // inputs (Calculate clicked twice) cannot overwrite the curve's status.
   const latestRequestRef = useRef(new Map<string, number>());
   const startRequest = (key: string) => {
     const id = (latestRequestRef.current.get(key) ?? 0) + 1;
     latestRequestRef.current.set(key, id);
     return () => latestRequestRef.current.get(key) === id;
+  };
+  const cacheUpdate = (key: string, entry: CacheEntry) => {
+    cacheRef.current.set(key, { ...cacheRef.current.get(key), ...entry });
   };
 
   const {
@@ -131,196 +176,212 @@ function Calculator() {
 
   const savingsMutation = useCalculateSavings();
   const calculateMutation = useCalculateDonation();
-  const targetMutation = useCalculateTargetDonation();
   const ukSavingsMutation = useCalculateUKSavings();
   const ukCalculateMutation = useCalculateUKDonation();
+  // Bunching needs only the headline, so it runs alongside the curve.
+  const bunching = useBunching(
+    country === "us" && published ? published.request : null,
+    published ? published.headline.tax_savings : null,
+  );
+
+  const publishUS = useCallback(
+    (
+      state: FormState,
+      headline: Headline,
+      result: CalculateResponse | null,
+    ) => {
+      setPublished({ headline, result, request: toRequest(state), form: state });
+      syncUrl(state);
+    },
+    [],
+  );
 
   // Check cache and update results when form state changes
-  const setFormState = useCallback((newState: FormState) => {
-    setFormStateInternal(newState);
-
-    // Check if we have cached results for this state
-    const cacheKey = getCacheKey(newState, "us");
-    usKeyRef.current = cacheKey;
-    const cached = cacheRef.current.get(cacheKey);
-
-    // Restore cached results, or clear them until the next calculation
-    setHeadline(cached?.headline || null);
-    setResult(cached?.result || null);
-    setCurveStatus(cached?.curveStatus ?? null);
-    setTargetResult(cached?.targetResult || null);
-  }, []);
+  const setFormState = useCallback(
+    (newState: FormState) => {
+      formRef.current = newState;
+      setFormStateInternal(newState);
+      const cached = cacheRef.current.get(getCacheKey(newState));
+      if (cached?.headline) {
+        publishUS(newState, cached.headline, cached.result ?? null);
+      } else {
+        setPublished(null);
+      }
+      setCurveStatus(cached?.curveStatus ?? null);
+    },
+    [publishUS],
+  );
 
   const setUKFormState = useCallback((newState: UKFormState) => {
+    ukFormRef.current = newState;
     setUKFormStateInternal(newState);
-
-    // Check if we have cached results for this state
-    const cacheKey = getUKCacheKey(newState);
-    ukKeyRef.current = cacheKey;
-    const cached = cacheRef.current.get(cacheKey);
-
-    setUKHeadline(cached?.ukHeadline || null);
-    setUKResult(cached?.ukResult || null);
+    const cached = cacheRef.current.get(getUKCacheKey(newState));
+    setUKPublished(
+      cached?.ukHeadline
+        ? {
+            headline: cached.ukHeadline,
+            result: cached.ukResult ?? null,
+            form: newState,
+          }
+        : null,
+    );
     setUKCurveStatus(cached?.ukCurveStatus ?? null);
   }, []);
 
-  const cacheUpdate = (key: string, entry: CacheEntry) => {
-    cacheRef.current.set(key, { ...cacheRef.current.get(key), ...entry });
-  };
-
-  // Errors land in the mutations' state, which the page renders.
-  const handleCalculate = async () => {
-    try {
-      await (country === "uk" ? calculateUK() : calculateUS());
-    } catch {
-      // Shown from the mutation's error state.
-    }
-  };
-
-  const calculateUK = async () => {
-    const cacheKey = getUKCacheKey(ukFormState);
-    ukKeyRef.current = cacheKey;
-    const cached = cacheRef.current.get(cacheKey);
-    if (cached?.ukHeadline && cached.ukResult) {
-      setUKHeadline(cached.ukHeadline);
-      setUKResult(cached.ukResult);
-      setUKCurveStatus(null);
-      return;
-    }
-    const request = {
-      income: ukFormState.income,
-      region: ukFormState.region,
-      gift_aid: ukFormState.gift_aid,
-      is_married: ukFormState.is_married,
-      num_children: ukFormState.num_children,
-      year: ukFormState.year,
-    };
-    setUKResult(null);
-    setUKHeadline(cached?.ukHeadline || null);
-    setUKCurveStatus(null);
-    const isLatest = startRequest(cacheKey);
-    await fetchHeadlineFirst({
-      cachedHeadline: cached?.ukHeadline,
-      fetchHeadline: async () =>
-        ukHeadlineFrom(await ukSavingsMutation.mutateAsync(request)),
-      fetchFull: () => ukCalculateMutation.mutateAsync(request),
-      storeHeadline: (ukHeadline) => cacheUpdate(cacheKey, { ukHeadline }),
-      storeFull: (ukResult) => cacheUpdate(cacheKey, { ukResult }),
-      storeFullStatus: (status) => {
-        if (!isLatest()) return;
-        // An earlier request for this form may already have the curve.
-        const kept = cacheRef.current.get(cacheKey)?.ukResult;
-        cacheUpdate(cacheKey, {
-          ukCurveStatus: status === "failed" && kept ? null : status,
-        });
-      },
-      showHeadline: setUKHeadline,
-      showFull: setUKResult,
-      showFullStatus: (status) => {
-        const kept = cacheRef.current.get(cacheKey)?.ukResult;
-        if (status === "failed" && kept) {
-          setUKResult(kept);
+  const handleCalculate = useCallback(
+    async (stateOverride?: FormState) => {
+      if (country === "uk") {
+        const ukState = ukFormState;
+        const cacheKey = getUKCacheKey(ukState);
+        const cached = cacheRef.current.get(cacheKey);
+        if (cached?.ukHeadline && cached.ukResult) {
+          setUKPublished({
+            headline: cached.ukHeadline,
+            result: cached.ukResult,
+            form: ukState,
+          });
           setUKCurveStatus(null);
-        } else {
-          setUKCurveStatus(status);
+          return;
         }
-      },
-      isCurrent: () => ukKeyRef.current === cacheKey && isLatest(),
-    });
-  };
+        const request = {
+          income: ukState.income,
+          region: ukState.region,
+          gift_aid: ukState.gift_aid,
+          is_married: ukState.is_married,
+          num_children: ukState.num_children,
+          year: ukState.year,
+        };
+        // Publish only while the inputs still match what was calculated,
+        // labelled with the current inputs.
+        const isShown = () => getUKCacheKey(ukFormRef.current) === cacheKey;
+        const isLatest = startRequest(cacheKey);
+        const kept = () => cacheRef.current.get(cacheKey)?.ukResult;
+        const show = (
+          headline: Headline,
+          result: UKCalculateResponse | null,
+        ) => setUKPublished({ headline, result, form: ukFormRef.current });
 
-  const calculateUS = async () => {
-    const cacheKey = getCacheKey(formState, "us");
-    usKeyRef.current = cacheKey;
-    const isShown = () => usKeyRef.current === cacheKey;
-    const cached = cacheRef.current.get(cacheKey);
-    const household = {
-      income: formState.income,
-      state_code: formState.state_code,
-      is_married: formState.is_married,
-      num_children: formState.num_children,
-      in_nyc: formState.in_nyc,
-      deductions: formState.deductions,
-      year: formState.year,
-    };
-
-    if (formState.mode !== "amount") {
-      if (cached?.targetResult) {
-        setTargetResult(cached.targetResult);
+        if (!cached?.ukHeadline) setUKPublished(null);
+        setUKCurveStatus(null);
+        await fetchHeadlineFirst({
+          cachedHeadline: cached?.ukHeadline,
+          fetchHeadline: async () =>
+            ukHeadlineFrom(await ukSavingsMutation.mutateAsync(request)),
+          fetchFull: () => ukCalculateMutation.mutateAsync(request),
+          storeHeadline: (ukHeadline) => cacheUpdate(cacheKey, { ukHeadline }),
+          storeFull: (ukResult) =>
+            cacheUpdate(cacheKey, { ukResult, ukCurveStatus: null }),
+          storeFullStatus: (status) => {
+            if (!isLatest()) return;
+            cacheUpdate(cacheKey, {
+              ukCurveStatus: status === "failed" && kept() ? null : status,
+            });
+          },
+          showHeadline: (headline) => show(headline, kept() ?? null),
+          // Any curve for these inputs shows, even one from an earlier
+          // request that finished after a later one failed.
+          showFull: (result) => {
+            const headline = cacheRef.current.get(cacheKey)?.ukHeadline;
+            if (headline) show(headline, result);
+            setUKCurveStatus(null);
+          },
+          showFullStatus: (status) => {
+            if (!isLatest()) return;
+            setUKCurveStatus(status === "failed" && kept() ? null : status);
+          },
+          isCurrent: isShown,
+        });
         return;
       }
-      setTargetResult(null);
-      const response = await targetMutation.mutateAsync({
-        ...household,
-        target_reduction: formState.target_reduction,
-        is_percentage: formState.is_percentage,
-      });
-      cacheUpdate(cacheKey, { targetResult: response });
-      if (isShown()) setTargetResult(response);
-      return;
-    }
 
-    if (cached?.headline && cached.result) {
-      setHeadline(cached.headline);
-      setResult(cached.result);
+      const state = stateOverride ?? formState;
+      const request = toRequest(state);
+      const cacheKey = getCacheKey(state);
+      const cached = cacheRef.current.get(cacheKey);
+      if (cached?.headline && cached.result) {
+        publishUS(state, cached.headline, cached.result);
+        setCurveStatus(null);
+        return;
+      }
+      // Publish only while the inputs still match what was calculated. An
+      // equivalent edit (10% of $160,000 rewritten as $16,000) keeps the
+      // same request, so label the result with the current inputs.
+      const isShown = () => getCacheKey(formRef.current) === cacheKey;
+      const isLatest = startRequest(cacheKey);
+      const kept = () => cacheRef.current.get(cacheKey)?.result;
+
+      if (!cached?.headline) setPublished(null);
       setCurveStatus(null);
-      return;
-    }
-    const request = {
-      ...household,
-      donation_amount: formState.donation_amount,
-    };
-
-    // The headline first, from two simulations; then the curve and the
-    // marginal rate, from the donation sweep.
-    setResult(null);
-    setHeadline(cached?.headline || null);
-    setCurveStatus(null);
-    const isLatest = startRequest(cacheKey);
-    await fetchHeadlineFirst({
-      cachedHeadline: cached?.headline,
-      fetchHeadline: () => savingsMutation.mutateAsync(request),
-      fetchFull: () => calculateMutation.mutateAsync(request),
-      storeHeadline: (headline) => cacheUpdate(cacheKey, { headline }),
-      storeFull: (result) => cacheUpdate(cacheKey, { result }),
-      storeFullStatus: (status) => {
-        if (!isLatest()) return;
-        // An earlier request for this form may already have the curve.
-        const kept = cacheRef.current.get(cacheKey)?.result;
-        cacheUpdate(cacheKey, {
-          curveStatus: status === "failed" && kept ? null : status,
-        });
-      },
-      showHeadline: setHeadline,
-      showFull: setResult,
-      showFullStatus: (status) => {
-        const kept = cacheRef.current.get(cacheKey)?.result;
-        if (status === "failed" && kept) {
-          setResult(kept);
+      // The headline first, from two simulations; then the curve and the
+      // marginal rate, from the donation sweep.
+      await fetchHeadlineFirst({
+        cachedHeadline: cached?.headline,
+        fetchHeadline: () => savingsMutation.mutateAsync(request),
+        fetchFull: () => calculateMutation.mutateAsync(request),
+        storeHeadline: (headline) => cacheUpdate(cacheKey, { headline }),
+        storeFull: (result) =>
+          cacheUpdate(cacheKey, { result, curveStatus: null }),
+        storeFullStatus: (status) => {
+          if (!isLatest()) return;
+          cacheUpdate(cacheKey, {
+            curveStatus: status === "failed" && kept() ? null : status,
+          });
+        },
+        showHeadline: (headline) =>
+          publishUS(formRef.current, headline, kept() ?? null),
+        // Any curve for these inputs shows, even one from an earlier
+        // request that finished after a later one failed.
+        showFull: (result) => {
+          const headline = cacheRef.current.get(cacheKey)?.headline;
+          if (headline) publishUS(formRef.current, headline, result);
           setCurveStatus(null);
-        } else {
-          setCurveStatus(status);
-        }
-      },
-      isCurrent: () => isShown() && isLatest(),
-    });
-  };
+        },
+        showFullStatus: (status) => {
+          if (!isLatest()) return;
+          setCurveStatus(status === "failed" && kept() ? null : status);
+        },
+        isCurrent: isShown,
+      });
+    },
+    [
+      country,
+      formState,
+      ukFormState,
+      savingsMutation,
+      calculateMutation,
+      ukSavingsMutation,
+      ukCalculateMutation,
+      publishUS,
+    ],
+  );
+
+  // Fill the form from a shared link once, then calculate.
+  useEffect(() => {
+    const prefilled = applySearchParams(
+      DEFAULT_FORM_STATE,
+      window.location.search,
+    );
+    if (isReadyToCalculate(prefilled)) {
+      formRef.current = prefilled;
+      setFormStateInternal(prefilled);
+      setPrefillKey((k) => k + 1);
+      setPendingPrefillCalc(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (pendingPrefillCalc) {
+      setPendingPrefillCalc(false);
+      handleCalculate(formState).catch(() => undefined);
+    }
+  }, [pendingPrefillCalc, formState, handleCalculate]);
 
   // Only the headline holds the page; the charts load after it.
   const isCalculating =
-    country === "uk"
-      ? ukSavingsMutation.isPending
-      : savingsMutation.isPending || targetMutation.isPending;
-  // The curve's status for the form on screen, not for the last request.
+    country === "uk" ? ukSavingsMutation.isPending : savingsMutation.isPending;
+  const hasError =
+    country === "uk" ? ukSavingsMutation.isError : savingsMutation.isError;
   const shownCurveStatus = country === "uk" ? ukCurveStatus : curveStatus;
-  const isLoadingCurve = shownCurveStatus === "loading";
-  const headlineError =
-    country === "uk"
-      ? ukSavingsMutation.error
-      : savingsMutation.error || targetMutation.error;
-  const curveFailed = shownCurveStatus === "failed";
-  const hasError = !!headlineError;
-  const error = headlineError;
 
   // Only show loading for US states - UK doesn't need to load regions
   if (country === "us" && statesLoading) {
@@ -357,6 +418,7 @@ function Calculator() {
   const states = statesData?.states || [];
 
   // Convert UK result to US-compatible format for Results component
+  const ukResult = ukPublished?.result ?? null;
   const ukResultAsUS: CalculateResponse | null = ukResult
     ? {
         donation_amount: ukResult.gift_aid,
@@ -370,6 +432,11 @@ function Calculator() {
       }
     : null;
 
+  const taxInfo =
+    country === "us" && formState.state_code ? (
+      <TaxInfo stateCode={formState.state_code} />
+    ) : null;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -379,147 +446,124 @@ function Calculator() {
           {/* Left Column - Input Form */}
           <div className="lg:col-span-1 space-y-6">
             {/* Country Selector - full width of input column */}
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <div
+              className="flex rounded-lg border border-gray-300 overflow-hidden"
+              role="group"
+              aria-label="Country"
+            >
               <button
                 type="button"
                 onClick={() => setCountry("us")}
-                className={`flex-1 py-2 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                aria-pressed={country === "us"}
+                className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
                   country === "us"
                     ? "bg-teal-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <span>🇺🇸</span> United States
+                United States
               </button>
               <button
                 type="button"
                 onClick={() => setCountry("uk")}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors flex items-center justify-center gap-2 ${
+                aria-pressed={country === "uk"}
+                className={`flex-1 py-2 px-4 text-sm font-medium border-l border-gray-300 transition-colors ${
                   country === "uk"
                     ? "bg-teal-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <span>🇬🇧</span> United Kingdom
+                United Kingdom
               </button>
             </div>
             {country === "us" ? (
               <>
                 <InputForm
+                  key={prefillKey}
                   formState={formState}
                   setFormState={setFormState}
                   states={states}
-                  onCalculate={handleCalculate}
+                  onCalculate={() => {
+                    handleCalculate().catch(() => undefined);
+                  }}
                   isCalculating={isCalculating}
+                  prefilled={prefillKey > 0}
                 />
-                {formState.state_code && <TaxInfo stateCode={formState.state_code} />}
+                {/* On small screens the programs follow the results. */}
+                <div className="hidden lg:block">{taxInfo}</div>
               </>
             ) : (
               <UKInputForm
                 formState={ukFormState}
                 setFormState={setUKFormState}
-                onCalculate={handleCalculate}
+                onCalculate={() => {
+                  handleCalculate().catch(() => undefined);
+                }}
                 isCalculating={isCalculating}
               />
             )}
           </div>
 
           {/* Right Column - Results */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             {hasError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-700">
-                  {error instanceof Error
-                    ? error.message
-                    : "An error occurred. Please try again."}
+                  The calculation didn&apos;t finish. The server may be busy;
+                  please try again in a moment.
                 </p>
               </div>
             )}
             <Results
-              headline={country === "uk" ? ukHeadline : headline}
-              result={country === "uk" ? ukResultAsUS : result}
-              targetResult={country === "us" ? targetResult : null}
-              mode={country === "uk" ? "amount" : formState.mode}
+              headline={
+                country === "uk"
+                  ? (ukPublished?.headline ?? null)
+                  : (published?.headline ?? null)
+              }
+              result={
+                country === "uk" ? ukResultAsUS : (published?.result ?? null)
+              }
               isCalculating={isCalculating}
-              isLoadingCurve={isLoadingCurve}
-              curveFailed={curveFailed}
+              isLoadingCurve={shownCurveStatus === "loading"}
+              curveFailed={shownCurveStatus === "failed"}
               currency={country === "uk" ? "GBP" : "USD"}
+              year={
+                country === "uk"
+                  ? (ukPublished?.form.year ?? ukFormState.year)
+                  : (published?.form.year ?? formState.year)
+              }
+              pledgePercent={
+                country === "us" && published?.form.mode === "pledge"
+                  ? published.form.pledge_percent
+                  : null
+              }
+              bunching={
+                country === "us"
+                  ? {
+                      data: bunching.data ?? null,
+                      isLoading: bunching.isLoading && bunching.fetchStatus !== "idle",
+                      isError: bunching.isError,
+                    }
+                  : null
+              }
             />
+            <div className="lg:hidden">{taxInfo}</div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-t from-gray-50 to-white border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {/* CTA Section */}
-          <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-xl p-6 mb-8 border border-primary-200/50">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center">
-                  <span className="text-xl">💚</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    GiveCalc is free, forever
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Support open-source tax and benefit analysis
-                  </p>
-                </div>
-              </div>
-              <a
-                href="https://www.policyengine.org/us/donate"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-md shadow-primary-500/20"
-              >
-                Support PolicyEngine
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </a>
-            </div>
-          </div>
-
-          {/* Bottom Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <p className="text-sm text-gray-500">
-                Tax calculations powered by{" "}
-                <a
-                  href="https://policyengine.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  PolicyEngine
-                </a>
-              </p>
-              <span className="hidden sm:inline text-gray-300">•</span>
-              <a
-                href="https://github.com/PolicyEngine/givecalc"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path
-                    fillRule="evenodd"
-                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                View source
-              </a>
-            </div>
-            <p className="text-xs text-gray-400 text-center sm:text-right max-w-md">
-              This calculator provides estimates only. Consult a tax professional
-              for your specific situation. Your information is not stored.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <p className="max-w-7xl mx-auto px-4 pb-8 sm:px-6 lg:px-8 w-full text-xs text-gray-500">
+        Estimates from PolicyEngine&apos;s open-source tax models. Consult a tax
+        professional for your situation.{" "}
+        <a
+          href="https://github.com/PolicyEngine/givecalc"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary-600 hover:text-primary-700"
+        >
+          View source
+        </a>
+      </p>
     </div>
   );
 }

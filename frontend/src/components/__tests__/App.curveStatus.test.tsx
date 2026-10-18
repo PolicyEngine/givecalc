@@ -200,4 +200,23 @@ describe("curve status per form", () => {
     expect(screen.getByTestId("tax-chart")).toBeInTheDocument();
     expect(screen.queryAllByText(FAILED)).toHaveLength(0);
   });
+
+  it("shows an earlier request's chart that arrives after a later one failed", async () => {
+    slow.savingsA = true;
+    render(<App />);
+    await click("form A");
+    await click("calc");
+    await click("calc");
+    await settle(() => {
+      pending["savings 1000"].resolve(headline(1000));
+      pending["savings 1000 again"].resolve(headline(1000));
+    });
+    // The later request fails first; then the earlier one answers.
+    await settle(() =>
+      pending["full 1000 again"].reject(new Error("second failed")),
+    );
+    await settle(() => pending["full 1000"].resolve(full(1000)));
+    expect(screen.getByTestId("tax-chart")).toBeInTheDocument();
+    expect(screen.queryAllByText(FAILED)).toHaveLength(0);
+  });
 });

@@ -99,4 +99,48 @@ describe("InputForm - Wizard Flow", () => {
     expect(options.length).toBe(1);
     expect(screen.getByText("Select a state...")).toBeInTheDocument();
   });
+
+  it("asks for an amount by default and offers a share of income", () => {
+    const setFormState = vi.fn();
+    render(<InputForm {...defaultProps} setFormState={setFormState} />);
+    expect(
+      screen.getByLabelText("How much are you planning to donate?"),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Share of income" }));
+    expect(setFormState).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: "pledge" }),
+    );
+  });
+
+  it("asks what share of income when that option is chosen", () => {
+    render(
+      <InputForm
+        {...defaultProps}
+        formState={{ ...DEFAULT_FORM_STATE, mode: "pledge" }}
+      />,
+    );
+    expect(
+      screen.getByLabelText("What share of your income do you give?"),
+    ).toHaveValue(10);
+  });
+
+  it("opens both steps confirmed when a shared link filled the form", () => {
+    render(
+      <InputForm
+        {...defaultProps}
+        prefilled
+        formState={{
+          ...DEFAULT_FORM_STATE,
+          mode: "pledge",
+          income: { ...DEFAULT_FORM_STATE.income, wages_and_salaries: 150000 },
+          state_code: "NY",
+        }}
+      />,
+    );
+    expect(screen.getByText("10% of income ($15,000)")).toBeInTheDocument();
+    expect(screen.getByText("$150,000 income, NY")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Complete previous section first"),
+    ).not.toBeInTheDocument();
+  });
 });
