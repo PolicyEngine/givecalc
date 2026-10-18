@@ -65,7 +65,8 @@ givecalc/                       # Repository root
 │   │   ├── index.css          # Tailwind imports, design tokens, global styles
 │   │   ├── components/
 │   │   │   ├── Header.tsx     # App header with PolicyEngine branding
-│   │   │   ├── InputForm.tsx  # US wizard-style input (donation -> details -> calculate)
+│   │   │   ├── InputForm.tsx  # US form on policyengine-household-wizard (gift, household, income, home, review)
+│   │   │   ├── household/     # One component per InputForm step
 │   │   │   ├── UKInputForm.tsx # UK input form (Gift Aid, region, income)
 │   │   │   ├── Results.tsx    # Metric cards, charts, methodology explainer
 │   │   │   ├── TaxChart.tsx   # Net taxes vs donation (Recharts LineChart)
@@ -74,6 +75,8 @@ givecalc/                       # Repository root
 │   │   ├── hooks/
 │   │   │   └── useCalculation.ts # React Query hooks for API calls
 │   │   ├── lib/
+│   │   │   ├── household.ts   # Wizard draft -> API request, income for a share, step validation
+│   │   │   ├── urlState.ts    # Shareable ?amount=... and ?pledge=... links
 │   │   │   ├── api.ts         # Axios API client, hardcoded states list
 │   │   │   ├── types.ts       # TypeScript interfaces and defaults
 │   │   │   ├── format.ts      # Currency/percent/number formatters
@@ -179,12 +182,22 @@ df["marginal_savings"] = -np.gradient(df.income_tax_after_donations) / \
                          np.gradient(df[donation_column])
 ```
 
+## Household wizard
+
+The US form uses `policyengine-household-wizard`'s primitives and US draft, and
+sends the draft as `toV1HouseholdSituation` builds it (`lib/household.ts`). The
+wizard owns the mapping from answers to PolicyEngine US variables; do not map
+fields to variables in GiveCalc. Until the wizard's npm releases publish, the
+dependency is a vendored build in `frontend/vendor/` (see its README).
+`bun run fixtures` rewrites `tests/fixtures/wizard_households.json`, which the
+Python tests run; a Vitest check fails when it is out of date.
+
 ## Common gotchas
 
 1. **API URL**: Set `NEXT_PUBLIC_API_URL` in `frontend/.env` (defaults to `http://localhost:8000`)
 2. **Modal deploy**: Must `unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET` before deploying to policyengine workspace
 3. **Vercel deploy**: Root `vercel.json` builds frontend/ -- deploy from repo root, not frontend/
-4. **NYC checkbox**: Only shown for NY state (handled in InputForm.tsx)
+4. **NYC**: New York City tax comes from the county (any of the five boroughs); `?nyc=1` links map to New York County
 5. **UK/US result mapping**: UK results are mapped to US-compatible format in App.tsx
 6. **States list**: Hardcoded in `api.ts` to avoid cold start delays
 7. **Chart testing**: Recharts is mocked in tests since jsdom can't render SVG

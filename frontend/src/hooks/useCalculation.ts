@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { compareBunching } from "../lib/pledge";
+import { toCalculateRequest } from "../lib/household";
 import { MAX_TAX_YEAR } from "../lib/types";
 import {
   getStates,
@@ -15,6 +16,7 @@ import {
 import { getTaxProgramsData } from "../lib/taxPrograms";
 import type {
   CalculateRequest,
+  FormState,
   UKCalculateRequest,
 } from "../lib/types";
 
@@ -58,15 +60,18 @@ export function useCalculateUKDonation() {
 }
 
 /**
- * Compare giving `request.donation_amount` this year and next with giving
- * twice that this year and nothing next year. Runs two extra simulations,
- * so it starts only after the main result is in.
+ * Compare giving the form's gift this year and next with giving twice that
+ * this year and nothing next year. Runs two extra simulations, so it starts
+ * only after the main result is in. Next year's run moves the whole household
+ * to that year, with the same gift.
  */
 export function useBunching(
-  request: CalculateRequest | null,
+  form: FormState | null,
   thisYearSavings: number | null,
 ) {
+  const request = form ? toCalculateRequest(form) : null;
   const enabled =
+    form !== null &&
     request !== null &&
     thisYearSavings !== null &&
     request.donation_amount > 0 &&
@@ -77,14 +82,21 @@ export function useBunching(
     staleTime: Infinity,
     retry: 1,
     queryFn: async () => {
-      const req = request as CalculateRequest;
-      const [nextYear, bunched] = await Promise.all([
-        calculateDonation({ ...req, year: req.year + 1 }),
-        calculateDonation({ ...req, donation_amount: 2 * req.donation_amount }),
+      const thisYear = request as CalculateRequest;
+      const nextYear = toCalculateRequest(form as FormState, {
+        year: thisYear.year + 1,
+        donation_amount: thisYear.donation_amount,
+      });
+      const [nextYearResult, bunched] = await Promise.all([
+        calculateDonation(nextYear),
+        calculateDonation({
+          ...thisYear,
+          donation_amount: 2 * thisYear.donation_amount,
+        }),
       ]);
       return compareBunching(
         thisYearSavings as number,
-        nextYear.tax_savings,
+        nextYearResult.tax_savings,
         bunched.tax_savings,
       );
     },

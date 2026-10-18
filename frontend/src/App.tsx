@@ -27,10 +27,10 @@ import type {
   UKCalculateResponse,
 } from "./lib/types";
 import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "./lib/types";
-import { pledgeAmount, pledgeBaseIncome } from "./lib/pledge";
+import { isReadyToCalculate, toCalculateRequest } from "./lib/household";
 import {
   applySearchParams,
-  isReadyToCalculate,
+  isShareable,
   toSearchParams,
 } from "./lib/urlState";
 
@@ -52,53 +52,28 @@ type CacheEntry = {
 };
 type ResultCache = Map<string, CacheEntry>;
 
-/** The gift the form describes, in dollars. */
-function giftAmount(formState: FormState): number {
-  return formState.mode === "pledge"
-    ? pledgeAmount(formState.pledge_percent, formState.income)
-    : formState.donation_amount;
-}
-
-function toRequest(formState: FormState): CalculateRequest {
-  return {
-    income: formState.income,
-    state_code: formState.state_code,
-    is_married: formState.is_married,
-    num_children: formState.num_children,
-    in_nyc: formState.in_nyc,
-    donation_amount: giftAmount(formState),
-    deductions: formState.deductions,
-    year: formState.year,
-  };
-}
-
 // Generate cache key from request parameters
 function getCacheKey(formState: FormState): string {
-  return JSON.stringify({ country: "us", ...toRequest(formState) });
+  return JSON.stringify({ country: "us", ...toCalculateRequest(formState) });
 }
 
 function getUKCacheKey(formState: UKFormState): string {
   return JSON.stringify({ country: "uk", ...formState });
 }
 
-/** A shared link reproduces the result only when wages are the only income. */
-function shareable(formState: FormState): boolean {
-  return (
-    pledgeBaseIncome(formState.income) ===
-      formState.income.wages_and_salaries &&
-    formState.income.qualified_dividends === 0
-  );
-}
-
-/** Point the address bar at the inputs behind the result on screen. */
+/**
+ * Point the address bar at the inputs behind the result on screen, or at no
+ * link when a link cannot reproduce them: an older link would reload a
+ * different household.
+ */
 function syncUrl(formState: FormState) {
-  if (shareable(formState)) {
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}?${toSearchParams(formState)}`,
-    );
-  }
+  window.history.replaceState(
+    null,
+    "",
+    isShareable(formState)
+      ? `${window.location.pathname}?${toSearchParams(formState)}`
+      : window.location.pathname,
+  );
 }
 
 const queryClient = new QueryClient({
@@ -137,13 +112,13 @@ function Calculator() {
   const calculateMutation = useCalculateDonation();
   const ukCalculateMutation = useCalculateUKDonation();
   const bunching = useBunching(
-    country === "us" && published ? published.request : null,
+    country === "us" && published ? published.form : null,
     published ? published.result.tax_savings : null,
   );
 
   const publishUS = useCallback(
     (state: FormState, result: CalculateResponse) => {
-      setPublished({ result, request: toRequest(state), form: state });
+      setPublished({ result, request: toCalculateRequest(state), form: state });
       syncUrl(state);
     },
     [],
@@ -203,7 +178,7 @@ function Calculator() {
       }
 
       const state = stateOverride ?? formState;
-      const request = toRequest(state);
+      const request = toCalculateRequest(state);
       const cacheKey = getCacheKey(state);
       const cached = cacheRef.current.get(cacheKey);
       if (cached?.result) {
@@ -231,18 +206,20 @@ function Calculator() {
     ],
   );
 
-  // Fill the form from a shared link once, then calculate.
+  // Fill the form from a shared link once. A complete link calculates; an
+  // incomplete one opens on the first question it leaves unanswered.
   useEffect(() => {
     const prefilled = applySearchParams(
       DEFAULT_FORM_STATE,
       window.location.search,
     );
-    if (isReadyToCalculate(prefilled)) {
-      formRef.current = prefilled;
-      setFormStateInternal(prefilled);
-      setPrefillKey((k) => k + 1);
-      setPendingPrefillCalc(true);
+    if (JSON.stringify(prefilled) === JSON.stringify(DEFAULT_FORM_STATE)) {
+      return;
     }
+    formRef.current = prefilled;
+    setFormStateInternal(prefilled);
+    setPrefillKey((k) => k + 1);
+    if (isReadyToCalculate(prefilled)) setPendingPrefillCalc(true);
   }, []);
 
   useEffect(() => {
@@ -306,8 +283,8 @@ function Calculator() {
     : null;
 
   const taxInfo =
-    country === "us" && formState.state_code ? (
-      <TaxInfo stateCode={formState.state_code} />
+    country === "us" && formState.household.state ? (
+      <TaxInfo stateCode={formState.household.state} />
     ) : null;
 
   return (
@@ -396,7 +373,7 @@ function Calculator() {
               year={
                 country === "uk"
                   ? (ukPublished?.form.year ?? ukFormState.year)
-                  : (published?.form.year ?? formState.year)
+                  : (published?.form.household.year ?? formState.household.year)
               }
               pledgePercent={
                 country === "us" && published?.form.mode === "pledge"

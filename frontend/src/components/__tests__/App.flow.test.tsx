@@ -4,6 +4,8 @@
  * - A response that arrives after the inputs changed must not appear under
  *   the new inputs.
  * - Restoring a cached result must point the URL at that result's inputs.
+ *
+ * Ported to the household wizard form in #88.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -63,6 +65,12 @@ async function resolveMain(index: number, savings: number) {
   });
 }
 
+/** Wages of the first adult in a request. */
+function wages(request: CalculateRequest): number | undefined {
+  const values = request.household.people["adult-1"]?.employment_income;
+  return values ? Number(values[String(request.year)]) : undefined;
+}
+
 describe("App result publishing", () => {
   beforeEach(() => {
     calls.length = 0;
@@ -85,8 +93,8 @@ describe("App result publishing", () => {
     await waitFor(() => expect(calls.length).toBe(1));
     expect(calls[0].request.donation_amount).toBe(15_000);
 
-    // Change the pledge while the first calculation is still running.
-    fireEvent.click(screen.getByText("10% of income ($15,000)"));
+    // Change the share while the first calculation is still running.
+    fireEvent.click(screen.getByRole("button", { name: /Edit Gift/ }));
     fireEvent.change(
       screen.getByLabelText("What share of your income do you give?"),
       { target: { value: "20" } },
@@ -115,12 +123,11 @@ describe("App result publishing", () => {
     await waitFor(() => expect(calls.length).toBe(1));
 
     // Rewrite 10% of $160,000 as a $16,000 amount while it calculates.
-    fireEvent.click(screen.getByText("10% of income ($16,000)"));
-    fireEvent.click(screen.getByRole("button", { name: "Specific amount" }));
-    fireEvent.change(
-      screen.getByLabelText("How much are you planning to donate?"),
-      { target: { value: "16000" } },
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Edit Gift/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "Specific amount" }));
+    fireEvent.change(screen.getByLabelText("How much do you plan to give?"), {
+      target: { value: "16000" },
+    });
 
     await resolveMain(0, 1_600);
     await waitFor(() =>
@@ -144,23 +151,31 @@ describe("App result publishing", () => {
     await resolveMain(0, 500);
     await waitFor(() =>
       expect(
-        screen.getByText("Giving 10% of your income ($10,000) costs you $9,500 in 2026."),
+        screen.getByText(
+          "Giving 10% of your income ($10,000) costs you $9,500 in 2026.",
+        ),
       ).toBeInTheDocument(),
     );
 
     // Recalculate at $200,000.
-    fireEvent.click(screen.getByText("$100,000 income, CA"));
-    const wages = screen.getByPlaceholderText("Enter annual income");
-    fireEvent.change(wages, { target: { value: "200000" } });
+    const editIncome = () =>
+      fireEvent.click(screen.getByRole("button", { name: /Edit Household income/ }));
+    const setWages = (value: string) =>
+      fireEvent.change(
+        screen.getByLabelText("Wages and salaries, not counting tips"),
+        { target: { value } },
+      );
+    editIncome();
+    setWages("200000");
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(screen.getByRole("button", { name: "Calculate tax impact" }));
     await waitFor(() =>
-      expect(
-        calls.some((c) => c.request.income.wages_and_salaries === 200_000),
-      ).toBe(true),
+      expect(calls.some((c) => wages(c.request) === 200_000)).toBe(true),
     );
     const second = calls.findIndex(
       (c) =>
-        c.request.income.wages_and_salaries === 200_000 &&
+        wages(c.request) === 200_000 &&
         c.request.year === 2026 &&
         c.request.donation_amount === 20_000,
     );
@@ -170,12 +185,12 @@ describe("App result publishing", () => {
     );
 
     // Back to $100,000: the cached result returns and the URL follows it.
-    fireEvent.click(screen.getByText("$200,000 income, CA"));
-    fireEvent.change(screen.getByPlaceholderText("Enter annual income"), {
-      target: { value: "100000" },
-    });
+    editIncome();
+    setWages("100000");
     expect(
-      screen.getByText("Giving 10% of your income ($10,000) costs you $9,500 in 2026."),
+      screen.getByText(
+        "Giving 10% of your income ($10,000) costs you $9,500 in 2026.",
+      ),
     ).toBeInTheDocument();
     expect(window.location.search).toContain("income=100000");
   });
