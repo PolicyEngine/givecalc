@@ -15,16 +15,20 @@ import TaxInfo from "./components/TaxInfo";
 import {
   useStates,
   useCalculateDonation,
+  useCalculateSavings,
   useCalculateUKDonation,
+  useCalculateUKSavings,
   useBunching,
 } from "./hooks/useCalculation";
 import type {
   CalculateRequest,
   Country,
   FormState,
+  Headline,
   UKFormState,
   CalculateResponse,
   UKCalculateResponse,
+  UKSavingsResponse,
 } from "./lib/types";
 import { DEFAULT_FORM_STATE, DEFAULT_UK_FORM_STATE } from "./lib/types";
 import { pledgeAmount, pledgeBaseIncome } from "./lib/pledge";
@@ -33,24 +37,46 @@ import {
   isReadyToCalculate,
   toSearchParams,
 } from "./lib/urlState";
+import { fetchHeadlineFirst, type FullStatus } from "./lib/headlineFirst";
 
-/** A result together with the inputs that produced it. */
+/**
+ * A result together with the inputs that produced it. The headline
+ * (/api/savings) arrives first; the curve and marginal rate
+ * (/api/calculate) follow, so `result` is null until then.
+ */
 interface USPublished {
-  result: CalculateResponse;
+  headline: Headline;
+  result: CalculateResponse | null;
   request: CalculateRequest;
   form: FormState;
 }
 interface UKPublished {
-  result: UKCalculateResponse;
+  headline: Headline;
+  result: UKCalculateResponse | null;
   form: UKFormState;
 }
 
-// Cache for calculation results
+// Cache for calculation results, with where each form's curve stands.
 type CacheEntry = {
+  headline?: Headline;
   result?: CalculateResponse;
+  curveStatus?: FullStatus;
+  ukHeadline?: Headline;
   ukResult?: UKCalculateResponse;
+  ukCurveStatus?: FullStatus;
 };
 type ResultCache = Map<string, CacheEntry>;
+
+function ukHeadlineFrom(savings: UKSavingsResponse): Headline {
+  return {
+    donation_amount: savings.gift_aid,
+    baseline_net_tax: savings.baseline_net_tax,
+    net_tax_at_donation: savings.net_tax_at_donation,
+    tax_savings: savings.tax_savings,
+    baseline_net_income: savings.baseline_net_income,
+    net_income_after_donation: savings.net_income_after_donation,
+  };
+}
 
 /** The gift the form describes, in dollars. */
 function giftAmount(formState: FormState): number {
@@ -118,6 +144,9 @@ function Calculator() {
     useState<UKFormState>(DEFAULT_UK_FORM_STATE);
   const [published, setPublished] = useState<USPublished | null>(null);
   const [ukPublished, setUKPublished] = useState<UKPublished | null>(null);
+  // Where the curve of the form on screen stands.
+  const [curveStatus, setCurveStatus] = useState<FullStatus>(null);
+  const [ukCurveStatus, setUKCurveStatus] = useState<FullStatus>(null);
   // The latest inputs, read after an await so that a slow response never
   // lands on inputs the user has since changed.
   const formRef = useRef<FormState>(formState);
@@ -126,6 +155,17 @@ function Calculator() {
   const [prefillKey, setPrefillKey] = useState(0);
   const [pendingPrefillCalc, setPendingPrefillCalc] = useState(false);
   const cacheRef = useRef<ResultCache>(new Map());
+  // The latest request per cache key, so an earlier request for the same
+  // inputs (Calculate clicked twice) cannot overwrite the curve's status.
+  const latestRequestRef = useRef(new Map<string, number>());
+  const startRequest = (key: string) => {
+    const id = (latestRequestRef.current.get(key) ?? 0) + 1;
+    latestRequestRef.current.set(key, id);
+    return () => latestRequestRef.current.get(key) === id;
+  };
+  const cacheUpdate = (key: string, entry: CacheEntry) => {
+    cacheRef.current.set(key, { ...cacheRef.current.get(key), ...entry });
+  };
 
   const {
     data: statesData,
@@ -134,16 +174,23 @@ function Calculator() {
     error: statesErrorData,
   } = useStates();
 
+  const savingsMutation = useCalculateSavings();
   const calculateMutation = useCalculateDonation();
+  const ukSavingsMutation = useCalculateUKSavings();
   const ukCalculateMutation = useCalculateUKDonation();
+  // Bunching needs only the headline, so it runs alongside the curve.
   const bunching = useBunching(
     country === "us" && published ? published.request : null,
-    published ? published.result.tax_savings : null,
+    published ? published.headline.tax_savings : null,
   );
 
   const publishUS = useCallback(
-    (state: FormState, result: CalculateResponse) => {
-      setPublished({ result, request: toRequest(state), form: state });
+    (
+      state: FormState,
+      headline: Headline,
+      result: CalculateResponse | null,
+    ) => {
+      setPublished({ headline, result, request: toRequest(state), form: state });
       syncUrl(state);
     },
     [],
@@ -155,11 +202,12 @@ function Calculator() {
       formRef.current = newState;
       setFormStateInternal(newState);
       const cached = cacheRef.current.get(getCacheKey(newState));
-      if (cached?.result) {
-        publishUS(newState, cached.result);
+      if (cached?.headline) {
+        publishUS(newState, cached.headline, cached.result ?? null);
       } else {
         setPublished(null);
       }
+      setCurveStatus(cached?.curveStatus ?? null);
     },
     [publishUS],
   );
@@ -169,8 +217,15 @@ function Calculator() {
     setUKFormStateInternal(newState);
     const cached = cacheRef.current.get(getUKCacheKey(newState));
     setUKPublished(
-      cached?.ukResult ? { result: cached.ukResult, form: newState } : null,
+      cached?.ukHeadline
+        ? {
+            headline: cached.ukHeadline,
+            result: cached.ukResult ?? null,
+            form: newState,
+          }
+        : null,
     );
+    setUKCurveStatus(cached?.ukCurveStatus ?? null);
   }, []);
 
   const handleCalculate = useCallback(
@@ -179,26 +234,63 @@ function Calculator() {
         const ukState = ukFormState;
         const cacheKey = getUKCacheKey(ukState);
         const cached = cacheRef.current.get(cacheKey);
-        if (cached?.ukResult) {
-          setUKPublished({ result: cached.ukResult, form: ukState });
+        if (cached?.ukHeadline && cached.ukResult) {
+          setUKPublished({
+            headline: cached.ukHeadline,
+            result: cached.ukResult,
+            form: ukState,
+          });
+          setUKCurveStatus(null);
           return;
         }
-
-        setUKPublished(null);
-        const response = await ukCalculateMutation.mutateAsync({
+        const request = {
           income: ukState.income,
           region: ukState.region,
           gift_aid: ukState.gift_aid,
           is_married: ukState.is_married,
           num_children: ukState.num_children,
           year: ukState.year,
+        };
+        // Publish only while the inputs still match what was calculated,
+        // labelled with the current inputs.
+        const isShown = () => getUKCacheKey(ukFormRef.current) === cacheKey;
+        const isLatest = startRequest(cacheKey);
+        const kept = () => cacheRef.current.get(cacheKey)?.ukResult;
+        const show = (
+          headline: Headline,
+          result: UKCalculateResponse | null,
+        ) => setUKPublished({ headline, result, form: ukFormRef.current });
+
+        if (!cached?.ukHeadline) setUKPublished(null);
+        setUKCurveStatus(null);
+        await fetchHeadlineFirst({
+          cachedHeadline: cached?.ukHeadline,
+          fetchHeadline: async () =>
+            ukHeadlineFrom(await ukSavingsMutation.mutateAsync(request)),
+          fetchFull: () => ukCalculateMutation.mutateAsync(request),
+          storeHeadline: (ukHeadline) => cacheUpdate(cacheKey, { ukHeadline }),
+          storeFull: (ukResult) =>
+            cacheUpdate(cacheKey, { ukResult, ukCurveStatus: null }),
+          storeFullStatus: (status) => {
+            if (!isLatest()) return;
+            cacheUpdate(cacheKey, {
+              ukCurveStatus: status === "failed" && kept() ? null : status,
+            });
+          },
+          showHeadline: (headline) => show(headline, kept() ?? null),
+          // Any curve for these inputs shows, even one from an earlier
+          // request that finished after a later one failed.
+          showFull: (result) => {
+            const headline = cacheRef.current.get(cacheKey)?.ukHeadline;
+            if (headline) show(headline, result);
+            setUKCurveStatus(null);
+          },
+          showFullStatus: (status) => {
+            if (!isLatest()) return;
+            setUKCurveStatus(status === "failed" && kept() ? null : status);
+          },
+          isCurrent: isShown,
         });
-        cacheRef.current.set(cacheKey, { ukResult: response });
-        // Publish only if the inputs still match what was calculated, and
-        // label it with the current inputs.
-        if (getUKCacheKey(ukFormRef.current) === cacheKey) {
-          setUKPublished({ result: response, form: ukFormRef.current });
-        }
         return;
       }
 
@@ -206,26 +298,58 @@ function Calculator() {
       const request = toRequest(state);
       const cacheKey = getCacheKey(state);
       const cached = cacheRef.current.get(cacheKey);
-      if (cached?.result) {
-        publishUS(state, cached.result);
+      if (cached?.headline && cached.result) {
+        publishUS(state, cached.headline, cached.result);
+        setCurveStatus(null);
         return;
       }
-
-      setPublished(null);
-      const response = await calculateMutation.mutateAsync(request);
-      cacheRef.current.set(cacheKey, { result: response });
-      // Publish only if the inputs still match what was calculated. An
+      // Publish only while the inputs still match what was calculated. An
       // equivalent edit (10% of $160,000 rewritten as $16,000) keeps the
       // same request, so label the result with the current inputs.
-      if (getCacheKey(formRef.current) === cacheKey) {
-        publishUS(formRef.current, response);
-      }
+      const isShown = () => getCacheKey(formRef.current) === cacheKey;
+      const isLatest = startRequest(cacheKey);
+      const kept = () => cacheRef.current.get(cacheKey)?.result;
+
+      if (!cached?.headline) setPublished(null);
+      setCurveStatus(null);
+      // The headline first, from two simulations; then the curve and the
+      // marginal rate, from the donation sweep.
+      await fetchHeadlineFirst({
+        cachedHeadline: cached?.headline,
+        fetchHeadline: () => savingsMutation.mutateAsync(request),
+        fetchFull: () => calculateMutation.mutateAsync(request),
+        storeHeadline: (headline) => cacheUpdate(cacheKey, { headline }),
+        storeFull: (result) =>
+          cacheUpdate(cacheKey, { result, curveStatus: null }),
+        storeFullStatus: (status) => {
+          if (!isLatest()) return;
+          cacheUpdate(cacheKey, {
+            curveStatus: status === "failed" && kept() ? null : status,
+          });
+        },
+        showHeadline: (headline) =>
+          publishUS(formRef.current, headline, kept() ?? null),
+        // Any curve for these inputs shows, even one from an earlier
+        // request that finished after a later one failed.
+        showFull: (result) => {
+          const headline = cacheRef.current.get(cacheKey)?.headline;
+          if (headline) publishUS(formRef.current, headline, result);
+          setCurveStatus(null);
+        },
+        showFullStatus: (status) => {
+          if (!isLatest()) return;
+          setCurveStatus(status === "failed" && kept() ? null : status);
+        },
+        isCurrent: isShown,
+      });
     },
     [
       country,
       formState,
       ukFormState,
+      savingsMutation,
       calculateMutation,
+      ukSavingsMutation,
       ukCalculateMutation,
       publishUS,
     ],
@@ -252,9 +376,12 @@ function Calculator() {
     }
   }, [pendingPrefillCalc, formState, handleCalculate]);
 
+  // Only the headline holds the page; the charts load after it.
   const isCalculating =
-    calculateMutation.isPending || ukCalculateMutation.isPending;
-  const hasError = calculateMutation.isError || ukCalculateMutation.isError;
+    country === "uk" ? ukSavingsMutation.isPending : savingsMutation.isPending;
+  const hasError =
+    country === "uk" ? ukSavingsMutation.isError : savingsMutation.isError;
+  const shownCurveStatus = country === "uk" ? ukCurveStatus : curveStatus;
 
   // Only show loading for US states - UK doesn't need to load regions
   if (country === "us" && statesLoading) {
@@ -388,10 +515,17 @@ function Calculator() {
               </div>
             )}
             <Results
+              headline={
+                country === "uk"
+                  ? (ukPublished?.headline ?? null)
+                  : (published?.headline ?? null)
+              }
               result={
                 country === "uk" ? ukResultAsUS : (published?.result ?? null)
               }
               isCalculating={isCalculating}
+              isLoadingCurve={shownCurveStatus === "loading"}
+              curveFailed={shownCurveStatus === "failed"}
               currency={country === "uk" ? "GBP" : "USD"}
               year={
                 country === "uk"

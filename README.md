@@ -87,24 +87,23 @@ unset MODAL_TOKEN_ID MODAL_TOKEN_SECRET && modal deploy modal_app.py
 **Frontend (build-time):**
 - `NEXT_PUBLIC_API_URL`: Backend API URL
 
-**Backend:**
-- `USE_MODAL`: `false` runs calculations in-process (the Modal image sets this)
-
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/states` | GET | List supported states |
 | `/api/tax-programs/{state}` | GET | Get tax program info for a state |
-| `/api/calculate` | POST | Calculate donation tax impact |
+| `/api/savings` | POST | Tax savings at a donation, from two simulations (optionally a bunching comparison, from three more) |
+| `/api/calculate` | POST | Tax savings plus the marginal rate and the donation curve |
 | `/api/target-donation` | POST | Find donation for target reduction |
-| `/api/uk/calculate` | POST | Calculate UK Gift Aid tax impact |
+| `/api/uk/savings` | POST | UK Gift Aid tax savings, from two simulations |
+| `/api/uk/calculate` | POST | UK Gift Aid savings plus the marginal rate and the donation curve |
 | `/api/uk/regions` | GET | List UK regions |
 | `/api/health` | GET | Health check |
 
 ### US households
 
-`/api/calculate` and `/api/target-donation` take the household as
+`/api/savings`, `/api/calculate` and `/api/target-donation` take the household as
 `household`: the PolicyEngine US situation that
 [policyengine-household-wizard](https://github.com/PolicyEngine/policyengine-household-wizard)'s
 `toV1HouseholdSituation` builds, with every value keyed by `year` and the
@@ -128,6 +127,8 @@ and a target are finite and at most 1e9. The curve runs from no gift to the hous
 income plus benefits, or to the gift if that is larger. `baseline_net_tax`
 is taxes minus benefits, so benefits the household enters (such as Social
 Security) count against it.
+With `bunching: true`, `/api/savings` runs next year with the household's
+values moved to next year and everyone a year older.
 
 ```json
 {
