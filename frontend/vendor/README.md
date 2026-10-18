@@ -10,8 +10,10 @@ npmjs.com.
 
 Once a release with those inputs is on npm, replace the tarball with it:
 
+From `frontend/`:
+
 ```bash
 bun remove policyengine-household-wizard
 bun add policyengine-household-wizard@^0.2.0
-rm frontend/vendor/policyengine-household-wizard-*.tgz
+rm vendor/policyengine-household-wizard-*.tgz
 ```
