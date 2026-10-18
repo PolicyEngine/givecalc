@@ -6,14 +6,14 @@ export type Country = "us" | "uk";
 
 // US-specific types
 // Gifts count in the year they are made, so offer last year (for filing),
-// this year and next year. The API accepts up to next year.
+// this year and next year. The API accepts up to two years ahead.
 export const CURRENT_YEAR = new Date().getFullYear();
 export const TAX_YEAR_OPTIONS = [
   CURRENT_YEAR - 1,
   CURRENT_YEAR,
   CURRENT_YEAR + 1,
 ];
-/** The latest year the API accepts. */
+/** The latest year the form offers (the API accepts one more). */
 export const MAX_TAX_YEAR = CURRENT_YEAR + 1;
 
 /**
@@ -70,6 +70,44 @@ export interface CalculateResponse {
   baseline_net_income: number;
   net_income_after_donation: number;
   curve: DonationDataPoint[];
+}
+
+/**
+ * The headline figures: net tax and net income at $0 and at the gift, each
+ * from its own simulation. /api/savings returns these without the
+ * donation curve, so they arrive before the charts.
+ */
+export interface Headline {
+  donation_amount: number;
+  baseline_net_tax: number;
+  net_tax_at_donation: number;
+  tax_savings: number;
+  baseline_net_income: number;
+  net_income_after_donation: number;
+}
+
+export interface SavingsRequest extends CalculateRequest {
+  /** Also compare giving twice the gift this year and none next year. */
+  bunching?: boolean;
+}
+
+export interface BunchingResult {
+  next_year: number;
+  next_year_baseline_net_tax: number;
+  next_year_net_tax_at_donation: number;
+  next_year_tax_savings: number;
+  bunched_donation_amount: number;
+  bunched_net_tax: number;
+  bunched_tax_savings: number;
+  /** This year's tax_savings plus next_year_tax_savings. */
+  every_year_tax_savings: number;
+  /** bunched_tax_savings minus every_year_tax_savings. */
+  bunching_gain: number;
+}
+
+export interface SavingsResponse extends Headline {
+  year: number;
+  bunching: BunchingResult | null;
 }
 
 export interface StateInfo {
@@ -177,6 +215,16 @@ export interface UKCalculateResponse {
   baseline_net_income: number;
   net_income_after_donation: number;
   curve: UKDonationDataPoint[];
+}
+
+export interface UKSavingsResponse {
+  year: number;
+  gift_aid: number;
+  baseline_net_tax: number;
+  net_tax_at_donation: number;
+  tax_savings: number;
+  baseline_net_income: number;
+  net_income_after_donation: number;
 }
 
 export interface UKFormState {

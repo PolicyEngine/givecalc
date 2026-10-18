@@ -30,16 +30,23 @@ def calculate_donation_metrics(situation, donation_amount):
     baseline_simulation = create_donation_simulation(
         situation=situation, donation_amount=donation_amount
     )
+    benefits = baseline_simulation.calculate(
+        "household_benefits", year, map_to="household"
+    )
     return {
         "baseline_income_tax": baseline_simulation.calculate(
             "household_tax", year, map_to="household"
         )
-        - baseline_simulation.calculate(
-            "household_benefits", year, map_to="household"
-        ),
+        - benefits,
         "baseline_net_income": baseline_simulation.calculate(
             "household_net_income", year, map_to="household"
         ),
+        # Market income and benefits end a wizard household's donation
+        # curve (see givecalc.core.household.household_gross_income).
+        "household_market_income": baseline_simulation.calculate(
+            "household_market_income", year, map_to="household"
+        ),
+        "household_benefits": benefits,
     }
 
 
