@@ -13,7 +13,7 @@ import {
 describe("Year consistency", () => {
   it("DEFAULT_FORM_STATE defaults to the current system year", () => {
     const currentYear = new Date().getFullYear();
-    expect(DEFAULT_FORM_STATE.year).toBe(currentYear);
+    expect(DEFAULT_FORM_STATE.household.year).toBe(currentYear);
   });
 
   it("DEFAULT_UK_FORM_STATE defaults to the UK tax year in progress", () => {
@@ -37,7 +37,7 @@ describe("Year consistency", () => {
   });
 
   it("defaults to a year the picker offers", () => {
-    expect(TAX_YEAR_OPTIONS).toContain(DEFAULT_FORM_STATE.year);
+    expect(TAX_YEAR_OPTIONS).toContain(DEFAULT_FORM_STATE.household.year);
     expect(TAX_YEAR_OPTIONS).toContain(DEFAULT_UK_FORM_STATE.year);
   });
 });

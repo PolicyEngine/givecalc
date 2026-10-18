@@ -34,14 +34,14 @@ vi.mock("../InputForm", () => ({
     <div>
       <button
         onClick={() =>
-          setFormState({ ...formState, state_code: "CA", donation_amount: 1000 })
+          setFormState({ ...formState, mode: "amount", donation_amount: 1000 })
         }
       >
         form A
       </button>
       <button
         onClick={() =>
-          setFormState({ ...formState, state_code: "CA", donation_amount: 2000 })
+          setFormState({ ...formState, mode: "amount", donation_amount: 2000 })
         }
       >
         form B

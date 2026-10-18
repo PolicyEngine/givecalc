@@ -2,6 +2,13 @@
  * TypeScript types for GiveCalc API
  */
 
+import {
+  addPerson,
+  createBlankDraft,
+  type USHouseholdDraft,
+  type V1HouseholdSituation,
+} from "policyengine-household-wizard/us-household";
+
 export type Country = "us" | "uk";
 
 // US-specific types
@@ -26,31 +33,14 @@ export function ukTaxYear(date: Date): number {
   return beforeSixthApril ? date.getFullYear() - 1 : date.getFullYear();
 }
 
-export interface Income {
-  wages_and_salaries: number;
-  tips: number;
-  dividends: number;
-  qualified_dividends: number;
-  short_term_capital_gains: number;
-  long_term_capital_gains: number;
-  interest_income: number;
-  self_employment_income: number;
-}
-
-export interface Deductions {
-  mortgage_interest: number;
-  real_estate_taxes: number;
-  casualty_loss: number;
-}
-
+/**
+ * A US calculation request. `household` is the PolicyEngine US situation the
+ * shared household wizard builds from the form (`toV1HouseholdSituation`),
+ * keyed by `year`; the API adds the donation. The first person is the donor.
+ */
 export interface CalculateRequest {
-  income: Income;
-  state_code: string;
-  is_married: boolean;
-  num_children: number;
-  in_nyc: boolean;
+  household: V1HouseholdSituation;
   donation_amount: number;
-  deductions: Deductions;
   year: number;
 }
 
@@ -132,47 +122,33 @@ export interface TaxProgramsResponse {
 
 // Form state type
 export interface FormState {
-  income: Income;
-  state_code: string;
-  is_married: boolean;
-  num_children: number;
-  in_nyc: boolean;
-  donation_amount: number;
-  deductions: Deductions;
+  /**
+   * The household, as the shared wizard's US draft: state, county, marital
+   * status, and each person's age, income and expenses. GiveCalc asks about
+   * home costs once and keeps them on the first adult; the tax unit sums them.
+   */
+  household: USHouseholdDraft;
+  /** Whether the household has a mortgage or pays property tax; null until asked. */
+  hasHomeCosts: boolean | null;
   /** "pledge" gives pledge_percent of income; "amount" gives donation_amount. */
   mode: "pledge" | "amount";
   pledge_percent: number;
-  year: number;
+  donation_amount: number;
 }
 
-export const DEFAULT_INCOME: Income = {
-  wages_and_salaries: 0,
-  tips: 0,
-  dividends: 0,
-  qualified_dividends: 0,
-  short_term_capital_gains: 0,
-  long_term_capital_gains: 0,
-  interest_income: 0,
-  self_employment_income: 0,
-};
+/** A form with one adult and nothing else answered. */
+export function blankForm(year: number = CURRENT_YEAR): FormState {
+  return {
+    household: addPerson(createBlankDraft(year), "adult"),
+    hasHomeCosts: null,
+    // General audiences think in amounts; a share of income suits pledgers.
+    mode: "amount",
+    pledge_percent: 10,
+    donation_amount: 0,
+  };
+}
 
-export const DEFAULT_FORM_STATE: FormState = {
-  income: DEFAULT_INCOME,
-  state_code: "",  // No default state
-  is_married: false,
-  num_children: 0,
-  in_nyc: false,
-  donation_amount: 0,  // No default donation
-  deductions: {
-    mortgage_interest: 0,
-    real_estate_taxes: 0,
-    casualty_loss: 0,
-  },
-  // General audiences think in amounts; share of income suits pledgers.
-  mode: "amount",
-  pledge_percent: 10,
-  year: CURRENT_YEAR,
-};
+export const DEFAULT_FORM_STATE: FormState = blankForm();
 
 // UK-specific types
 export interface UKIncome {

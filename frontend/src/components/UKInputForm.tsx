@@ -12,6 +12,11 @@ interface Props {
   setFormState: (state: UKFormState) => void;
   onCalculate: () => void;
   isCalculating: boolean;
+  /**
+   * False while the form is hidden behind the US form, so its window-wide
+   * Enter key does nothing. Required, so a caller can't leave it on.
+   */
+  active: boolean;
 }
 
 // Section states
@@ -105,6 +110,7 @@ export default function UKInputForm({
   setFormState,
   onCalculate,
   isCalculating,
+  active,
 }: Props) {
   // Track which sections are confirmed (user clicked Continue)
   const [donationConfirmed, setDonationConfirmed] = useState(false);
@@ -164,6 +170,7 @@ export default function UKInputForm({
 
   // Global Enter key handler to trigger calculate when ready
   useEffect(() => {
+    if (!active) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && canCalculate && !isCalculating) {
         e.preventDefault();
@@ -172,7 +179,7 @@ export default function UKInputForm({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canCalculate, isCalculating, onCalculate]);
+  }, [active, canCalculate, isCalculating, onCalculate]);
 
   const handleDonationContinue = () => {
     if (donationComplete) {
