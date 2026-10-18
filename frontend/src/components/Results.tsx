@@ -228,7 +228,7 @@ export default function Results({
                     year,
                   )
                 : bunching.isLoading
-                  ? "Running three more simulations to check…"
+                  ? "Simulating next year, and twice the gift this year, to check…"
                   : bunching.isError
                     ? "The bunching check didn't finish; try again in a moment."
                     : "Pick an earlier tax year to compare it with giving across two years."}
