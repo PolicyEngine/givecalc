@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from "react";
-import type { CalculateResponse } from "../lib/types";
+import type { CalculateResponse, Headline } from "../lib/types";
 import type { BunchingComparison } from "../lib/pledge";
 import { formatCurrency, formatPercent } from "../lib/format";
 import TaxChart from "./TaxChart";
@@ -16,8 +16,15 @@ export interface BunchingState {
 }
 
 interface Props {
+  /** The headline figures, which arrive before the curve. */
+  headline?: Headline | null;
+  /** The donation curve and marginal rate, plus the headline figures. */
   result: CalculateResponse | null;
+  /** True until the headline arrives. */
   isCalculating?: boolean;
+  /** True while the curve loads after the headline. */
+  isLoadingCurve?: boolean;
+  curveFailed?: boolean;
   currency?: "USD" | "GBP";
   /** Tax year of the result. */
   year: number;
@@ -28,7 +35,7 @@ interface Props {
 
 /** The answer in one sentence: what the gift costs after tax. */
 export function costHeadline(
-  result: CalculateResponse,
+  result: Headline,
   currency: "USD" | "GBP",
   year: number,
   pledgePercent?: number | null,
@@ -93,14 +100,12 @@ function CalculatingProgress({ isUK }: { isUK: boolean }) {
 
   // Show different messages based on elapsed time and country
   const getMessage = () => {
-    if (elapsed < 5) {
-      return "Running tax simulations across donation amounts...";
-    } else if (elapsed < 15) {
+    if (elapsed < 10) {
       return isUK
-        ? "Calculating Gift Aid relief and tax impacts..."
-        : "Calculating federal and state tax impacts...";
+        ? "Calculating your taxes with and without Gift Aid..."
+        : "Calculating your federal and state taxes with and without your gift...";
     } else if (elapsed < 30) {
-      return "Simulating 1,000+ scenarios across your donation range...";
+      return "The first answer after a quiet spell can take about a minute.";
     } else {
       return "Almost done. Complex scenarios take a bit longer.";
     }
@@ -120,8 +125,30 @@ function CalculatingProgress({ isUK }: { isUK: boolean }) {
   );
 }
 
+// Holds a chart's place while the curve loads, or if it failed.
+function ChartPlaceholder({ failed }: { failed?: boolean }) {
+  return (
+    <div
+      className="h-[350px] flex flex-col items-center justify-center text-sm text-gray-500"
+      role="status"
+    >
+      {failed ? (
+        <p>The chart could not load. Calculate again to retry.</p>
+      ) : (
+        <>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-3" />
+          <p>Loading the chart across donation amounts...</p>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Results({
+  headline: headlineFigures = null,
   result,
+  isLoadingCurve,
+  curveFailed,
   isCalculating,
   currency = "USD",
   year,
@@ -133,7 +160,12 @@ export default function Results({
     return <CalculatingProgress isUK={currency === "GBP"} />;
   }
 
-  if (!result) {
+  // The headline figures come from /api/savings when it has answered, and
+  // from the full result when that is all there is (it carries the same
+  // figures, from the same simulations).
+  const summary: Headline | null = headlineFigures ?? result;
+
+  if (!summary) {
     return (
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg shadow-gray-200/50 p-10 text-center border border-gray-100">
         <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
@@ -161,9 +193,14 @@ export default function Results({
     );
   }
 
-  const data = result;
+  const curve = result?.curve;
+  const marginalRate = result
+    ? formatPercent(result.marginal_savings_rate)
+    : isLoadingCurve
+      ? "…"
+      : "–";
   const { headline, detail } = costHeadline(
-    result,
+    summary,
     currency,
     year,
     pledgePercent,
@@ -178,7 +215,7 @@ export default function Results({
         </p>
         <p className="text-gray-600 mt-2">{detail}</p>
 
-        {bunching && result.donation_amount > 0 && (
+        {bunching && summary.donation_amount > 0 && (
           <div className="mt-5 pt-5 border-t border-gray-100">
             <p className="text-sm font-medium text-gray-900">
               Give two years at once?
@@ -187,11 +224,11 @@ export default function Results({
               {bunching.data
                 ? bunchingSentence(
                     bunching.data,
-                    result.donation_amount,
+                    summary.donation_amount,
                     year,
                   )
                 : bunching.isLoading
-                  ? "Running two more simulations to check…"
+                  ? "Simulating next year, and twice the gift this year, to check…"
                   : bunching.isError
                     ? "The bunching check didn't finish; try again in a moment."
                     : "Pick an earlier tax year to compare it with giving across two years."}
@@ -204,20 +241,20 @@ export default function Results({
             <>
               <MetricCard
                 label="Your net cost"
-                value={fmt(result.donation_amount - result.tax_savings)}
+                value={fmt(summary.donation_amount - summary.tax_savings)}
                 description="What you pay after claiming relief"
                 highlight
               />
               <MetricCard
                 label="Charity receives"
-                value={fmt(result.donation_amount / 0.8)}
+                value={fmt(summary.donation_amount / 0.8)}
                 description="Your gift grossed up at the 20% basic rate"
               />
               <MetricCard
                 label="Your tax relief"
-                value={fmt(result.tax_savings)}
+                value={fmt(summary.tax_savings)}
                 description={
-                  result.tax_savings > 0
+                  summary.tax_savings > 0
                     ? "Higher- or additional-rate relief"
                     : "Basic-rate taxpayers: no personal relief"
                 }
@@ -227,18 +264,18 @@ export default function Results({
             <>
               <MetricCard
                 label="Your net cost"
-                value={fmt(result.donation_amount - result.tax_savings)}
+                value={fmt(summary.donation_amount - summary.tax_savings)}
                 description="Gift minus the tax it saves"
                 highlight
               />
               <MetricCard
                 label="Tax savings"
-                value={fmt(result.tax_savings)}
+                value={fmt(summary.tax_savings)}
                 description="Federal, state and local"
               />
               <MetricCard
                 label="Saved on the next $1"
-                value={formatPercent(result.marginal_savings_rate)}
+                value={marginalRate}
                 description="Tax saved if you gave a little more"
               />
             </>
@@ -253,11 +290,15 @@ export default function Results({
             <span className="w-2 h-2 rounded-full bg-primary-500" />
             Net taxes vs. donation amount
           </h3>
-          <TaxChart
-            curve={data.curve}
-            currentDonation={result.donation_amount}
-            currency={currency}
-          />
+          {curve ? (
+            <TaxChart
+              curve={curve}
+              currentDonation={summary.donation_amount}
+              currency={currency}
+            />
+          ) : (
+            <ChartPlaceholder failed={curveFailed && !isLoadingCurve} />
+          )}
         </div>
 
         <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 p-6 border border-gray-100">
@@ -265,16 +306,20 @@ export default function Results({
             <span className="w-2 h-2 rounded-full bg-primary-500" />
             {currency === "GBP" ? "Tax relief breakdown" : "Marginal savings rate"}
           </h3>
-          <MarginalChart
-            curve={data.curve}
-            currentDonation={result.donation_amount}
-            currency={currency}
-          />
+          {curve ? (
+            <MarginalChart
+              curve={curve}
+              currentDonation={summary.donation_amount}
+              currency={currency}
+            />
+          ) : (
+            <ChartPlaceholder failed={curveFailed && !isLoadingCurve} />
+          )}
         </div>
       </div>
 
       {/* Detailed Breakdown */}
-      {result && (
+      {summary && (
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Detailed breakdown
@@ -284,26 +329,26 @@ export default function Results({
               <span className="text-gray-600">
                 Baseline net tax (no donation)
               </span>
-              <span className="font-medium">{fmt(result.baseline_net_tax)}</span>
+              <span className="font-medium">{fmt(summary.baseline_net_tax)}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-600">
-                Net tax at {fmt(result.donation_amount)}
+                Net tax at {fmt(summary.donation_amount)}
               </span>
               <span className="font-medium">
-                {fmt(result.net_tax_at_donation)}
+                {fmt(summary.net_tax_at_donation)}
               </span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-600">Baseline net income</span>
               <span className="font-medium">
-                {fmt(result.baseline_net_income)}
+                {fmt(summary.baseline_net_income)}
               </span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-600">Net income after donation</span>
               <span className="font-medium">
-                {fmt(result.net_income_after_donation)}
+                {fmt(summary.net_income_after_donation)}
               </span>
             </div>
           </div>

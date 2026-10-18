@@ -26,7 +26,9 @@ def _check_year(year: int) -> int:
     return year
 
 
-TaxYear = Annotated[int, AfterValidator(_check_year)]
+# ge shows the fixed lower bound in the OpenAPI schema; the upper bound
+# moves with today's date, so only _check_year enforces it.
+TaxYear = Annotated[int, Field(ge=MIN_YEAR), AfterValidator(_check_year)]
 
 
 class IncomeInput(BaseModel):
@@ -183,6 +185,52 @@ class CalculateResponse(BaseModel):
     curve: list[DonationDataPoint]
 
 
+class SavingsRequest(CalculateRequest):
+    """Request body for the headline savings, without the donation curve."""
+
+    bunching: bool = Field(
+        default=False,
+        description=(
+            "Also compare giving the donation this year and again next "
+            "year with giving twice the donation this year and nothing "
+            "next year"
+        ),
+    )
+
+
+class BunchingResult(BaseModel):
+    """Giving two years' donations in one year, against one in each year.
+
+    Each net tax comes from its own simulation; the savings are differences
+    of those, and the totals are sums of the savings.
+    """
+
+    next_year: int
+    next_year_baseline_net_tax: float
+    next_year_net_tax_at_donation: float
+    next_year_tax_savings: float
+    bunched_donation_amount: float
+    bunched_net_tax: float
+    bunched_tax_savings: float
+    # tax_savings this year plus next_year_tax_savings.
+    every_year_tax_savings: float
+    # bunched_tax_savings minus every_year_tax_savings.
+    bunching_gain: float
+
+
+class SavingsResponse(BaseModel):
+    """The headline: what the donation saves and costs, from two runs."""
+
+    year: int
+    donation_amount: float
+    baseline_net_tax: float
+    net_tax_at_donation: float
+    tax_savings: float
+    baseline_net_income: float
+    net_income_after_donation: float
+    bunching: Optional[BunchingResult] = None
+
+
 class TargetDonationRequest(USHouseholdInputs):
     """Request body for target donation calculation."""
 
@@ -307,6 +355,18 @@ class UKCalculateResponse(BaseModel):
 
     # Full curve data for charts (donation sweep)
     curve: list[UKDonationDataPoint]
+
+
+class UKSavingsResponse(BaseModel):
+    """The UK headline: what the Gift Aid donation saves, from two runs."""
+
+    year: int
+    gift_aid: float
+    baseline_net_tax: float
+    net_tax_at_donation: float
+    tax_savings: float
+    baseline_net_income: float
+    net_income_after_donation: float
 
 
 class UKTaxProgramsResponse(BaseModel):

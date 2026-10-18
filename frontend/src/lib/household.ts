@@ -87,38 +87,29 @@ export function giftAmount(form: FormState): number {
 }
 
 /**
- * The API request for the form. `year` moves the household to another tax
- * year, everyone a year older per year moved (the bunching check runs next
- * year at the same gift). The gift is the API's to set, so no one carries
- * `charitableCashDonations`, and home costs go only with a "Yes".
+ * The API request for the form. The gift is the API's to set, so no one
+ * carries `charitableCashDonations`, and home costs go only with a "Yes".
+ * The API's bunching check moves the household to next year itself,
+ * everyone a year older.
  */
-export function toCalculateRequest(
-  form: FormState,
-  overrides: { year?: number; donation_amount?: number } = {},
-): CalculateRequest {
-  const year = overrides.year ?? form.household.year;
-  const shift = year - form.household.year;
+export function toCalculateRequest(form: FormState): CalculateRequest {
+  const ordered = orderPeople(form.household);
   const draft: USHouseholdDraft = {
-    ...orderPeople(form.household),
-    year,
+    ...ordered,
+    people: ordered.people.map(({ charitableCashDonations: _, ...person }) => {
+      if (form.hasHomeCosts !== false) return person;
+      // "No" to home costs leaves out amounts entered before the answer.
+      const { mortgageInterest: _m, realEstateTaxes: _r, ...rest } = person;
+      return rest;
+    }),
   };
-  draft.people = draft.people.map(({ charitableCashDonations: _, ...person }) => {
-    const aged =
-      shift !== 0 && typeof person.age === "number"
-        ? { ...person, age: person.age + shift }
-        : person;
-    if (form.hasHomeCosts !== false) return aged;
-    // "No" to home costs leaves out amounts entered before the answer.
-    const { mortgageInterest: _m, realEstateTaxes: _r, ...rest } = aged;
-    return rest;
-  });
   return {
     household: toV1HouseholdSituation(draft, {
       // Puts a couple in one marital unit, as PolicyEngine US expects.
       includeMaritalUnit: draft.maritalStatus === "married",
     }),
-    donation_amount: overrides.donation_amount ?? giftAmount(form),
-    year,
+    donation_amount: giftAmount(form),
+    year: draft.year,
   };
 }
 

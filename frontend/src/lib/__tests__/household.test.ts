@@ -197,18 +197,6 @@ describe("toCalculateRequest", () => {
     );
   });
 
-  it("ages everyone by the years it moves the household", () => {
-    fc.assert(
-      fc.property(formArb, fc.integer({ min: -1, max: 2 }), (form, shift) => {
-        const year = form.household.year + shift;
-        const moved = toCalculateRequest(form, { year }).household.people;
-        for (const person of form.household.people) {
-          expect(moved[person.id].age).toEqual({ [String(year)]: (person.age ?? 0) + shift });
-        }
-      }),
-    );
-  });
-
   it("gives the same request whatever order the people were added in", () => {
     fc.assert(
       fc.property(formArb, (form) => {
@@ -229,10 +217,15 @@ describe("toCalculateRequest", () => {
     );
   });
 
-  it("keys every value by the request's year, including a moved year", () => {
+  // The API's bunching check moves the household to next year by re-keying
+  // the values keyed by this year, so every value must be keyed by it.
+  it("keys every value by the request's year", () => {
     fc.assert(
-      fc.property(formArb, fc.constantFrom(2025, 2026, 2027, 2028), (form, year) => {
-        const request = toCalculateRequest(form, { year });
+      fc.property(formArb, fc.constantFrom(2025, 2026, 2027), (form, year) => {
+        const request = toCalculateRequest({
+          ...form,
+          household: { ...form.household, year },
+        });
         expect(request.year).toBe(year);
         const { people, households } = request.household;
         for (const record of [...Object.values(people), ...Object.values(households ?? {})]) {

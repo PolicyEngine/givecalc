@@ -5,18 +5,38 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, waitFor, fireEvent } from "@testing-library/react";
 import * as api from "../../lib/api";
-import { CURRENT_YEAR, MAX_TAX_YEAR, type CalculateRequest } from "../../lib/types";
+import {
+  CURRENT_YEAR,
+  MAX_TAX_YEAR,
+  type CalculateRequest,
+  type SavingsRequest,
+} from "../../lib/types";
 
-// Mock the API module - calculateDonation is the only US call that hits the API
+// The US calls that hit the API: /api/savings for the headline and the
+// bunching check, /api/calculate for the curve.
 vi.mock("../../lib/api", async (importOriginal) => {
   const actual = (await importOriginal()) as typeof api;
   return {
     ...actual,
+    calculateSavings: vi.fn(),
     calculateDonation: vi.fn(),
   };
 });
 
-/** A stand-in API response; the numbers are test values, not model output. */
+/** Stand-in API responses; the numbers are test values, not model output. */
+function headline(request: SavingsRequest, taxSavings: number) {
+  return {
+    year: request.year,
+    donation_amount: request.donation_amount,
+    baseline_net_tax: 40_000,
+    net_tax_at_donation: 40_000 - taxSavings,
+    tax_savings: taxSavings,
+    baseline_net_income: 110_000,
+    net_income_after_donation: 110_000 - request.donation_amount + taxSavings,
+    bunching: null,
+  };
+}
+
 function response(request: CalculateRequest, taxSavings: number) {
   return {
     donation_amount: request.donation_amount,
@@ -65,16 +85,32 @@ describe("App", () => {
   });
 
   it("calculates a shared link, runs the bunching check, and keeps the link", async () => {
+    const savings = vi.mocked(api.calculateSavings);
     const calculate = vi.mocked(api.calculateDonation);
-    calculate.mockImplementation(async (request) =>
-      response(request, request.donation_amount === 30_000 ? 5_853 : 1_589),
-    );
+    savings.mockImplementation(async (request) => ({
+      ...headline(request, 1_589),
+      bunching: request.bunching
+        ? {
+            next_year: request.year + 1,
+            next_year_baseline_net_tax: 40_000,
+            next_year_net_tax_at_donation: 38_411,
+            next_year_tax_savings: 1_589,
+            bunched_donation_amount: 2 * request.donation_amount,
+            bunched_net_tax: 34_147,
+            bunched_tax_savings: 5_853,
+            every_year_tax_savings: 3_178,
+            bunching_gain: 2_675,
+          }
+        : null,
+    }));
+    calculate.mockImplementation(async (request) => response(request, 1_589));
     window.history.replaceState(null, "", "/?pledge=10&income=150000&state=NY");
     const App = (await import("../../App")).default;
     render(<App />);
 
-    await waitFor(() => expect(calculate).toHaveBeenCalled());
-    const [first] = calculate.mock.calls[0];
+    await waitFor(() => expect(savings).toHaveBeenCalled());
+    const [first] = savings.mock.calls[0];
+    expect(first.bunching).toBeFalsy();
     expect(first.year).toBe(CURRENT_YEAR);
     expect(first.donation_amount).toBe(15_000);
     const year = String(CURRENT_YEAR);
@@ -87,19 +123,13 @@ describe("App", () => {
 
     // The form offers last, this and next year, so next year is always open.
     expect(CURRENT_YEAR + 1).toBeLessThanOrEqual(MAX_TAX_YEAR);
-    {
-      await waitFor(() => expect(calculate).toHaveBeenCalledTimes(3));
-      const requests = calculate.mock.calls.map(([request]) => request);
-      const nextYear = requests.find((request) => request.year === CURRENT_YEAR + 1);
-      // Next year's run moves the whole household a year on, everyone a
-      // year older, with the same gift.
-      expect(nextYear?.donation_amount).toBe(15_000);
-      expect(nextYear?.household.people["adult-1"].age).toEqual({
-        [String(CURRENT_YEAR + 1)]: 31,
-      });
-      const bunched = requests.find((request) => request.donation_amount === 30_000);
-      expect(bunched?.year).toBe(CURRENT_YEAR);
-    }
+    // The curve is the same request; the bunching check is one more
+    // /api/savings call, which moves and ages the household on the server
+    // (tests/test_savings_wizard.py).
+    await waitFor(() => expect(savings).toHaveBeenCalledTimes(2));
+    expect(calculate).toHaveBeenCalledWith(first);
+    expect(savings.mock.calls[1][0]).toEqual({ ...first, bunching: true });
+    expect(await screen.findByText(/\$2,675/)).toBeInTheDocument();
 
     await waitFor(() =>
       expect(window.location.search).toBe(
@@ -110,7 +140,9 @@ describe("App", () => {
   });
 
   it("drops the link after a result the link cannot reproduce, and restores cached results", async () => {
+    const savings = vi.mocked(api.calculateSavings);
     const calculate = vi.mocked(api.calculateDonation);
+    savings.mockImplementation(async (request) => headline(request, 1_000));
     calculate.mockImplementation(async (request) => response(request, 1_000));
     window.history.replaceState(null, "", "/?amount=5000&income=150000&state=NY");
     const App = (await import("../../App")).default;
@@ -135,11 +167,11 @@ describe("App", () => {
 
     // Undoing the edit brings back the cached result, and its link, without
     // a new request.
-    const calls = calculate.mock.calls.length;
+    const calls = savings.mock.calls.length + calculate.mock.calls.length;
     fireEvent.click(screen.getByRole("button", { name: /Edit Household income/ }));
     fireEvent.change(screen.getByLabelText("Taxable interest"), { target: { value: "" } });
     expect(screen.getByText(/Your net cost/)).toBeInTheDocument();
-    expect(calculate.mock.calls.length).toBe(calls);
+    expect(savings.mock.calls.length + calculate.mock.calls.length).toBe(calls);
     expect(window.location.search).toBe(
       `?amount=5000&income=150000&state=NY&age=30&year=${CURRENT_YEAR}`,
     );
@@ -160,12 +192,14 @@ describe("App", () => {
   });
 
   it("fills an incomplete link without calculating, on the question it leaves open", async () => {
+    const savings = vi.mocked(api.calculateSavings);
     const calculate = vi.mocked(api.calculateDonation);
     window.history.replaceState(null, "", "/?pledge=10&income=90000&state=MD");
     const App = (await import("../../App")).default;
     render(<App />);
     expect(await screen.findByRole("heading", { name: "Your household" })).toBeInTheDocument();
     expect(screen.getByLabelText("State")).toHaveValue("MD");
+    expect(savings).not.toHaveBeenCalled();
     expect(calculate).not.toHaveBeenCalled();
   });
 

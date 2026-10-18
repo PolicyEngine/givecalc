@@ -17,7 +17,7 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
-import type { CalculateRequest, CalculateResponse } from "../../lib/types";
+import type { SavingsRequest, SavingsResponse } from "../../lib/types";
 
 // Recharts' ResponsiveContainer needs ResizeObserver, which jsdom lacks.
 globalThis.ResizeObserver ??= class {
@@ -26,34 +26,37 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 } as unknown as typeof ResizeObserver;
 
+// The headline and the bunching check come from /api/savings.
 const calls: {
-  request: CalculateRequest;
-  resolve: (r: CalculateResponse) => void;
+  request: SavingsRequest;
+  resolve: (r: SavingsResponse) => void;
 }[] = [];
 
 vi.mock("../../lib/api", async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
-    calculateDonation: vi.fn(
-      (request: CalculateRequest) =>
-        new Promise<CalculateResponse>((resolve) => {
+    calculateSavings: vi.fn(
+      (request: SavingsRequest) =>
+        new Promise<SavingsResponse>((resolve) => {
           calls.push({ request, resolve });
         }),
     ),
+    // The curve follows the headline; these tests leave it loading.
+    calculateDonation: vi.fn(() => new Promise(() => {})),
   };
 });
 
-function response(gift: number, savings: number): CalculateResponse {
+function response(gift: number, savings: number): SavingsResponse {
   return {
+    year: 2026,
     donation_amount: gift,
     baseline_net_tax: 0,
     net_tax_at_donation: -savings,
     tax_savings: savings,
-    marginal_savings_rate: 0,
     baseline_net_income: 0,
     net_income_after_donation: 0,
-    curve: [],
+    bunching: null,
   };
 }
 
@@ -66,7 +69,7 @@ async function resolveMain(index: number, savings: number) {
 }
 
 /** Wages of the first adult in a request. */
-function wages(request: CalculateRequest): number | undefined {
+function wages(request: SavingsRequest): number | undefined {
   const values = request.household.people["adult-1"]?.employment_income;
   return values ? Number(values[String(request.year)]) : undefined;
 }
@@ -175,6 +178,7 @@ describe("App result publishing", () => {
     );
     const second = calls.findIndex(
       (c) =>
+        !c.request.bunching &&
         wages(c.request) === 200_000 &&
         c.request.year === 2026 &&
         c.request.donation_amount === 20_000,

@@ -4,19 +4,20 @@
 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { compareBunching } from "../lib/pledge";
-import { toCalculateRequest } from "../lib/household";
 import { MAX_TAX_YEAR } from "../lib/types";
 import {
   getStates,
   calculateDonation,
+  calculateSavings,
   getUKRegions,
   calculateUKDonation,
+  calculateUKSavings,
   STATES,
 } from "../lib/api";
 import { getTaxProgramsData } from "../lib/taxPrograms";
 import type {
   CalculateRequest,
-  FormState,
+  SavingsRequest,
   UKCalculateRequest,
 } from "../lib/types";
 
@@ -59,19 +60,31 @@ export function useCalculateUKDonation() {
   });
 }
 
+/** The headline from two simulations, without the donation curve. */
+export function useCalculateSavings() {
+  return useMutation({
+    mutationFn: (request: SavingsRequest) => calculateSavings(request),
+  });
+}
+
+export function useCalculateUKSavings() {
+  return useMutation({
+    mutationFn: (request: UKCalculateRequest) => calculateUKSavings(request),
+  });
+}
+
 /**
- * Compare giving the form's gift this year and next with giving twice that
- * this year and nothing next year. Runs two extra simulations, so it starts
- * only after the main result is in. Next year's run moves the whole household
- * to that year, with the same gift.
+ * Compare giving `request.donation_amount` this year and next with giving
+ * twice that this year and nothing next year, in one /api/savings call.
+ * The server runs next year at $0 and at the gift and this year at twice
+ * the gift (this year's $0 and gift runs are cached from the headline), so
+ * it starts only after the main result is in.
  */
 export function useBunching(
-  form: FormState | null,
+  request: CalculateRequest | null,
   thisYearSavings: number | null,
 ) {
-  const request = form ? toCalculateRequest(form) : null;
   const enabled =
-    form !== null &&
     request !== null &&
     thisYearSavings !== null &&
     request.donation_amount > 0 &&
@@ -82,22 +95,13 @@ export function useBunching(
     staleTime: Infinity,
     retry: 1,
     queryFn: async () => {
-      const thisYear = request as CalculateRequest;
-      const nextYear = toCalculateRequest(form as FormState, {
-        year: thisYear.year + 1,
-        donation_amount: thisYear.donation_amount,
-      });
-      const [nextYearResult, bunched] = await Promise.all([
-        calculateDonation(nextYear),
-        calculateDonation({
-          ...thisYear,
-          donation_amount: 2 * thisYear.donation_amount,
-        }),
-      ]);
+      const req = request as CalculateRequest;
+      const { bunching } = await calculateSavings({ ...req, bunching: true });
+      if (!bunching) throw new Error("The API returned no bunching result.");
       return compareBunching(
         thisYearSavings as number,
-        nextYearResult.tax_savings,
-        bunched.tax_savings,
+        bunching.next_year_tax_savings,
+        bunching.bunched_tax_savings,
       );
     },
   });

@@ -263,17 +263,15 @@ def household_gross_income(household: dict, year: int) -> float:
     return total("household_market_income") + total("household_benefits")
 
 
-def situation_from_household(
-    household: dict, year: int, donation_amount: float = 0
-) -> dict:
-    """A copy of ``household`` with GiveCalc's donation axis on the donor.
+def curve_top(gross_income: float, donation_amount: float) -> float:
+    """Where the donation curve ends: the household's gross income, or the
+    gift if that is larger, so the curve always reaches the gift."""
+    return max(gross_income, donation_amount, 1)
 
-    The axis runs from no gift to the household's gross income, or to the
-    gift if that is larger, so the curve always reaches the gift.
-    """
-    situation = copy.deepcopy(household)
-    top = max(household_gross_income(household, year), donation_amount, 1)
-    situation["axes"] = [
+
+def donation_axes(year: int, top: float) -> list:
+    """GiveCalc's donation axis on the donor (the first person)."""
+    return [
         [
             {
                 "name": DONATION_VARIABLE,
@@ -284,4 +282,43 @@ def situation_from_household(
             }
         ]
     ]
+
+
+def household_for_year(household: dict, from_year: int, to_year: int) -> dict:
+    """A copy of ``household`` with its values moved to ``to_year``.
+
+    Every value keyed by ``from_year`` is keyed by ``to_year`` instead, and
+    everyone is ``to_year - from_year`` years older, so next year's run sees
+    birthdays that matter (65 for the additional standard deduction and the
+    senior deduction, 17 for the child tax credit). Other values are carried
+    as they are.
+    """
+    shift = to_year - from_year
+    old_key, new_key = str(from_year), str(to_year)
+    moved = copy.deepcopy(household)
+    for collection in ("people", *GROUP_ENTITIES):
+        for record in (moved.get(collection) or {}).values():
+            for name, values in record.items():
+                if name == "members" or not isinstance(values, dict):
+                    continue
+                if old_key in values:
+                    value = values.pop(old_key)
+                    if name == "age":
+                        value = value + shift
+                    values[new_key] = value
+    return moved
+
+
+def situation_from_household(
+    household: dict, year: int, donation_amount: float = 0
+) -> dict:
+    """A copy of ``household`` with GiveCalc's donation axis on the donor.
+
+    The axis runs from no gift to ``curve_top``. This runs a simulation for
+    the household's gross income; the API takes it from its no-gift run
+    instead.
+    """
+    situation = copy.deepcopy(household)
+    top = curve_top(household_gross_income(household, year), donation_amount)
+    situation["axes"] = donation_axes(year, top)
     return situation
