@@ -28,6 +28,7 @@ describe("UKInputForm", () => {
         setFormState={() => {}}
         onCalculate={onCalculate}
         isCalculating={false}
+        active
       />,
     );
     confirmBothSections();
@@ -44,7 +45,7 @@ describe("UKInputForm", () => {
       onCalculate,
       isCalculating: false,
     };
-    const { rerender } = render(<UKInputForm {...props} />);
+    const { rerender } = render(<UKInputForm {...props} active />);
     confirmBothSections();
     rerender(<UKInputForm {...props} active={false} />);
     const event = new KeyboardEvent("keydown", { key: "Enter", cancelable: true });

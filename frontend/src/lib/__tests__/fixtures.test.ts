@@ -10,7 +10,8 @@ import { describe, it, expect } from "vitest";
 import { fixtureRequests } from "../../../scripts/write-wizard-fixtures";
 
 // Read at run time rather than imported: Vercel deploys leave out tests/,
-// and the production build type-checks this file.
+// and the production build type-checks this file. Under jsdom,
+// import.meta.url is not a file URL, so the path comes from __dirname.
 const FIXTURES = resolve(__dirname, "../../../../tests/fixtures/wizard_households.json");
 
 describe("shared household fixtures", () => {

@@ -14,9 +14,9 @@ interface Props {
   isCalculating: boolean;
   /**
    * False while the form is hidden behind the US form, so its window-wide
-   * Enter key does nothing.
+   * Enter key does nothing. Required, so a caller can't leave it on.
    */
-  active?: boolean;
+  active: boolean;
 }
 
 // Section states
@@ -110,7 +110,7 @@ export default function UKInputForm({
   setFormState,
   onCalculate,
   isCalculating,
-  active = true,
+  active,
 }: Props) {
   // Track which sections are confirmed (user clicked Continue)
   const [donationConfirmed, setDonationConfirmed] = useState(false);
