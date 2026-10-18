@@ -5,7 +5,7 @@ from typing import Annotated, Any, Optional
 
 from pydantic import AfterValidator, BaseModel, Field, model_validator
 
-from givecalc.core.household import household_errors
+from givecalc.core.household import MAX_ABS_VALUE, household_errors
 
 # Gifts count in the year they are made, so the useful years run to next
 # year. The bound is checked against today's date on each request, so a
@@ -152,7 +152,11 @@ class CalculateRequest(USHouseholdInputs):
     """Request body for donation calculation."""
 
     donation_amount: float = Field(
-        ..., ge=0, description="Charitable donation amount"
+        ...,
+        ge=0,
+        le=MAX_ABS_VALUE,
+        allow_inf_nan=False,
+        description="Charitable donation amount",
     )
 
 
@@ -187,7 +191,11 @@ class TargetDonationRequest(USHouseholdInputs):
     """Request body for target donation calculation."""
 
     target_reduction: float = Field(
-        ..., gt=0, description="Target net income reduction"
+        ...,
+        gt=0,
+        le=MAX_ABS_VALUE,
+        allow_inf_nan=False,
+        description="Target net income reduction",
     )
     is_percentage: bool = Field(
         default=False,

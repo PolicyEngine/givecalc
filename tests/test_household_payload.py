@@ -35,12 +35,15 @@ from hypothesis import strategies as st
 
 os.environ.setdefault("USE_MODAL", "false")
 
+from policyengine_us import Simulation  # noqa: E402
+
 from api.main import app  # noqa: E402
 from givecalc import create_situation  # noqa: E402
 from givecalc.calculations.tax import calculate_donation_metrics  # noqa: E402
 from givecalc.core.household import (  # noqa: E402
     DONATION_VARIABLE,
     MAX_PEOPLE,
+    _period_error,
     household_errors,
     household_gross_income,
     situation_from_household,
@@ -134,6 +137,11 @@ def test_both_request_shapes_agree_at_the_endpoint(fixture):
         assert new.json()[key] == pytest.approx(
             old.json()[key], abs=TOLERANCE
         ), key
+    # The curves' grids differ when benefits raise the top, so the rate is
+    # compared loosely: the same bracket, not the same grid point.
+    assert new.json()["marginal_savings_rate"] == pytest.approx(
+        old.json()["marginal_savings_rate"], abs=0.02
+    )
 
 
 @pytest.mark.parametrize(
@@ -371,6 +379,23 @@ def mutated(change):
             "must hold every person",
         ),
         (lambda h: h.pop("families"), "families is required"),
+        (lambda h: h.pop("marital_units"), "marital_units is required"),
+        (
+            lambda h: h["marital_units"].update(
+                {"adult-1": {"members": ["adult-1"]}}
+            ),
+            "has a person's id",
+        ),
+        (
+            lambda h: h["households"]["household"].pop("state_name"),
+            "state_name is required",
+        ),
+        (
+            lambda h: h["people"]["adult-1"].update(
+                {"employment_income_before_lsr": {"2026": 1}}
+            ),
+            "is set from employment_income",
+        ),
         (
             lambda h: h["people"]["adult-1"].update(
                 {"employment_income": {"2026": "1e12"}}
@@ -521,6 +546,94 @@ def test_household_errors_never_raises_on_a_damaged_fixture(data):
             break
         node = node[key]
     assert isinstance(household_errors(household, 2026), list)
+
+
+class _Variable:
+    def __init__(self, **attributes):
+        self.is_neutralized = False
+        self.end = None
+        self.definition_period = "year"
+        self.set_input = None
+        self.__dict__.update(attributes)
+
+
+def test_period_error_rejects_values_the_model_would_not_read():
+    assert _period_error(_Variable(), "2026") is None
+    assert (
+        _period_error(_Variable(definition_period="eternity"), "2026") is None
+    )
+    assert "month values" in _period_error(
+        _Variable(definition_period="month"), "2026"
+    )
+    assert (
+        _period_error(
+            _Variable(definition_period="month", set_input=print), "2026"
+        )
+        is None
+    )
+    assert "ended" in _period_error(_Variable(end="2025-12-31"), "2026")
+    assert "switched off" in _period_error(
+        _Variable(is_neutralized=True), "2026"
+    )
+
+
+@pytest.mark.parametrize(
+    "amount", [1e12, float("inf")], ids=["too large", "infinite"]
+)
+def test_endpoint_rejects_an_unbounded_gift(amount):
+    response = client.post(
+        "/api/calculate",
+        content=json.dumps(
+            {
+                "household": SINGLE["household"],
+                "donation_amount": amount,
+                "year": 2026,
+            }
+        ),
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422, response.text
+
+
+def test_axis_varies_only_the_donor():
+    """Each cell of the axis simulation gives only its first person a gift."""
+    request = BY_NAME[
+        "married Californians with two children and investment income"
+    ]["request"]
+    situation = situation_from_household(request["household"], 2026, 10_000)
+    sim = Simulation(situation=situation)
+    gifts = sim.calculate(DONATION_VARIABLE, 2026).reshape(-1, 4)
+    assert (gifts[:, 1:] == 0).all()
+    assert gifts[:, 0].max() > 0
+
+
+def test_single_parent_matches_the_legacy_request():
+    """Head of household, where the two shapes lay out marital units most
+    differently: legacy puts everyone in one unit, the wizard one each."""
+    household = copy.deepcopy(SINGLE["household"])
+    for child in ("dependent-1", "dependent-2"):
+        household["people"][child] = {
+            "age": {"2026": 10},
+            "is_tax_unit_dependent": {"2026": True},
+        }
+        for collection in ("families", "tax_units", "spm_units", "households"):
+            next(iter(household[collection].values()))["members"].append(child)
+    new = client.post(
+        "/api/calculate",
+        json={"household": household, "donation_amount": 15_000, "year": 2026},
+    ).json()
+    old = client.post(
+        "/api/calculate",
+        json={
+            "income": {"wages_and_salaries": 150_000},
+            "state_code": "NY",
+            "num_children": 2,
+            "donation_amount": 15_000,
+            "year": 2026,
+        },
+    ).json()
+    for key in ("baseline_net_tax", "tax_savings", "baseline_net_income"):
+        assert new[key] == pytest.approx(old[key], abs=TOLERANCE), key
 
 
 def test_fixtures_have_no_errors():

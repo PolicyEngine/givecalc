@@ -5,12 +5,16 @@ PolicyEngine-US for accurate federal and state tax modeling, and
 PolicyEngine-UK for UK Gift Aid calculations.
 """
 
+import math
 from pathlib import Path
 
 import numpy as np
 import yaml
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from givecalc import (
     CURRENT_YEAR,
@@ -59,6 +63,31 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+
+def _printable(value):
+    """``value`` with non-finite floats as strings, which JSON can carry."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return str(value)
+    if isinstance(value, dict):
+        return {key: _printable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_printable(item) for item in value]
+    return value
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    """A 422 like FastAPI's, which can also report an infinite input.
+
+    FastAPI echoes each invalid input; JSON has no infinity, so an infinite
+    gift would otherwise turn the 422 into a 500.
+    """
+    return JSONResponse(
+        status_code=422,
+        content={"detail": _printable(jsonable_encoder(exc.errors()))},
+    )
+
 
 # Vercel preview deployments of this repo's frontend.
 VERCEL_PREVIEW_ORIGINS = (

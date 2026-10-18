@@ -11,13 +11,16 @@ person.
 
 ``household_errors`` enforces that boundary without simulating:
 
-- one household, family, tax unit and SPM unit holding everyone, and marital
-  units of one or two people;
+- one household, family, tax unit and SPM unit holding everyone, and a
+  ``marital_units`` collection (``{}`` gives everyone their own unit) of
+  units of one or two people, with no group named after a person;
+- a state on the household;
 - at most two people who are not dependents, and two only as a couple in one
   marital unit, since GiveCalc models one tax unit (two unmarried adults in
   it would be filed jointly);
 - input variables, plus the few computed ones the wizard writes on purpose,
-  each on the entity policyengine-us defines it for;
+  each on the entity policyengine-us defines it for, read for the request's
+  year, and not alongside the input the model moves a reviewed total onto;
 - values for the request's year only, of each variable's type: finite
   numbers within ``MAX_ABS_VALUE``, booleans, or one of an enum's names.
 """
@@ -45,6 +48,10 @@ GROUP_ENTITIES = {
 }
 # Every person shares one of each of these.
 SHARED_GROUPS = ("families", "tax_units", "spm_units", "households")
+# Collections a household must have. Without ``marital_units``,
+# policyengine-core puts everyone in one marital unit; ``{}`` gives each
+# person their own.
+REQUIRED_COLLECTIONS = (*SHARED_GROUPS, "marital_units")
 
 # Computed variables the wizard's V1 adapter sends on purpose, as reviewed in
 # its tests: policyengine-us's Simulation moves the first three onto inputs;
@@ -61,6 +68,14 @@ WIZARD_COMPUTED_INPUTS = frozenset(
         "county",
     }
 )
+
+# policyengine-us's Simulation moves an input on each of these totals onto
+# the input beside it, overwriting a value sent for that input.
+MOVED_TOTALS = {
+    "employment_income": "employment_income_before_lsr",
+    "self_employment_income": "self_employment_income_before_lsr",
+    "long_term_capital_gains": "long_term_capital_gains_before_response",
+}
 
 
 def donor_id(situation: dict) -> str:
@@ -130,9 +145,29 @@ def _record_errors(
             variable.is_input_variable() or name in WIZARD_COMPUTED_INPUTS
         ):
             errors.append(f"{where}: {name} is computed by policyengine-us")
+        elif problem := _period_error(variable, year):
+            errors.append(f"{where}: {name} {problem}")
         else:
             errors.extend(_values_errors(where, name, values, year))
+    for total, component in MOVED_TOTALS.items():
+        if total in record and component in record:
+            errors.append(
+                f"{where}: {component} is set from {total}; send one"
+            )
     return errors
+
+
+def _period_error(variable, year: str):
+    """Why the model would not read a yearly value of ``variable``."""
+    if variable.is_neutralized:
+        return "is switched off in policyengine-us"
+    if variable.end is not None and str(variable.end) < f"{year}-01-01":
+        return f"ended on {variable.end}"
+    if variable.definition_period not in ("year", "eternity") and (
+        variable.set_input is None
+    ):
+        return f"takes {variable.definition_period} values, not a year's"
+    return None
 
 
 def _members(record, people: dict):
@@ -209,6 +244,16 @@ def household_errors(household, year: int) -> list:
 
     everyone = sorted(people)
     for collection, entity in GROUP_ENTITIES.items():
+        named_after_people = (
+            sorted(set(household.get(collection) or {}) & set(people))
+            if isinstance(household.get(collection), dict)
+            else []
+        )
+        for group_id in named_after_people:
+            errors.append(
+                f"{collection}.{group_id} has a person's id; name groups "
+                "differently"
+            )
         groups = household.get(collection, {})
         if not isinstance(groups, dict):
             errors.append(f"household.{collection} must be an object")
@@ -239,9 +284,15 @@ def household_errors(household, year: int) -> list:
             )
         if len(seen) != len(set(seen)):
             errors.append(f"household.{collection} repeats a person")
-    for collection in SHARED_GROUPS:
+    for collection in REQUIRED_COLLECTIONS:
         if collection not in household:
             errors.append(f"household.{collection} is required")
+    households = household.get("households")
+    for group_id, record in (
+        households.items() if isinstance(households, dict) else ()
+    ):
+        if isinstance(record, dict) and "state_name" not in record:
+            errors.append(f"households.{group_id}.state_name is required")
     if not errors:
         errors.extend(_filer_errors(household))
     return errors
