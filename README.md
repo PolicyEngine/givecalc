@@ -117,7 +117,8 @@ the first person, so the household must not set that variable.
 
 The API checks the household's shape before simulating: at most 12 people;
 input variables (and those reviewed computed ones) on their own entities,
-read for `year`, and not alongside the input a reviewed total is moved onto;
+read for `year`, and no total sent while anyone sends the input it is moved
+onto (the model moves it for the whole household);
 values of each variable's type for `year` only; one household, family, tax
 unit and SPM unit holding everyone, a `marital_units` collection (`{}` gives
 everyone their own unit; groups may not reuse a person's id), and a
@@ -128,7 +129,8 @@ income plus benefits, or to the gift if that is larger. `baseline_net_tax`
 is taxes minus benefits, so benefits the household enters (such as Social
 Security) count against it.
 With `bunching: true`, `/api/savings` runs next year with the household's
-values moved to next year and everyone a year older.
+values moved to next year and every age sent a year older (a person sent
+without an age keeps the model's default).
 
 ```json
 {

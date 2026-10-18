@@ -314,8 +314,10 @@ def test_donor_is_the_first_person():
     assert list(by_person) == [5_000, 0]
 
 
-def test_bunching_runs_the_household_next_year():
-    """The frontend moves the household to next year for the bunching check."""
+def test_accepts_a_household_keyed_by_next_year():
+    """A household sent for next year passes the checks and runs. The
+    bunching check's own move to next year, with birthdays, is tested in
+    test_savings_wizard.py."""
     request = copy.deepcopy(
         BY_NAME["single New Yorker, $150,000, 10% pledge"]["request"]
     )
