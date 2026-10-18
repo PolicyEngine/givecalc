@@ -18,13 +18,26 @@ the workers are up (about 1.5 minutes after a cold start), simulations run
 in the request's thread.
 
 A cold start takes about a minute, so an answer in a few seconds needs a
-warm container (``min_containers``); that costs money and is left to a
-decision.
+warm container (``min_containers``). Max's call (d1650, 2026-10-18): keep one
+container warm in giving season only, 15 November to 31 December, about $180
+at Modal's list price. Modal resets ``min_containers`` to the decorator's
+value on every deploy (``Function.update_autoscaler``), so the decorator reads
+the season at deploy time and an hourly schedule re-applies it, which also
+switches it on and off at the season's edges.
 """
+
+from datetime import date, datetime, timezone
 
 import modal
 
 SIMULATION_WORKERS = 4
+
+
+def warm_containers(day: date) -> int:
+    """Containers to keep warm on ``day``: 1 from 15 Nov to 31 Dec, else 0."""
+    in_season = (day.month == 11 and day.day >= 15) or day.month == 12
+    return 1 if in_season else 0
+
 
 # Create Modal image with all dependencies
 image = (
@@ -65,6 +78,8 @@ app = modal.App("givecalc")
     timeout=300,
     cpu=2.0,
     memory=8192,
+    # Evaluated at deploy time; set_giving_season_warmth keeps it current.
+    min_containers=warm_containers(datetime.now(timezone.utc).date()),
 )
 # Up to eight requests share the four workers. Eight headlines are 16
 # simulations, four rounds on four workers (about 10 s at the 2.3 s per
@@ -85,3 +100,12 @@ def fastapi_app():
     from api.main import app as api
 
     return api
+
+
+@app.function(schedule=modal.Cron("7 * * * *"), timeout=60)
+def set_giving_season_warmth():
+    """Hourly: keep one API container warm in giving season, none otherwise."""
+    target = warm_containers(datetime.now(timezone.utc).date())
+    api = modal.Function.from_name("givecalc", "fastapi_app")
+    api.update_autoscaler(min_containers=target)
+    print(f"min_containers={target}")
