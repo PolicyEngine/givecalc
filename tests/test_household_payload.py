@@ -662,6 +662,22 @@ def test_422_reports_a_lone_surrogate(body):
     assert "\\ud800" in response.text
 
 
+def test_422_echoes_a_deeply_nested_input_without_failing():
+    nested = "[" * 3000 + "]" * 3000
+    body = (
+        '{"household": {"people": {"a": {"age": {"2026": '
+        + nested
+        + '}}}}, "donation_amount": 1, "year": 2026}'
+    )
+    response = client.post(
+        "/api/calculate",
+        content=body,
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422, response.text[:200]
+    assert '"..."' in response.text
+
+
 def test_printable_carries_anything_as_json():
     class Unprintable:
         def __str__(self):
@@ -674,11 +690,13 @@ def test_printable_carries_anything_as_json():
         "set": {float("nan")},
         "surrogate": "\ud800",
         1: [float("-inf"), (True, None, 10**400)],
+        Unprintable(): 10**5000,
     }
     text = json.dumps(_printable(value), allow_nan=False)
     text.encode("utf-8")
     assert json.loads(text)["1"] == ["-inf", [True, None, 10**400]]
     assert json.loads(text)["object"] == "<Unprintable>"
+    assert json.loads(text)["<Unprintable>"] == "<class 'int'>"
 
 
 def test_axis_varies_only_the_donor():

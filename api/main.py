@@ -81,29 +81,48 @@ app = FastAPI(
 )
 
 
-def _printable(value):
+# How deep a 422 echoes the invalid input. Requests nest about five levels;
+# echoing deeper would exhaust Python's stack on a deeply nested input.
+MAX_ECHO_DEPTH = 32
+
+
+def _text(value) -> str:
+    """``value``'s text, UTF-8 safe, or its type if it has none."""
+    if isinstance(value, (bytes, bytearray)):
+        text = bytes(value).decode("utf-8", "backslashreplace")
+    else:
+        try:
+            text = str(value)
+        except Exception:
+            text = f"<{type(value).__name__}>"
+    return text.encode("utf-8", "backslashreplace").decode("utf-8")
+
+
+def _printable(value, depth=0):
     """``value`` as JSON can carry it.
 
     Non-finite floats become strings, bytes are decoded, other objects
     become their text, and lone surrogates (an escaped "\\ud800" in the
-    request), which UTF-8 can't encode, are written as escapes.
+    request), which UTF-8 can't encode, are written as escapes. Anything
+    nested deeper than ``MAX_ECHO_DEPTH`` becomes "...".
     """
-    if value is None or isinstance(value, (bool, int)):
+    if value is None or isinstance(value, bool):
         return value
+    if isinstance(value, int):
+        # Python won't write an integer of more than 4,300 digits.
+        return value if value.bit_length() < 14_000 else _text(type(value))
     if isinstance(value, float):
         return value if math.isfinite(value) else str(value)
-    if isinstance(value, dict):
-        return {_printable(str(k)): _printable(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple, set, frozenset)):
-        return [_printable(item) for item in value]
-    if isinstance(value, (bytes, bytearray)):
-        value = bytes(value).decode("utf-8", "backslashreplace")
-    elif not isinstance(value, str):
-        try:
-            value = str(value)
-        except Exception:
-            value = f"<{type(value).__name__}>"
-    return value.encode("utf-8", "backslashreplace").decode("utf-8")
+    if isinstance(value, (dict, list, tuple, set, frozenset)):
+        if depth >= MAX_ECHO_DEPTH:
+            return "..."
+        if isinstance(value, dict):
+            return {
+                _text(key): _printable(item, depth + 1)
+                for key, item in value.items()
+            }
+        return [_printable(item, depth + 1) for item in value]
+    return _text(value)
 
 
 @app.exception_handler(RequestValidationError)
