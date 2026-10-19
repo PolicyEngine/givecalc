@@ -12,6 +12,7 @@ import InputForm from "./components/InputForm";
 import UKInputForm from "./components/UKInputForm";
 import Results from "./components/Results";
 import TaxInfo from "./components/TaxInfo";
+import Faq from "./components/faq/Faq";
 import {
   useStates,
   useCalculateDonation,
@@ -532,6 +533,7 @@ function Calculator() {
               }
             />
             <div className="lg:hidden">{taxInfo}</div>
+            <Faq />
           </div>
         </div>
       </main>

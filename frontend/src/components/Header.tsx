@@ -43,10 +43,18 @@ export default function Header() {
             </a>
           </div>
 
-          {/* Tagline with subtle animation */}
-          <p className="text-sm text-white/70 hidden sm:block font-medium">
-            Calculate how charitable giving affects your taxes
-          </p>
+          <div className="flex items-center gap-6">
+            {/* Tagline with subtle animation */}
+            <p className="text-sm text-white/70 hidden md:block font-medium">
+              Calculate how charitable giving affects your taxes
+            </p>
+            <a
+              href="#questions"
+              className="text-sm font-medium text-white/90 hover:text-white underline-offset-4 hover:underline"
+            >
+              Questions
+            </a>
+          </div>
         </div>
       </div>
 

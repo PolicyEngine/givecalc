@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "fixtures": "bun scripts/write-wizard-fixtures.ts"
+    "fixtures": "bun scripts/write-wizard-fixtures.ts",
+    "faq-numbers": "bun scripts/write-faq-numbers.ts"
   },
   "dependencies": {
     "@policyengine/ui-kit": "^0.12.0",
