@@ -68,6 +68,11 @@ describe("FAQ numbers", () => {
     expect(california.largerGift).toBeGreaterThan(california.gift);
     // "In 2025, the $1,000 gift saved nothing."
     expect(california.earlierYearSavings).toBe(0);
+    // "a larger gift can still lower your state tax": California's own
+    // itemized deduction, while the federal saving stays at the cap.
+    expect(numbers.us.californiaStateItemizer.response.tax_savings).toBeGreaterThan(
+      california.largerGiftSavings,
+    );
     expect(california.earlierYear).toBe(california.year - 1);
   });
 

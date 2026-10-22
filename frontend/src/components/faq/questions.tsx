@@ -53,6 +53,7 @@ function Link({ href, children }: { href: string; children: ReactNode }) {
       className="text-primary-600 hover:text-primary-700 underline"
     >
       {children}
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }
@@ -82,8 +83,9 @@ export const FAQ_ITEMS: FaqItem[] = [
           taxes: your taxes minus any benefits you receive.
         </p>
         <p>
-          In the US, GiveCalc counts federal, state and local taxes. In the
-          UK, it applies Gift Aid to your income tax. The charts show how your
+          In the US, GiveCalc counts federal and state taxes, and the local
+          income taxes PolicyEngine models, such as New York City&apos;s. In
+          the UK, it applies Gift Aid to your income tax. The charts show how your
           net taxes change with gifts from nothing up to your income.
         </p>
       </>
@@ -99,8 +101,11 @@ export const FAQ_ITEMS: FaqItem[] = [
           part you can deduct. If you take the standard deduction, you can
           deduct up to {singleCap} of cash gifts from {us.year}, or {jointCap}{" "}
           on a joint return; in {california.earlierYear} you could deduct
-          nothing. Larger gifts save more only once itemizing, gift included,
-          would lower your tax more than the standard deduction does.
+          nothing. Above that, a larger gift lowers your federal income tax
+          only once itemizing, gift included, would lower it more than the
+          standard deduction does. Some states, such as California, let you
+          itemize on the state return either way, so a larger gift can still
+          lower your state tax.
         </p>
         <p>
           A single 30-year-old in California earning {usd(california.wages)}{" "}
@@ -135,8 +140,7 @@ export const FAQ_ITEMS: FaqItem[] = [
           <li>
             Filers who take the standard deduction can deduct up to{" "}
             {singleCap} of cash gifts, or {jointCap}{" "}
-            on a joint return. Gifts to donor-advised funds don&apos;t count
-            toward it.
+            on a joint return.
           </li>
           <li>
             Itemizers deduct only the part of their gifts above{" "}
@@ -144,9 +148,10 @@ export const FAQ_ITEMS: FaqItem[] = [
             adjusted gross income.
           </li>
           <li>
-            Filers in the top {formatPercent(us.top_bracket_rate, 0)} bracket
-            give up {limit} of their itemized deductions, capped at {limit} of
-            their income in that bracket.
+            Filers whose income before itemized deductions reaches the top{" "}
+            {formatPercent(us.top_bracket_rate, 0)} bracket give up {limit} of
+            their itemized deductions, up to {limit} of their income in that
+            bracket.
           </li>
         </ul>
         <p>
@@ -169,7 +174,7 @@ export const FAQ_ITEMS: FaqItem[] = [
         step and enter a percentage, such as 10%. GiveCalc then works out the
         gift from the income you enter in step 3: everyone&apos;s wages, tips,
         self-employment income, interest, dividends and capital gains, minus
-        capital losses. The UK calculator asks for an amount.
+        any losses. The UK calculator asks for an amount.
       </p>
     ),
   },
@@ -209,10 +214,10 @@ export const FAQ_ITEMS: FaqItem[] = [
         <p>
           With Gift Aid, a charity claims the basic-rate tax on your gift:{" "}
           {pencePerPound}p for every &pound;1, so a {gbp(giftAid.gift)} gift
-          gives the charity {gbp(toCharity)}. Higher- and additional-rate
-          taxpayers also save income tax, at the difference between their rate
-          and the basic rate, on that {gbp(toCharity)}. GiveCalc shows that
-          saving as your tax relief.
+          gives the charity {gbp(toCharity)}. Taxpayers above the basic rate
+          also save income tax: the difference between their rate and the
+          basic rate, on as much of that {gbp(toCharity)} as they pay their
+          higher rate on. GiveCalc shows that saving as your tax relief.
         </p>
         <p>
           A donor in England, Wales or Northern Ireland earning{" "}
@@ -225,7 +230,9 @@ export const FAQ_ITEMS: FaqItem[] = [
           , because the basic-rate relief goes to the charity.
         </p>
         <p>
-          GiveCalc uses Scottish rates for donors in Scotland. Gift Aid also
+          GiveCalc uses Scottish rates for donors in Scotland, where relief
+          starts at the {formatPercent(uk.scottish_intermediate_rate, 0)}{" "}
+          intermediate rate. Gift Aid also
           lowers the income that tapers the personal allowance above{" "}
           {gbp(uk.personal_allowance_taper_start)} and sets the High Income
           Child Benefit Charge, and GiveCalc counts both effects.
@@ -252,7 +259,7 @@ export const FAQ_ITEMS: FaqItem[] = [
         </ul>
         <p>
           GiveCalc treats each US gift as cash to a public charity. Gifts to
-          donor-advised funds can&apos;t use the {us.year}{" "}deduction for filers
+          donor-advised funds can&apos;t use the deduction for filers
           who don&apos;t itemize, and GiveCalc doesn&apos;t tell them apart.
           Use its estimates to plan, and ask a tax professional about your
           own return.
@@ -270,12 +277,12 @@ export const FAQ_ITEMS: FaqItem[] = [
           your browser sends the household you enter to GiveCalc&apos;s
           server, which runs the model and sends back the result. GiveCalc&apos;s
           code saves none of it to a database or file. The server&apos;s log
-          records which calculation ran, whether it worked and how long it
-          took.
+          records each request&apos;s type, such as a savings calculation,
+          whether it worked and how long it took, without the household.
         </p>
         <p>
-          Each server keeps recent results in memory to answer repeat
-          questions faster, and drops them when it needs the room or shuts
+          Each server keeps recent households and their results in memory to
+          answer repeat questions faster, and drops them when it needs the room or shuts
           down.
         </p>
         <p>

@@ -111,9 +111,16 @@ def test_uk_rules_match_policyengine_uk():
     from policyengine_uk.system import system
 
     rules = RULES["uk"]
-    # PolicyEngine UK's year 2026 is the 2026/27 tax year, from 6 April.
-    p = system.parameters(f"{rules['year']}-04-06").gov.hmrc.income_tax
-    assert p.rates.uk.rates[0] == rules["basic_rate"]
-    assert p.allowances.personal_allowance.maximum_ANI == (
-        rules["personal_allowance_taper_start"]
-    )
+    # PolicyEngine UK's year 2026 is the 2026/27 tax year, from 6 April;
+    # policyengine-core reads the year's parameters at 1 January. Check both.
+    for day in ("01-01", "04-06"):
+        p = system.parameters(f"{rules['year']}-{day}").gov.hmrc.income_tax
+        assert p.rates.uk.rates[0] == rules["basic_rate"]
+        # Scottish relief starts at the intermediate band (index 2), the
+        # first band policyengine-uk extends for Gift Aid.
+        assert p.rates.scotland.rates.rates[2] == (
+            rules["scottish_intermediate_rate"]
+        )
+        assert p.allowances.personal_allowance.maximum_ANI == (
+            rules["personal_allowance_taper_start"]
+        )

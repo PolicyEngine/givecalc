@@ -129,11 +129,16 @@ describe("FAQ", () => {
   it("quotes the rules it states", () => {
     renderFaq();
     const text = answer("What changed for 2026?");
-    expect(text).toContain("up to $1,000 of cash gifts, or $2,000 on a joint return");
+    expect(text).toContain("up to $1,000 of cash gifts, or $2,000 on a joint return.");
     expect(text).toContain("above 0.5% of their adjusted gross income");
-    expect(text).toContain("top 37% bracket give up 2/37 of their itemized deductions");
+    expect(text).toContain(
+      "reaches the top 37% bracket give up 2/37 of their itemized deductions, up to 2/37 of their income in that bracket.",
+    );
     expect(answer("How does Gift Aid work in GiveCalc?")).toContain(
       "tapers the personal allowance above £100,000",
+    );
+    expect(answer("How does Gift Aid work in GiveCalc?")).toContain(
+      "where relief starts at the 21% intermediate rate",
     );
   });
 

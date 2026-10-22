@@ -1,6 +1,6 @@
 {
   "api": "https://policyengine--givecalc-fastapi-app.modal.run",
-  "generated": "2026-10-18",
+  "generated": "2026-10-22",
   "models": {
     "policyengine-us": "2.49.2",
     "policyengine-uk": "2.134.6"
@@ -129,6 +129,69 @@
         "tax_savings": 220,
         "baseline_net_income": 57909.02734375,
         "net_income_after_donation": 53129.02734375,
+        "bunching": null
+      }
+    },
+    "californiaStateItemizer": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 75000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "CA"
+              }
+            }
+          }
+        },
+        "donation_amount": 8000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 8000,
+        "baseline_net_tax": 17090.97265625,
+        "net_tax_at_donation": 16697.796875,
+        "tax_savings": 393.17578125,
+        "baseline_net_income": 57909.02734375,
+        "net_income_after_donation": 50302.203125,
         "bunching": null
       }
     },

@@ -9,6 +9,7 @@
   "uk": {
     "year": 2026,
     "basic_rate": 0.2,
+    "scottish_intermediate_rate": 0.21,
     "personal_allowance_taper_start": 100000
   }
 }

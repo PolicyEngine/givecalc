@@ -42,6 +42,8 @@ export const US_FAQ_CASES = {
   california: single("CA", 75_000, 1_000, 2026),
   /** The same household giving more than that deduction allows. */
   californiaLarger: single("CA", 75_000, 5_000, 2026),
+  /** A gift above California's own standard deduction. */
+  californiaStateItemizer: single("CA", 75_000, 8_000, 2026),
   /** The first gift a year earlier, before the deduction began. */
   california2025: single("CA", 75_000, 1_000, 2025),
   /** Giving each year, compared with giving two years' gifts at once. */
