@@ -17,7 +17,7 @@ export default function Header() {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex items-center gap-4">
             {/* Logo with refined typography */}
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
