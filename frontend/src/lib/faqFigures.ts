@@ -18,6 +18,19 @@ function wages(form: (typeof US_FAQ_CASES)[keyof typeof US_FAQ_CASES]): number {
   return form.household.people[0].employmentIncome ?? 0;
 }
 
+/** Two gifts from one household, and what the larger one saves on top. */
+function step(
+  smaller: keyof typeof US_FAQ_CASES,
+  larger: keyof typeof US_FAQ_CASES,
+) {
+  return {
+    gift: US_FAQ_CASES[smaller].donation_amount,
+    largerGift: US_FAQ_CASES[larger].donation_amount,
+    extraSavings:
+      us[larger].response.tax_savings - us[smaller].response.tax_savings,
+  };
+}
+
 export const FAQ_RULES = rules;
 
 export const FAQ_FIGURES = {
@@ -48,6 +61,16 @@ export const FAQ_FIGURES = {
     year: US_FAQ_CASES.texas.household.year,
     extraSavings:
       us.texasMore.response.tax_savings - us.texas.response.tax_savings,
+  },
+  florida: {
+    wages: wages(US_FAQ_CASES.florida),
+    year: US_FAQ_CASES.florida.household.year,
+    /** $10,000 more within one bracket. */
+    upper: step("florida", "floridaMore"),
+    /** $10,000 more once taxable income is in a lower bracket. */
+    lower: step("floridaLowerBracket", "floridaLowerBracketMore"),
+    /** $10,000 more past the federal limit on the deduction. */
+    overLimit: step("floridaAtLimit", "floridaOverLimit"),
   },
   giftAid: {
     gift: UK_FAQ_CASES.higherRate.gift_aid,

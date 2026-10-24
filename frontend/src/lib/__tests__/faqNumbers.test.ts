@@ -22,7 +22,7 @@ import {
   type UKFaqCase,
   type USFaqCase,
 } from "../faqCases";
-import { FAQ_FIGURES } from "../faqFigures";
+import { FAQ_FIGURES, FAQ_RULES } from "../faqFigures";
 import numbers from "../faqNumbers.json";
 import { toCalculateRequest } from "../household";
 import { isShareable } from "../urlState";
@@ -103,6 +103,30 @@ describe("FAQ numbers", () => {
     // 37% of the 35/37 of each extra dollar the 2/37 limit leaves.
     const perDollar = texas.extraSavings / (texas.largerGift - texas.gift);
     expect(perDollar).toBeCloseTo(0.37 * (35 / 37), 3);
+  });
+
+  it("bear out the Florida answer", () => {
+    const { florida } = FAQ_FIGURES;
+    const steps = [florida.upper, florida.lower, florida.overLimit];
+    // Each step adds the same amount, so their savings compare directly.
+    for (const step of steps) {
+      expect(step.largerGift - step.gift).toBe(10_000);
+    }
+    // "32 cents for each extra dollar", then "24 cents a dollar" once the
+    // gifts reach a lower bracket (tests/test_faq_numbers.py checks the
+    // brackets in the model).
+    expect(florida.upper.extraSavings).toBeGreaterThan(
+      florida.lower.extraSavings,
+    );
+    expect(florida.lower.extraSavings).toBeGreaterThan(0);
+    expect(florida.upper.gift).toBeLessThan(florida.lower.gift);
+    // "Giving $160,000 instead of $150,000, which is 60% of their income,
+    // saves nothing more."
+    expect(florida.overLimit.gift).toBeCloseTo(
+      FAQ_RULES.us.cash_gift_limit_share_of_agi * florida.wages,
+      6,
+    );
+    expect(florida.overLimit.extraSavings).toBe(0);
   });
 
   it("bear out the Gift Aid answer", () => {
