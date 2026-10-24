@@ -1,0 +1,15 @@
+{
+  "us": {
+    "year": 2026,
+    "non_itemizer_cap": { "single": 1000, "joint": 2000 },
+    "itemizer_floor_share_of_agi": 0.005,
+    "top_bracket_rate": 0.37,
+    "top_bracket_limit": { "numerator": 2, "denominator": 37 }
+  },
+  "uk": {
+    "year": 2026,
+    "basic_rate": 0.2,
+    "scottish_intermediate_rate": 0.21,
+    "personal_allowance_taper_start": 100000
+  }
+}

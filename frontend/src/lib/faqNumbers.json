@@ -1,0 +1,508 @@
+{
+  "api": "https://policyengine--givecalc-fastapi-app.modal.run",
+  "generated": "2026-10-22",
+  "models": {
+    "policyengine-us": "2.49.2",
+    "policyengine-uk": "2.134.6"
+  },
+  "us": {
+    "california": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 75000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "CA"
+              }
+            }
+          }
+        },
+        "donation_amount": 1000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 1000,
+        "baseline_net_tax": 17090.97265625,
+        "net_tax_at_donation": 16870.97265625,
+        "tax_savings": 220,
+        "baseline_net_income": 57909.02734375,
+        "net_income_after_donation": 57129.02734375,
+        "bunching": null
+      }
+    },
+    "californiaLarger": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 75000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "CA"
+              }
+            }
+          }
+        },
+        "donation_amount": 5000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 5000,
+        "baseline_net_tax": 17090.97265625,
+        "net_tax_at_donation": 16870.97265625,
+        "tax_savings": 220,
+        "baseline_net_income": 57909.02734375,
+        "net_income_after_donation": 53129.02734375,
+        "bunching": null
+      }
+    },
+    "californiaStateItemizer": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 75000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "CA"
+              }
+            }
+          }
+        },
+        "donation_amount": 8000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 8000,
+        "baseline_net_tax": 17090.97265625,
+        "net_tax_at_donation": 16697.796875,
+        "tax_savings": 393.17578125,
+        "baseline_net_income": 57909.02734375,
+        "net_income_after_donation": 50302.203125,
+        "bunching": null
+      }
+    },
+    "california2025": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2025": 30
+              },
+              "is_tax_unit_dependent": {
+                "2025": false
+              },
+              "employment_income": {
+                "2025": 75000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2025": "CA"
+              }
+            }
+          }
+        },
+        "donation_amount": 1000,
+        "year": 2025
+      },
+      "response": {
+        "year": 2025,
+        "donation_amount": 1000,
+        "baseline_net_tax": 17443.0703125,
+        "net_tax_at_donation": 17443.0703125,
+        "tax_savings": 0,
+        "baseline_net_income": 57556.9296875,
+        "net_income_after_donation": 56556.9296875,
+        "bunching": null
+      }
+    },
+    "newYork": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 150000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "NY"
+              }
+            }
+          }
+        },
+        "donation_amount": 15000,
+        "year": 2026,
+        "bunching": true
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 15000,
+        "baseline_net_tax": 44942.109375,
+        "net_tax_at_donation": 43353.20703125,
+        "tax_savings": 1588.90234375,
+        "baseline_net_income": 105057.890625,
+        "net_income_after_donation": 91646.796875,
+        "bunching": {
+          "next_year": 2027,
+          "next_year_baseline_net_tax": 44472.95703125,
+          "next_year_net_tax_at_donation": 43028.8203125,
+          "next_year_tax_savings": 1444.13671875,
+          "bunched_donation_amount": 30000,
+          "bunched_net_tax": 39089.45703125,
+          "bunched_tax_savings": 5852.65234375,
+          "every_year_tax_savings": 3033.0390625,
+          "bunching_gain": 2819.61328125
+        }
+      }
+    },
+    "texas": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 1000000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "TX"
+              }
+            }
+          }
+        },
+        "donation_amount": 100000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 100000,
+        "baseline_net_tax": 353139.25,
+        "net_tax_at_donation": 325161.15625,
+        "tax_savings": 27978.09375,
+        "baseline_net_income": 646860.75,
+        "net_income_after_donation": 574838.875,
+        "bunching": null
+      }
+    },
+    "texasMore": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 1000000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "TX"
+              }
+            }
+          }
+        },
+        "donation_amount": 110000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 110000,
+        "baseline_net_tax": 353139.25,
+        "net_tax_at_donation": 321661.1875,
+        "tax_savings": 31478.0625,
+        "baseline_net_income": 646860.75,
+        "net_income_after_donation": 568338.8125,
+        "bunching": null
+      }
+    }
+  },
+  "uk": {
+    "higherRate": {
+      "request": {
+        "income": {
+          "employment_income": 70000,
+          "self_employment_income": 0
+        },
+        "region": "LONDON",
+        "gift_aid": 1000,
+        "is_married": false,
+        "num_children": 0,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "gift_aid": 1000,
+        "baseline_net_tax": 19022.646484375,
+        "net_tax_at_donation": 18772.646484375,
+        "tax_savings": 250,
+        "baseline_net_income": 50977.3515625,
+        "net_income_after_donation": 50227.3515625
+      }
+    },
+    "basicRate": {
+      "request": {
+        "income": {
+          "employment_income": 35000,
+          "self_employment_income": 0
+        },
+        "region": "LONDON",
+        "gift_aid": 1000,
+        "is_married": false,
+        "num_children": 0,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "gift_aid": 1000,
+        "baseline_net_tax": 6460.44775390625,
+        "net_tax_at_donation": 6460.44775390625,
+        "tax_savings": 0,
+        "baseline_net_income": 28539.552734375,
+        "net_income_after_donation": 27539.552734375
+      }
+    }
+  }
+}

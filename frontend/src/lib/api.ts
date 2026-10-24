@@ -140,7 +140,7 @@ export async function getUKRegions(): Promise<UKRegionsResponse> {
 
 // Map simplified region values to API-compatible regions. For tax purposes,
 // only Scotland differs: all other regions use the same rates.
-function ukApiRequest(request: UKCalculateRequest): UKCalculateRequest {
+export function ukApiRequest(request: UKCalculateRequest): UKCalculateRequest {
   return {
     ...request,
     region: request.region === "SCOTLAND" ? "SCOTLAND" : "LONDON",

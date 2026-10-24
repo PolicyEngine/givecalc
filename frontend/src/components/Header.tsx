@@ -17,7 +17,7 @@ export default function Header() {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex items-center gap-4">
             {/* Logo with refined typography */}
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -43,10 +43,18 @@ export default function Header() {
             </a>
           </div>
 
-          {/* Tagline with subtle animation */}
-          <p className="text-sm text-white/70 hidden sm:block font-medium">
-            Calculate how charitable giving affects your taxes
-          </p>
+          <div className="flex items-center gap-6">
+            {/* Tagline with subtle animation */}
+            <p className="text-sm text-white/70 hidden md:block font-medium">
+              Calculate how charitable giving affects your taxes
+            </p>
+            <a
+              href="#questions"
+              className="text-sm font-medium text-white/90 hover:text-white underline-offset-4 hover:underline"
+            >
+              Questions
+            </a>
+          </div>
         </div>
       </div>
 
