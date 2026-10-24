@@ -69,9 +69,15 @@ describe("FAQ numbers", () => {
     // "In 2025, the $1,000 gift saved nothing."
     expect(california.earlierYearSavings).toBe(0);
     // "a larger gift can still lower your state tax": California's own
-    // itemized deduction, while the federal saving stays at the cap.
-    expect(numbers.us.californiaStateItemizer.response.tax_savings).toBeGreaterThan(
-      california.largerGiftSavings,
+    // itemized deduction, while the federal saving stays at the cap. The
+    // extra saving fits within California's top rate (13.3%) on the extra
+    // $3,000, so it can be state tax alone.
+    const stateItemizer = numbers.us.californiaStateItemizer;
+    const stateExtra =
+      stateItemizer.response.tax_savings - california.largerGiftSavings;
+    expect(stateExtra).toBeGreaterThan(0);
+    expect(stateExtra).toBeLessThan(
+      0.133 * (stateItemizer.response.donation_amount - california.largerGift),
     );
     expect(california.earlierYear).toBe(california.year - 1);
   });
