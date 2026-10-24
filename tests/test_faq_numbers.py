@@ -11,6 +11,10 @@ Invariants:
   ones installed here.
 - Each rule the FAQ states equals its PolicyEngine parameter in the year
   the FAQ names.
+- The Florida example's reasons hold in the model: no state or local income
+  tax, adjusted gross income equal to wages, each $10,000 step saving at the
+  rate of the bracket its taxable income stays in, and a deduction that stops
+  at the cash-gift limit.
 
 When a model update moves a number, rerun ``bun run faq-numbers`` from
 ``frontend/`` (against a local API, ``GIVECALC_API_URL=http://localhost:8000``,
@@ -25,8 +29,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app
+from api.main import app, us_situation
+from api.schemas import SavingsRequest
 from api.simulations import clear_caches
+from givecalc.core.simulation import create_donation_simulation
 
 ROOT = Path(__file__).parent.parent
 LIB = ROOT / "frontend" / "src" / "lib"
@@ -90,6 +96,9 @@ def test_us_rules_match_policyengine_us():
     )
     assert charity.floor.applies
     assert charity.floor.amount == rules["itemizer_floor_share_of_agi"]
+    # GiveCalc's gifts are cash to public charities, which the 60% limit
+    # covers (26 U.S.C. 170(b)(1)(G)).
+    assert charity.ceiling.all == rules["cash_gift_limit_share_of_agi"]
     # The year before, neither rule applied.
     before = system.parameters(f"{rules['year'] - 1}-01-01").gov.irs
     assert not before.deductions.itemized.charity.floor.applies
@@ -127,3 +136,96 @@ def test_uk_rules_match_policyengine_uk():
         assert p.allowances.personal_allowance.maximum_ANI == (
             rules["personal_allowance_taper_start"]
         )
+
+
+FLORIDA_VARIABLES = (
+    "adjusted_gross_income",
+    "taxable_income",
+    "state_income_tax",
+    "local_income_tax",
+    "tax_unit_itemizes",
+    "charitable_deduction",
+)
+
+
+def florida_point(name: str) -> dict:
+    """The tax unit's variables for an FAQ case at its gift, simulated the
+    way the API simulates it."""
+    request = SavingsRequest(**NUMBERS["us"][name]["request"])
+    simulation = create_donation_simulation(
+        us_situation(request), request.donation_amount
+    )
+    return {
+        variable: float(simulation.calculate(variable, request.year)[0])
+        for variable in FLORIDA_VARIABLES
+    }
+
+
+def single_bracket_rate(taxable_income: float, year: int) -> float:
+    """The federal rate on a single filer's last dollar of taxable income."""
+    from policyengine_us.system import system
+
+    bracket = system.parameters(f"{year}-01-01").gov.irs.income.bracket
+    above = sum(
+        taxable_income >= bracket.thresholds[str(i)].SINGLE
+        for i in range(1, 7)
+    )
+    return bracket.rates[str(1 + above)]
+
+
+def extra_savings(smaller: str, larger: str) -> float:
+    us = NUMBERS["us"]
+    return (
+        us[larger]["response"]["tax_savings"]
+        - us[smaller]["response"]["tax_savings"]
+    )
+
+
+def test_florida_answer_holds_in_the_model():
+    """The Florida answer's reasons: Florida has no state income tax; each
+    extra dollar saves at a bracket's rate, then at a lower bracket's; and
+    past $150,000, 60% of their income, a larger gift saves nothing more."""
+    names = [name for name in NUMBERS["us"] if name.startswith("florida")]
+    assert len(names) == 6
+    points = {name: florida_point(name) for name in names}
+    year = NUMBERS["us"]["florida"]["request"]["year"]
+    wages = NUMBERS["us"]["florida"]["request"]["household"]["people"][
+        "adult-1"
+    ]["employment_income"][str(year)]
+    for name, point in points.items():
+        assert point["state_income_tax"] == 0, name
+        assert point["local_income_tax"] == 0, name
+        assert point["adjusted_gross_income"] == wages, name
+        # Each gift is past the standard deduction, so it saves through
+        # the itemized deduction.
+        assert point["tax_unit_itemizes"], name
+
+    rates = []
+    for smaller, larger in (
+        ("florida", "floridaMore"),
+        ("floridaLowerBracket", "floridaLowerBracketMore"),
+    ):
+        rate = single_bracket_rate(points[smaller]["taxable_income"], year)
+        assert single_bracket_rate(points[larger]["taxable_income"], year) == (
+            rate
+        )
+        gifts = (
+            NUMBERS["us"][larger]["request"]["donation_amount"]
+            - NUMBERS["us"][smaller]["request"]["donation_amount"]
+        )
+        assert extra_savings(smaller, larger) == pytest.approx(
+            rate * gifts, abs=0.01
+        )
+        rates.append(rate)
+    assert rates[1] < rates[0]
+
+    limit = RULES["us"]["cash_gift_limit_share_of_agi"]
+    floor = RULES["us"]["itemizer_floor_share_of_agi"]
+    at_limit = NUMBERS["us"]["floridaAtLimit"]["request"]["donation_amount"]
+    assert at_limit == limit * wages
+    capped = (limit - floor) * wages
+    for name in ("floridaAtLimit", "floridaOverLimit"):
+        assert points[name]["charitable_deduction"] == pytest.approx(
+            capped, abs=0.01
+        )
+    assert extra_savings("floridaAtLimit", "floridaOverLimit") == 0

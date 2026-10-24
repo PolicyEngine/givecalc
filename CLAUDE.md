@@ -68,7 +68,8 @@ givecalc/                       # Repository root
 │   │   │   ├── InputForm.tsx  # US form on policyengine-household-wizard (gift, household, income, home, review)
 │   │   │   ├── household/     # One component per InputForm step
 │   │   │   ├── UKInputForm.tsx # UK input form (Gift Aid, region, income)
-│   │   │   ├── Results.tsx    # Metric cards, charts, methodology explainer
+│   │   │   ├── Results.tsx    # Cost headline, metric cards, charts, breakdown
+│   │   │   ├── faq/           # Questions below the results; figures from faqNumbers.json
 │   │   │   ├── TaxChart.tsx   # Net taxes vs donation (Recharts LineChart)
 │   │   │   ├── MarginalChart.tsx # Marginal savings rate (Recharts ComposedChart)
 │   │   │   └── TaxInfo.tsx    # Federal/state tax program information
@@ -127,7 +128,7 @@ givecalc/                       # Repository root
 2. **User enters donation info** (InputForm wizard step 1)
 3. **User enters household details** (InputForm wizard step 2)
 4. **Click "Calculate tax impact"** triggers API call via React Query mutation
-5. **Results render**: Metric cards + TaxChart + MarginalChart + methodology explainer
+5. **Results render**: Metric cards + TaxChart + MarginalChart, with the Questions (FAQ) below
 6. **Caching**: Client-side cache keyed on form state prevents redundant API calls
 
 ### Backend architecture

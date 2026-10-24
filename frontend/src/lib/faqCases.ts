@@ -51,6 +51,17 @@ export const US_FAQ_CASES = {
   /** A top-bracket itemizer, and the same donor giving $10,000 more. */
   texas: single("TX", 1_000_000, 100_000, 2026),
   texasMore: single("TX", 1_000_000, 110_000, 2026),
+  /**
+   * An itemizer with no state income tax, giving $10,000 more at three
+   * sizes: in one bracket, in a lower one, and past the federal limit of
+   * 60% of adjusted gross income.
+   */
+  florida: single("FL", 250_000, 30_000, 2026),
+  floridaMore: single("FL", 250_000, 40_000, 2026),
+  floridaLowerBracket: single("FL", 250_000, 60_000, 2026),
+  floridaLowerBracketMore: single("FL", 250_000, 70_000, 2026),
+  floridaAtLimit: single("FL", 250_000, 150_000, 2026),
+  floridaOverLimit: single("FL", 250_000, 160_000, 2026),
 } satisfies Record<string, FormState>;
 
 export type USFaqCase = keyof typeof US_FAQ_CASES;
