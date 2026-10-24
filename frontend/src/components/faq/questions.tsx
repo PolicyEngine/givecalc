@@ -133,9 +133,9 @@ export const FAQ_ITEMS: FaqItem[] = [
           A larger gift can also save less on each extra dollar. Once your
           gifts bring your taxable income down into a lower tax bracket, each
           further dollar saves federal tax at that lower rate. Federal law
-          also limits the deduction for cash gifts to {cashLimit} of your
-          adjusted gross income, so gifts beyond that save no more federal
-          tax. Your results show what your next dollar would save as
+          also limits the deduction for cash gifts to {cashLimit}{" "}
+          of your adjusted gross income, so gifts beyond that save no more
+          federal tax. Your results show what your next dollar would save as
           &ldquo;Saved on the next $1&rdquo;.
           {/* The limit: 26 U.S.C. 170(b)(1)(G)(i); the carryforward under
               "What does GiveCalc leave out?": 170(b)(1)(G)(ii). */}
