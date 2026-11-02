@@ -3,6 +3,7 @@
     "year": 2026,
     "non_itemizer_cap": { "single": 1000, "joint": 2000 },
     "itemizer_floor_share_of_agi": 0.005,
+    "cash_gift_limit_share_of_agi": 0.6,
     "top_bracket_rate": 0.37,
     "top_bracket_limit": { "numerator": 2, "denominator": 37 }
   },
