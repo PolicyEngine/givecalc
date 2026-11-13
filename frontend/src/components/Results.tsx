@@ -59,15 +59,17 @@ export function costHeadline(
       ? `Giving ${pledgePercent}% of your income (${fmt(gift)})`
       : `Your ${fmt(gift)} gift`;
   const share = gift > 0 ? result.tax_savings / gift : 0;
+  const change = (value: number) =>
+    value > 0 && value < 1 ? `less than ${fmt(1)}` : fmt(value);
   return {
     headline: cost < 0
-      ? `${subject} leaves you ${fmt(-cost)} better off in ${year}.`
+      ? `${subject} leaves you ${change(-cost)} better off in ${year}.`
       : `${subject} costs you ${fmt(cost)} in ${year}.`,
     detail:
       result.tax_savings > 0
         ? `Lower taxes cover ${fmt(result.tax_savings)}, or ${formatPercent(share, 0)} of the gift.`
         : result.tax_savings < 0
-          ? `Your taxes increase by ${fmt(-result.tax_savings)} at this gift size.`
+          ? `Your taxes increase by ${change(-result.tax_savings)} at this gift size.`
           : "Your taxes don't change at this gift size.",
   };
 }
