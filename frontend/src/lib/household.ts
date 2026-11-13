@@ -176,6 +176,9 @@ function message(draft: USHouseholdDraft, issue: ValidationIssue): string {
       return "Mortgage interest cannot be negative.";
     case "person.realEstateTaxes.negative":
       return "Property tax cannot be negative.";
+    case "childcareExpenses.negative":
+    case "childcareExpenses.invalid":
+      return "Childcare costs must be a finite amount of $0 or more.";
     default:
       return issue.message;
   }
@@ -185,13 +188,17 @@ function message(draft: USHouseholdDraft, issue: ValidationIssue): string {
 export function stepForIssue(issue: ValidationIssue): StepId {
   const { path } = issue;
   if (path === "year") return "gift";
-  if (/^people\[\d+\]\.(mortgageInterest|realEstateTaxes)$/.test(path)) {
+  if (path === "childcareExpenses" || isHomeCostPath(path)) {
     return "home";
   }
   if (/^people\[\d+\]\.age$/.test(path) || !path.includes(".")) {
     return "household";
   }
   return "income";
+}
+
+function isHomeCostPath(path: string): boolean {
+  return /^people\[\d+\]\.(mortgageInterest|realEstateTaxes)$/.test(path);
 }
 
 /**
@@ -233,7 +240,7 @@ export function issuesByStep(form: FormState): Record<StepId, StepIssues> {
     const step = stepForIssue(issue);
     // "No" to home costs keeps the amounts, but they are not sent, so
     // they are not checked either.
-    if (step === "home" && form.hasHomeCosts === false) continue;
+    if (isHomeCostPath(issue.path) && form.hasHomeCosts === false) continue;
     const bucket = result[step];
     (WARNING_CODES.has(issue.code) ? bucket.warnings : bucket.errors).push({
       path: issue.path,

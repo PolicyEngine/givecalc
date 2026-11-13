@@ -32,6 +32,33 @@ import {
 } from "../types";
 
 describe("applySearchParams", () => {
+  it.each([
+    ["IA", 114_150, 10],
+    ["KS", 30_000, 100],
+  ])("shares childcare in the %s counterexample", (state, income, amount) => {
+    const form = applySearchParams(blankForm(2026), `?amount=${amount}&income=${income}&state=${state}&age=40&child_ages=8&year=2026&childcare=3000`);
+    expect(form.household.childcareExpenses).toBe(3_000);
+    expect(form.hasHomeCosts).toBe(false);
+    expect(toCalculateRequest(form).household.spm_units?.spm_unit).toHaveProperty(
+      "spm_unit_pre_subsidy_childcare_expenses", { "2026": 3_000 },
+    );
+    expect(isReadyToCalculate(form)).toBe(true);
+    expect(isShareable(form)).toBe(true);
+    expect(new URLSearchParams(toSearchParams(form)).get("childcare")).toBe("3000");
+  });
+
+  it.each(["", "-1", "NaN", "Infinity", "100000001"])("ignores invalid childcare '%s'", (value) => {
+    const form = applySearchParams(blankForm(2026), `?state=IA&childcare=${value}`);
+    expect(form.household.childcareExpenses).toBeUndefined();
+  });
+
+  it("preserves an explicit zero childcare amount", () => {
+    const form = applySearchParams(blankForm(2026), "?amount=10&income=114150&state=IA&childcare=0");
+    expect(form.household.childcareExpenses).toBe(0);
+    expect(new URLSearchParams(toSearchParams(form)).get("childcare")).toBe("0");
+    expect(isShareable(form)).toBe(true);
+  });
+
   it("fills and calculates a pledge link from before the wizard", () => {
     const form = applySearchParams(
       DEFAULT_FORM_STATE,
@@ -156,6 +183,7 @@ const linkForm: fc.Arbitrary<FormState> = fc
     year: fc.constantFrom(...TAX_YEAR_OPTIONS),
     mortgage: fc.integer({ min: 0, max: 100_000 }),
     propertyTax: fc.integer({ min: 0, max: 100_000 }),
+    childcare: fc.option(fc.integer({ min: 0, max: 10_000_000 }).map((cents) => cents / 100), { nil: undefined }),
   })
   .map((r) => {
     let draft: USHouseholdDraft = {
@@ -169,6 +197,7 @@ const linkForm: fc.Arbitrary<FormState> = fc
             ? "KINGS_COUNTY_NY"
             : null,
       maritalStatus: r.married ? "married" : "single",
+      childcareExpenses: r.childcare,
     };
     draft = addPerson(draft, "adult", {
       age: r.ages[0],

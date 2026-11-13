@@ -127,6 +127,12 @@ export function reviewItems(
               : "",
       missing: form.hasHomeCosts === null,
     },
+    {
+      id: "childcare",
+      step: "home",
+      label: "Childcare costs",
+      value: draft.childcareExpenses ? formatCurrency(draft.childcareExpenses) : "None",
+    },
   ];
   return items.map(({ step, ...item }) => ({ ...item, onEdit: () => onEdit(step) }));
 }

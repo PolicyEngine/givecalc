@@ -5,11 +5,11 @@
     "": {
       "name": "frontend",
       "dependencies": {
-        "policyengine-household-wizard": "./vendor/policyengine-household-wizard-0.2.0-givecalc.ac003fe.tgz",
         "@policyengine/ui-kit": "^0.12.0",
         "@tanstack/react-query": "^5.90.11",
         "axios": "^1.13.2",
         "next": "^16.2.6",
+        "policyengine-household-wizard": "./vendor/policyengine-household-wizard-0.3.0-givecalc.childcare.0678121.tgz",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "recharts": "^2.15.3",
@@ -1102,7 +1102,7 @@
 
     "picomatch": ["picomatch@4.0.4", "", {}, "sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A=="],
 
-    "policyengine-household-wizard": ["policyengine-household-wizard@./vendor/policyengine-household-wizard-0.2.0-givecalc.ac003fe.tgz", { "peerDependencies": { "react": ">=19", "react-dom": ">=19" } }, "sha512-oqDirP5m4KshtS3rRVScxafKLzDOxQ201jiEY7IGnYrZKdggbHThB2eSL7uLqok94Sliug6fp3kwIqB3QsrF+Q=="],
+    "policyengine-household-wizard": ["policyengine-household-wizard@./vendor/policyengine-household-wizard-0.3.0-givecalc.childcare.0678121.tgz", { "peerDependencies": { "react": ">=19", "react-dom": ">=19" } }, "sha512-Az1zbtOZFbAj4YDi5YzUj1CSwd+qoFCalkHlCTP11X21IPcRgsdKXZgR+6Mx6nbhIpLK3DYorZ7FzHV9w4a4Eg=="],
 
     "possible-typed-array-names": ["possible-typed-array-names@1.1.0", "", {}, "sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg=="],
 

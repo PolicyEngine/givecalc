@@ -51,6 +51,31 @@ def fresh(path, body):
 
 
 @pytest.mark.parametrize(
+    "name,savings,after_gift_change",
+    [
+        (
+            "Iowa parent with childcare crossing the state credit cutoff",
+            182.58,
+            172.59,
+        ),
+        (
+            "Kansas parent whose gift reduces the childcare credit",
+            -5.00,
+            -105.00,
+        ),
+    ],
+)
+def test_childcare_credit_interactions(name, savings, after_gift_change):
+    """Wizard-built childcare reaches the real model (US 2.49.2)."""
+    body = next(f["request"] for f in FIXTURES if f["name"] == name)
+    result = fresh("/api/savings", body)
+    assert result["tax_savings"] == pytest.approx(savings, abs=0.02)
+    assert (
+        result["net_income_after_donation"] - result["baseline_net_income"]
+    ) == pytest.approx(after_gift_change, abs=0.02)
+
+
+@pytest.mark.parametrize(
     "fixture", FIXTURES, ids=[fixture["name"] for fixture in FIXTURES]
 )
 def test_wizard_savings_matches_calculate_exactly(fixture):
