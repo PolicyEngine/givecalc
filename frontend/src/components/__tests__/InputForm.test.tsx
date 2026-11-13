@@ -187,7 +187,7 @@ describe("InputForm", () => {
     );
     type("Occupation you received tips in", "0");
     next();
-    expect(screen.getByRole("heading", { name: "Your home" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Your expenses" })).toBeInTheDocument();
   });
 
   it("reveals home costs only with Yes, and keeps them through a No", () => {
@@ -217,6 +217,31 @@ describe("InputForm", () => {
     );
     choose("Yes");
     expect(screen.getByLabelText("Mortgage interest paid in 2026")).toHaveValue(18000);
+  });
+
+  it("enters childcare without home costs, reviews it and keeps it in the calculation", () => {
+    const onChange = vi.fn();
+    const form = applySearchParams(blankForm(2026), "?amount=10&income=114150&state=IA&age=40&child_ages=8");
+    render(<Harness initial={form} prefilled onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: /Edit Childcare costs/ }));
+    expect(screen.getByRole("heading", { name: "Your expenses" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "No" })).toHaveAttribute("aria-checked", "true");
+    type("Childcare costs in 2026", "3000");
+    next();
+    expect(screen.getByText("$3,000")).toBeInTheDocument();
+    const entered = onChange.mock.calls.at(-1)?.[0] as FormState;
+    expect(toCalculateRequest(entered).household.spm_units?.spm_unit).toHaveProperty(
+      "spm_unit_pre_subsidy_childcare_expenses", { "2026": 3_000 },
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Edit Childcare costs/ }));
+    type("Childcare costs in 2026", "-1");
+    next();
+    expect(screen.getByLabelText("Childcare costs in 2026")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent("Childcare costs must be a finite amount of $0 or more.");
+    type("Childcare costs in 2026", "");
+    next();
+    expect(screen.getByRole("heading", { name: "Review and calculate" })).toBeInTheDocument();
+    expect((onChange.mock.calls.at(-1)?.[0] as FormState).household.childcareExpenses).toBeUndefined();
   });
 
   it("brings back the spouse's answers after Married, Single, Married", () => {
@@ -317,7 +342,7 @@ describe("InputForm", () => {
     expect(screen.getByRole("alert")).not.toHaveTextContent(/Self-employment/);
     type("Taxable interest", "500");
     next();
-    expect(screen.getByRole("heading", { name: "Your home" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Your expenses" })).toBeInTheDocument();
   });
 
   it("opens the extra incomes when one of them has a problem", () => {

@@ -23,6 +23,29 @@ function response(gift: number, savings: number): CalculateResponse {
 }
 
 describe("costHeadline", () => {
+  it("states the Iowa gain when savings exceed the gift", () => {
+    expect(costHeadline(response(10, 182.580078125), "USD", 2026)).toEqual({
+      headline: "Your $10 gift leaves you $173 better off in 2026.",
+      detail: "Lower taxes cover $183, or 1826% of the gift.",
+    });
+  });
+
+  it("states the Kansas tax increase", () => {
+    expect(costHeadline(response(100, -5), "USD", 2026)).toEqual({
+      headline: "Your $100 gift costs you $105 in 2026.",
+      detail: "Your taxes increase by $5 at this gift size.",
+    });
+  });
+
+  it("keeps small nonzero changes visible", () => {
+    expect(costHeadline(response(1, -0.05), "USD", 2026).detail).toBe(
+      "Your taxes increase by less than $1 at this gift size.",
+    );
+    expect(costHeadline(response(10, 10.05), "USD", 2026).headline).toBe(
+      "Your $10 gift leaves you less than $1 better off in 2026.",
+    );
+  });
+
   it("states the cost of giving a share of income", () => {
     const { headline, detail } = costHeadline(
       response(15_000, 1_589),

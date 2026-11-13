@@ -46,7 +46,7 @@ const QUESTIONS: Record<StepId, string> = {
   gift: "Your gift",
   household: "Your household",
   income: "Your income",
-  home: "Your home",
+  home: "Your expenses",
   review: "Review and calculate",
 };
 

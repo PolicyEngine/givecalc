@@ -202,4 +202,18 @@ export const FIXTURE_FORMS: FixtureForm[] = [
       15_000,
     ),
   },
+  {
+    name: "Iowa parent with childcare crossing the state credit cutoff",
+    form: amount({
+      ...household("IA", [{ age: 40, employmentIncome: 114_150 }], [8]),
+      childcareExpenses: 3_000,
+    }, 10),
+  },
+  {
+    name: "Kansas parent whose gift reduces the childcare credit",
+    form: amount({
+      ...household("KS", [{ age: 40, employmentIncome: 30_000 }], [8]),
+      childcareExpenses: 3_000,
+    }, 100),
+  },
 ];

@@ -62,12 +62,14 @@ const draftArb: fc.Arbitrary<USHouseholdDraft> = fc
     childAges: fc.array(fc.integer({ min: 0, max: 17 }), { maxLength: 3 }),
     // A spouse added after the children comes after them in the draft.
     spouseLast: fc.boolean(),
+    childcareExpenses: fc.option(money, { nil: undefined }),
   })
-  .map(({ state, year, adults, childAges, spouseLast }) => {
+  .map(({ state, year, adults, childAges, spouseLast, childcareExpenses }) => {
     let draft: USHouseholdDraft = {
       ...createBlankDraft(year),
       state,
       maritalStatus: adults.length > 1 ? "married" : "single",
+      childcareExpenses,
     };
     const [head, spouse] = adults;
     draft = addPerson(draft, "adult", head);
@@ -227,8 +229,8 @@ describe("toCalculateRequest", () => {
           household: { ...form.household, year },
         });
         expect(request.year).toBe(year);
-        const { people, households } = request.household;
-        for (const record of [...Object.values(people), ...Object.values(households ?? {})]) {
+        const { people, households, spm_units } = request.household;
+        for (const record of [...Object.values(people), ...Object.values(households ?? {}), ...Object.values(spm_units ?? {})]) {
           for (const [key, value] of Object.entries(record)) {
             if (key !== "members") expect(Object.keys(value as object)).toEqual([String(year)]);
           }
@@ -251,9 +253,34 @@ describe("toCalculateRequest", () => {
       marital_unit: { members: ["adult-1", "adult-2"] },
     });
   });
+
+  it("keeps childcare in one SPM input when home costs are declined", () => {
+    const form = single({ employmentIncome: 114_150, mortgageInterest: 20_000 });
+    form.household = addPerson({ ...form.household, childcareExpenses: 3_000 }, "dependent", { age: 8 });
+    const household = toCalculateRequest(form).household;
+    expect(Object.values(household.spm_units ?? {})).toEqual([
+      {
+        members: ["adult-1", "dependent-1"],
+        spm_unit_pre_subsidy_childcare_expenses: { "2026": 3_000 },
+      },
+    ]);
+    for (const person of Object.values(household.people)) {
+      expect(person).not.toHaveProperty("spm_unit_pre_subsidy_childcare_expenses");
+      expect(person).not.toHaveProperty("home_mortgage_interest");
+    }
+  });
 });
 
 describe("issuesByStep", () => {
+  it.each([-1, Number.NaN, Infinity])("checks invalid childcare %s even without home costs", (childcareExpenses) => {
+    const form = single({ employmentIncome: 50_000 });
+    form.household = { ...form.household, childcareExpenses };
+    expect(issuesByStep(form).home.errors).toEqual([
+      { path: "childcareExpenses", message: "Childcare costs must be a finite amount of $0 or more." },
+    ]);
+    expect(firstIncompleteStep(form)).toBe("home");
+  });
+
   it("routes each wizard issue to the step that asks it", () => {
     const form = single({ employmentIncome: 50_000, tippedOccupationCode: 999 });
     form.household = { ...form.household, state: null };

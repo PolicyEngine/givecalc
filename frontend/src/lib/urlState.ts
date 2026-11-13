@@ -27,6 +27,7 @@
  *   `children=2` is shorthand for that many dependents aged
  *   `LINK_CHILD_AGE` (a fraction is rounded down, as GiveCalc always has).
  * - `mortgage` and `property_tax`: mortgage interest and property tax paid.
+ * - `childcare`: annual household childcare costs before government subsidies.
  *
  * The defaults are the ages GiveCalc's API assumed for every household
  * before the form asked, so links made then keep their results, with two
@@ -100,6 +101,9 @@ function linkHousehold(params: URLSearchParams, state: string, year: number) {
 
   const married = flag(params.get("married")) === true;
   draft.maritalStatus = married ? "married" : "single";
+
+  const childcare = nonNegative(params.get("childcare"));
+  if (childcare !== null) draft.childcareExpenses = childcare;
 
   const mortgage = nonNegative(params.get("mortgage"));
   const propertyTax = nonNegative(params.get("property_tax"));
@@ -188,6 +192,9 @@ export function toSearchParams(form: FormState): string {
     params.set("child_ages", dependents.map((d) => String(d.age)).join(","));
   }
   params.set("year", String(draft.year));
+  if (draft.childcareExpenses !== undefined) {
+    params.set("childcare", String(draft.childcareExpenses));
+  }
   if (form.hasHomeCosts !== false) {
     if (head?.mortgageInterest) {
       params.set("mortgage", String(head.mortgageInterest));
@@ -220,7 +227,7 @@ function canonical(form: FormState): string {
 
 /**
  * True when the form's link reproduces its calculation. The link carries
- * only wages, ages, location, children and home costs, so a household with
+ * wages, ages, location, children, home and childcare costs. A household with
  * other income is not shared.
  */
 export function isShareable(form: FormState): boolean {

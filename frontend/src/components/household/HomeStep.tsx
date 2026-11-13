@@ -64,6 +64,17 @@ export default function HomeStep({ form, setForm, errors }: Props) {
           />
         </>
       )}
+      <NumberField
+        id="childcare-expenses"
+        label={`Childcare costs in ${form.household.year}`}
+        value={form.household.childcareExpenses}
+        onChange={(childcareExpenses) =>
+          setForm({ ...form, household: { ...form.household, childcareExpenses } })
+        }
+        error={errors.childcareExpenses}
+        money
+        hint="Annual childcare costs that let you work or look for work, before government childcare subsidies. Leave blank if none."
+      />
     </div>
   );
 }

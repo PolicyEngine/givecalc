@@ -700,5 +700,143 @@
       "donation_amount": 15000,
       "year": 2026
     }
+  },
+  {
+    "name": "Iowa parent with childcare crossing the state credit cutoff",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 40
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 114150
+            }
+          },
+          "dependent-1": {
+            "age": {
+              "2026": 8
+            },
+            "is_tax_unit_dependent": {
+              "2026": true
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ]
+          }
+        },
+        "marital_units": {},
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ],
+            "spm_unit_pre_subsidy_childcare_expenses": {
+              "2026": 3000
+            }
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ],
+            "state_name": {
+              "2026": "IA"
+            }
+          }
+        }
+      },
+      "donation_amount": 10,
+      "year": 2026
+    }
+  },
+  {
+    "name": "Kansas parent whose gift reduces the childcare credit",
+    "request": {
+      "household": {
+        "people": {
+          "adult-1": {
+            "age": {
+              "2026": 40
+            },
+            "is_tax_unit_dependent": {
+              "2026": false
+            },
+            "employment_income": {
+              "2026": 30000
+            }
+          },
+          "dependent-1": {
+            "age": {
+              "2026": 8
+            },
+            "is_tax_unit_dependent": {
+              "2026": true
+            }
+          }
+        },
+        "families": {
+          "family": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ]
+          }
+        },
+        "marital_units": {},
+        "tax_units": {
+          "tax_unit": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ]
+          }
+        },
+        "spm_units": {
+          "spm_unit": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ],
+            "spm_unit_pre_subsidy_childcare_expenses": {
+              "2026": 3000
+            }
+          }
+        },
+        "households": {
+          "household": {
+            "members": [
+              "adult-1",
+              "dependent-1"
+            ],
+            "state_name": {
+              "2026": "KS"
+            }
+          }
+        }
+      },
+      "donation_amount": 100,
+      "year": 2026
+    }
   }
 ]

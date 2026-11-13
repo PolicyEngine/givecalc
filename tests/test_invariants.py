@@ -1,11 +1,12 @@
-"""Properties /api/calculate must satisfy for every household.
+"""Properties of the sampled childless legacy-request households.
 
 Invariants:
 - Accounting: net income after the gift equals baseline net income minus
   the gift plus the tax savings.
-- Bounds: tax savings are between zero and the gift. GiveCalc models no
-  credit that refunds more than a dollar per dollar given.
-- Monotonicity: net tax never rises as the gift grows along the curve.
+- Bounds and monotonicity are checked only for this restricted sample of
+  states and childless households. They are not universal: childcare-credit
+  interactions can make savings negative or larger than the gift (see
+  test_savings_wizard.py).
 - Differential: the vectorized curve and a single-point simulation agree at
   every grid point, since both evaluate the same household.
 """
