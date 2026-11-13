@@ -321,14 +321,23 @@ def test_keys_tell_donors_apart():
     from api.main import us_situation
     from api.schemas import CalculateRequest
 
+    checked = 0
     for fixture in wizard_fixtures():
         request = fixture["request"]
         people = request["household"]["people"]
-        if len(people) < 2:
+        year = str(request["year"])
+        donors = [
+            person_id
+            for person_id, person in people.items()
+            if person.get("age", {}).get(year, 0) >= 18
+            and not person.get("is_tax_unit_dependent", {}).get(year, False)
+        ]
+        if len(donors) < 2:
             continue
         swapped = copy.deepcopy(request)
         order = list(people)
-        order[0], order[1] = order[1], order[0]
+        first, second = (order.index(person_id) for person_id in donors[:2])
+        order[first], order[second] = order[second], order[first]
         swapped["household"]["people"] = {p: people[p] for p in order}
         original = us_situation(CalculateRequest(**request))
         reordered = us_situation(CalculateRequest(**swapped))
@@ -339,6 +348,8 @@ def test_keys_tell_donors_apart():
         longer = us_situation(CalculateRequest(**request), top=123_456)
         assert point_key("us", original, 0) == point_key("us", longer, 0)
         assert situation_key(original) != situation_key(longer)
+        checked += 1
+    assert checked > 0, "fixtures must include two eligible adult donors"
 
 
 def test_curve_cache_returns_independent_copies():

@@ -8,9 +8,10 @@ rewrites the file.
 Invariants:
 - Differential: a household both request shapes describe gets the same
   taxes from each, at the endpoint, with and without the gift.
-- Accounting and bounds, for every fixture: net income after the gift is
-  baseline net income minus the gift plus the savings, and the savings are
-  between zero and the gift.
+- Accounting, for every fixture: savings equal the change in net tax, and
+  net income after the gift is baseline net income minus the gift plus the
+  savings. Savings can exceed the gift or be negative: childcare-credit
+  interactions in test_savings_wizard.py check both intended exceptions.
 - The axis varies the donor: the curve at the gift equals the point run.
 - Person order does not change the result, given the donor.
 - Target donation: the reduction reported is the one the gift reaches, and
@@ -149,13 +150,16 @@ def test_both_request_shapes_agree_at_the_endpoint(fixture):
 @pytest.mark.parametrize(
     "fixture", FIXTURES, ids=[fixture["name"] for fixture in FIXTURES]
 )
-def test_endpoint_accounting_and_bounds(fixture):
+def test_endpoint_accounting(fixture):
     response = client.post("/api/calculate", json=fixture["request"])
     assert response.status_code == 200, response.text
     body = response.json()
     gift = fixture["request"]["donation_amount"]
     assert body["donation_amount"] == gift
-    assert -TOLERANCE <= body["tax_savings"] <= gift + TOLERANCE
+    assert body["tax_savings"] == pytest.approx(
+        body["baseline_net_tax"] - body["net_tax_at_donation"],
+        abs=TOLERANCE,
+    )
     assert body["net_income_after_donation"] == pytest.approx(
         body["baseline_net_income"] - gift + body["tax_savings"],
         abs=TOLERANCE,
