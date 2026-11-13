@@ -84,6 +84,31 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "Your gift" })).toBeInTheDocument();
   });
 
+  it.each([
+    ["IA", 114_150, 10, 182.580078125, "Your $10 gift leaves you $173 better off in 2026."],
+    ["KS", 30_000, 100, -5, "Your $100 gift costs you $105 in 2026."],
+  ])("automatically calculates the %s childcare link and preserves it", async (state, income, gift, taxSavings, expectedHeadline) => {
+    const savings = vi.mocked(api.calculateSavings);
+    const calculate = vi.mocked(api.calculateDonation);
+    // Test transport responses; real model results for the same requests
+    // are independently checked in tests/test_savings_wizard.py.
+    savings.mockImplementation(async (request) => headline(request, taxSavings));
+    calculate.mockImplementation(async (request) => response(request, taxSavings));
+    window.history.replaceState(null, "", `/?amount=${gift}&income=${income}&state=${state}&age=40&child_ages=8&year=2026&childcare=3000`);
+    const App = (await import("../../App")).default;
+    render(<App />);
+
+    expect(await screen.findByText(expectedHeadline)).toBeInTheDocument();
+    const [request] = savings.mock.calls[0];
+    expect(request.household.spm_units?.spm_unit).toHaveProperty(
+      "spm_unit_pre_subsidy_childcare_expenses", { "2026": 3_000 },
+    );
+    expect(calculate).toHaveBeenCalledWith(request);
+    expect(new URLSearchParams(window.location.search).get("childcare")).toBe("3000");
+    expect(screen.getByRole("heading", { name: "Review and calculate" })).toBeInTheDocument();
+    expect(screen.getByText("$3,000")).toBeInTheDocument();
+  });
+
   it("calculates a shared link, runs the bunching check, and keeps the link", async () => {
     const savings = vi.mocked(api.calculateSavings);
     const calculate = vi.mocked(api.calculateDonation);
