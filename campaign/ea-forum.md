@@ -1,3 +1,5 @@
+> We corrected PolicyEngine's charity status, the donation line and the 2026 limit on itemized deductions here on 2026-11-17. We correct the live EA Forum and LessWrong posts made from this draft separately.
+
 # EA Forum Post: GiveCalc
 
 **Title:** GiveCalc: Open-source tool to calculate the true cost of charitable giving
@@ -42,7 +44,7 @@ The key output is your **marginal giving discount**: how much tax you save on yo
 
 **Multiple income sources:** Beyond wages, include self-employment, capital gains, dividends, and interest—each taxed differently.
 
-**Multi-year planning (US):** Model 2024, 2025, or 2026. This matters given 2026 changes from HR1: a 0.5% AGI floor on charitable deductions, restored non-itemizer deduction ($1k/$2k), and 80% itemized deduction limitation for high earners.
+**Multi-year planning (US):** Model 2024, 2025, or 2026. This matters given 2026 changes from HR1: a 0.5% AGI floor on charitable deductions, restored non-itemizer deduction ($1k/$2k), and a 35% cap on the tax value of itemized deductions for filers in the 37% bracket.
 
 **Validated accuracy:** Calculations validated against [NBER's TAXSIM](https://policyengine.org/us/research/policyengine-nber-mou-taxsim) and the [Atlanta Fed's Policy Rules Database](https://www.atlantafed.org/economic-mobility-and-resilience/advancing-careers-for-low-income-families/policy-rules-database).
 
@@ -60,11 +62,11 @@ GiveCalc's marginal rate charts show exactly where your savings rate changes, he
 
 ## About PolicyEngine
 
-GiveCalc is built by [PolicyEngine](https://policyengine.org), a 501(c)(3) nonprofit (US) and registered charity (UK, no. 1210532). We build open-source tax-benefit simulation models used by congressional offices, think tanks, and researchers for evidence-based policy analysis.
+GiveCalc is built by [PolicyEngine](https://policyengine.org), a fiscally sponsored project of the PSL Foundation (a 501(c)(3) public charity) in the US and a registered charity in England and Wales (no. 1210532). We build open-source tax-benefit simulation models used by congressional offices, think tanks, and researchers for evidence-based policy analysis.
 
 We're also investigating how public policy mediates the relationship between AI-driven economic transformation and distributional outcomes. Our [research framework](https://policyengine.github.io/ai-growth-research/) examines how policy interventions shape who benefits and who loses from AI-driven economic shifts.
 
-Donations are tax-deductible (US) and Gift Aid eligible (UK).
+Donations are tax-deductible in the US.
 
 ## Try it
 
