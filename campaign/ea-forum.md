@@ -44,7 +44,7 @@ The key output is your **marginal giving discount**: how much tax you save on yo
 
 **Multiple income sources:** Beyond wages, include self-employment, capital gains, dividends, and interest—each taxed differently.
 
-**Multi-year planning (US):** Model 2024, 2025, or 2026. This matters given 2026 changes from HR1: a 0.5% AGI floor on charitable deductions, restored non-itemizer deduction ($1k/$2k), and a 35% cap on the tax value of itemized deductions for filers in the 37% bracket.
+**Multi-year planning (US):** Model 2024, 2025, or 2026. This matters given 2026 changes from HR1: a 0.5% AGI floor on charitable deductions, restored non-itemizer deduction ($1k/$2k), and a new federal limit on itemized deductions for high earners.
 
 **Validated accuracy:** Calculations validated against [NBER's TAXSIM](https://policyengine.org/us/research/policyengine-nber-mou-taxsim) and the [Atlanta Fed's Policy Rules Database](https://www.atlantafed.org/economic-mobility-and-resilience/advancing-careers-for-low-income-families/policy-rules-database).
 
@@ -66,7 +66,7 @@ GiveCalc is built by [PolicyEngine](https://policyengine.org), a fiscally sponso
 
 We're also investigating how public policy mediates the relationship between AI-driven economic transformation and distributional outcomes. Our [research framework](https://policyengine.github.io/ai-growth-research/) examines how policy interventions shape who benefits and who loses from AI-driven economic shifts.
 
-Donations are tax-deductible in the US.
+US taxpayers can deduct donations to the extent the law allows.
 
 ## Try it
 

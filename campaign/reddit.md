@@ -28,7 +28,7 @@ I work at PolicyEngine, a nonprofit that builds tax/benefit models. We made **Gi
 
 **Link:** [givecalc.org](https://givecalc.org)
 
-Free, no signup, no ads. Just launched v2 with support for multiple income types and multi-year planning (including the new 2026 OBBBA provisions: 0.5% AGI floor on charitable deductions, restored non-itemizer deduction, and a 35% cap on the tax value of itemized deductions for filers in the 37% bracket).
+Free, no signup, no ads. Just launched v2 with support for multiple income types and multi-year planning (including the new 2026 OBBBA provisions: 0.5% AGI floor on charitable deductions, restored non-itemizer deduction, and a new federal limit on itemized deductions for high earners).
 
 Happy to answer questions about the methodology.
 
@@ -64,7 +64,7 @@ The "marginal giving discount" chart shows how your tax savings rate changes as 
 
 **Link:** [givecalc.org](https://givecalc.org)
 
-Just shipped v2 with multiple income sources and 2024/2025/2026 year selection. The 2026 calculations include the new OBBBA provisions (0.5% AGI floor, restored non-itemizer deduction, 35% cap on the tax value of itemized deductions in the 37% bracket). Feedback welcome—especially edge cases where the model might be wrong.
+Just shipped v2 with multiple income sources and 2024/2025/2026 year selection. The 2026 calculations include the new OBBBA provisions (0.5% AGI floor, restored non-itemizer deduction, new federal limit on itemized deductions for high earners). Feedback welcome—especially edge cases where the model might be wrong.
 
 ---
 
