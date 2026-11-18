@@ -104,3 +104,25 @@ describe("Results - headline before the curve", () => {
     expect(screen.getByText("£1,500")).toBeInTheDocument();
   });
 });
+
+describe("Results - explanations", () => {
+  it.each(["USD", "GBP"] as const)(
+    "leaves how GiveCalc calculates to the questions below (%s)",
+    (currency) => {
+      render(
+        <Results
+          headline={HEADLINE}
+          result={FULL}
+          year={2026}
+          currency={currency}
+        />,
+      );
+      // The FAQ answers these with figures from API runs; Results keeps
+      // no second, untested copy.
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/How GiveCalc calculates|How Gift Aid works/),
+      ).not.toBeInTheDocument();
+    },
+  );
+});

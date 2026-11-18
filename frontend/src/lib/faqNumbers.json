@@ -1,6 +1,6 @@
 {
   "api": "https://policyengine--givecalc-fastapi-app.modal.run",
-  "generated": "2026-10-22",
+  "generated": "2026-10-24",
   "models": {
     "policyengine-us": "2.49.2",
     "policyengine-uk": "2.134.6"
@@ -455,6 +455,384 @@
         "tax_savings": 31478.0625,
         "baseline_net_income": 646860.75,
         "net_income_after_donation": 568338.8125,
+        "bunching": null
+      }
+    },
+    "florida": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 250000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "FL"
+              }
+            }
+          }
+        },
+        "donation_amount": 30000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 30000,
+        "baseline_net_tax": 66818,
+        "net_tax_at_donation": 62268.125,
+        "tax_savings": 4549.875,
+        "baseline_net_income": 183182,
+        "net_income_after_donation": 157731.875,
+        "bunching": null
+      }
+    },
+    "floridaMore": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 250000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "FL"
+              }
+            }
+          }
+        },
+        "donation_amount": 40000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 40000,
+        "baseline_net_tax": 66818,
+        "net_tax_at_donation": 59068.125,
+        "tax_savings": 7749.875,
+        "baseline_net_income": 183182,
+        "net_income_after_donation": 150931.875,
+        "bunching": null
+      }
+    },
+    "floridaLowerBracket": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 250000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "FL"
+              }
+            }
+          }
+        },
+        "donation_amount": 60000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 60000,
+        "baseline_net_tax": 66818,
+        "net_tax_at_donation": 53635.59375,
+        "tax_savings": 13182.40625,
+        "baseline_net_income": 183182,
+        "net_income_after_donation": 136364.40625,
+        "bunching": null
+      }
+    },
+    "floridaLowerBracketMore": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 250000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "FL"
+              }
+            }
+          }
+        },
+        "donation_amount": 70000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 70000,
+        "baseline_net_tax": 66818,
+        "net_tax_at_donation": 51235.59375,
+        "tax_savings": 15582.40625,
+        "baseline_net_income": 183182,
+        "net_income_after_donation": 128764.40625,
+        "bunching": null
+      }
+    },
+    "floridaAtLimit": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 250000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "FL"
+              }
+            }
+          }
+        },
+        "donation_amount": 150000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 150000,
+        "baseline_net_tax": 66818,
+        "net_tax_at_donation": 32155.9609375,
+        "tax_savings": 34662.0390625,
+        "baseline_net_income": 183182,
+        "net_income_after_donation": 67844.03125,
+        "bunching": null
+      }
+    },
+    "floridaOverLimit": {
+      "request": {
+        "household": {
+          "people": {
+            "adult-1": {
+              "age": {
+                "2026": 30
+              },
+              "is_tax_unit_dependent": {
+                "2026": false
+              },
+              "employment_income": {
+                "2026": 250000
+              }
+            }
+          },
+          "families": {
+            "family": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "marital_units": {},
+          "tax_units": {
+            "tax_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "spm_units": {
+            "spm_unit": {
+              "members": [
+                "adult-1"
+              ]
+            }
+          },
+          "households": {
+            "household": {
+              "members": [
+                "adult-1"
+              ],
+              "state_name": {
+                "2026": "FL"
+              }
+            }
+          }
+        },
+        "donation_amount": 160000,
+        "year": 2026
+      },
+      "response": {
+        "year": 2026,
+        "donation_amount": 160000,
+        "baseline_net_tax": 66818,
+        "net_tax_at_donation": 32155.9609375,
+        "tax_savings": 34662.0390625,
+        "baseline_net_income": 183182,
+        "net_income_after_donation": 57844.03125,
         "bunching": null
       }
     }

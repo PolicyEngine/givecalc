@@ -58,14 +58,23 @@ function Link({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
-const { california, newYork, texas, giftAid } = FAQ_FIGURES;
+const { california, newYork, texas, florida, giftAid } = FAQ_FIGURES;
 const { us, uk } = FAQ_RULES;
 const singleCap = usd(us.non_itemizer_cap.single);
 const jointCap = usd(us.non_itemizer_cap.joint);
+const cashLimit = formatPercent(us.cash_gift_limit_share_of_agi, 0);
 const limit = `${us.top_bracket_limit.numerator}/${us.top_bracket_limit.denominator}`;
-const centsPerExtraDollar = Math.round(
-  (100 * texas.extraSavings) / (texas.largerGift - texas.gift),
-);
+
+/** Cents of tax saved per dollar of the larger gift's extra. */
+function centsPerDollar(step: {
+  gift: number;
+  largerGift: number;
+  extraSavings: number;
+}): number {
+  return Math.round((100 * step.extraSavings) / (step.largerGift - step.gift));
+}
+
+const centsPerExtraDollar = centsPerDollar(texas);
 const toCharity = giftAid.gift / (1 - uk.basic_rate);
 const pencePerPound = Math.round((100 * uk.basic_rate) / (1 - uk.basic_rate));
 const ukTaxYear = `${giftAid.year}/${giftAid.year + 1 - 2000}`;
@@ -119,6 +128,40 @@ export const FAQ_ITEMS: FaqItem[] = [
             : usd(california.earlierYearSavings)}
           .
           <ExampleLink form={US_FAQ_CASES.california} place="California" />
+        </p>
+        <p>
+          A larger gift can also save less on each extra dollar. Once your
+          gifts bring your taxable income down into a lower tax bracket, each
+          further dollar saves federal tax at that lower rate. Federal law
+          also limits the deduction for cash gifts to {cashLimit}{" "}
+          of your adjusted gross income, so gifts beyond that save no more
+          federal tax. Your results show what your next dollar would save as
+          &ldquo;Saved on the next $1&rdquo;.
+          {/* The limit: 26 U.S.C. 170(b)(1)(G)(i); the carryforward under
+              "What does GiveCalc leave out?": 170(b)(1)(G)(ii). */}
+        </p>
+        <p>
+          Take a single 30-year-old earning {usd(florida.wages)} in Florida,
+          which has no state income tax. Giving{" "}
+          {usd(florida.upper.largerGift)} instead of{" "}
+          {usd(florida.upper.gift)} in {florida.year} saves{" "}
+          {usd(florida.upper.extraSavings)} more:{" "}
+          {centsPerDollar(florida.upper)} cents for each extra dollar. Giving{" "}
+          {usd(florida.lower.largerGift)} instead of{" "}
+          {usd(florida.lower.gift)} saves {usd(florida.lower.extraSavings)}{" "}
+          more, {centsPerDollar(florida.lower)} cents a dollar, because the
+          larger gifts bring their taxable income into a lower bracket.
+          Giving {usd(florida.overLimit.largerGift)} instead of{" "}
+          {usd(florida.overLimit.gift)}, which is {cashLimit} of their
+          income, saves{" "}
+          {Math.round(florida.overLimit.extraSavings) === 0
+            ? "nothing more"
+            : `${usd(florida.overLimit.extraSavings)} more`}
+          .
+          <ExampleLink
+            form={US_FAQ_CASES.floridaLowerBracketMore}
+            place="Florida"
+          />
         </p>
         <p>
           In the UK, a basic-rate taxpayer saves nothing: Gift Aid&apos;s
@@ -254,6 +297,11 @@ export const FAQ_ITEMS: FaqItem[] = [
           <li>
             state tax credits that depend on which charity you give to, such
             as Arizona&apos;s and Mississippi&apos;s;
+          </li>
+          <li>
+            deducting, in later years, US cash gifts above {cashLimit} of
+            adjusted gross income, which federal law lets you carry forward
+            for up to five years;
           </li>
           <li>countries other than the US and the UK.</li>
         </ul>

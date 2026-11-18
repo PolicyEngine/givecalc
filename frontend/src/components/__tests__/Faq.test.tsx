@@ -83,6 +83,22 @@ describe("FAQ", () => {
     expect(numbers.us.california2025.response.tax_savings).toBe(0);
   });
 
+  it("quotes the API's Florida figures", () => {
+    renderFaq();
+    expect(answer("Why did my gift save little or nothing?")).toContain(
+      "Take a single 30-year-old earning $250,000 in Florida, which has no state income tax. Giving $40,000 instead of $30,000 in 2026 saves $3,200 more: 32 cents for each extra dollar. Giving $70,000 instead of $60,000 saves $2,400 more, 24 cents a dollar, because the larger gifts bring their taxable income into a lower bracket. Giving $160,000 instead of $150,000, which is 60% of their income, saves nothing more.",
+    );
+    const savings = (name: keyof typeof numbers.us) =>
+      numbers.us[name].response.tax_savings;
+    expect(Math.round(savings("floridaMore") - savings("florida"))).toBe(3_200);
+    expect(
+      Math.round(
+        savings("floridaLowerBracketMore") - savings("floridaLowerBracket"),
+      ),
+    ).toBe(2_400);
+    expect(savings("floridaOverLimit")).toBe(savings("floridaAtLimit"));
+  });
+
   it("quotes the API's top-bracket figures", () => {
     renderFaq();
     const text = answer("What changed for 2026?");
@@ -140,6 +156,12 @@ describe("FAQ", () => {
     expect(answer("How does Gift Aid work in GiveCalc?")).toContain(
       "where relief starts at the 21% intermediate rate",
     );
+    expect(answer("Why did my gift save little or nothing?")).toContain(
+      "limits the deduction for cash gifts to 60% of your adjusted gross income",
+    );
+    expect(answer("What does GiveCalc leave out?")).toContain(
+      "deducting, in later years, US cash gifts above 60% of adjusted gross income, which federal law lets you carry forward for up to five years;",
+    );
   });
 
   it("links each US example to the calculator while it offers the year", () => {
@@ -149,6 +171,9 @@ describe("FAQ", () => {
     for (const link of links) {
       expect(link.getAttribute("href")).toMatch(/^\?amount=\d+&income=\d+&state=[A-Z]{2}&/);
     }
+    // Each example link says where it goes.
+    const names = links.map((link) => link.textContent);
+    expect(new Set(names).size).toBe(names.length);
     const form = US_FAQ_CASES.california;
     expect(exampleHref(form, [2025, 2026, 2027])).toBe(`?${toSearchParams(form)}`);
     expect(exampleHref(form, [2027, 2028, 2029])).toBeNull();
