@@ -32,6 +32,26 @@ import modal
 
 SIMULATION_WORKERS = 4
 
+# Modal's debian_slim Python 3.13 base carries pip 26.0.1, whose bundled
+# certifi trusts the compromised eMudhra root "emSign ECC Root CA - G3"
+# (https://emudhra.we-have-a-problem.com); `--cert` and PIP_CERT only add to
+# that trust. The image replaces it with pip 26.2.2, whose bundled certifi
+# drops that root, before any other package install. The wheel's sha256, as
+# PyPI publishes it, makes that one download authentic whatever answers the
+# request.
+PIP_BOOTSTRAP_VERSION = "26.2.2"
+PIP_BOOTSTRAP_WHEEL_SHA256 = (
+    "fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"
+)
+PIP_BOOTSTRAP_COMMAND = (
+    "printf '%s\\n' "
+    f"'pip=={PIP_BOOTSTRAP_VERSION} --hash=sha256:{PIP_BOOTSTRAP_WHEEL_SHA256}'"
+    " > /tmp/pip-bootstrap.txt"
+    " && python -m pip install --require-hashes --no-deps"
+    " -r /tmp/pip-bootstrap.txt"
+    " && rm /tmp/pip-bootstrap.txt"
+)
+
 
 def warm_containers(day: date) -> int:
     """Containers to keep warm on ``day``: 1 from 15 Nov to 31 Dec, else 0."""
@@ -42,6 +62,13 @@ def warm_containers(day: date) -> int:
 # Create Modal image with all dependencies
 image = (
     modal.Image.debian_slim(python_version="3.13")
+    # Upgrade the base's Debian ca-certificates (20230311, which trusts the
+    # emSign root). pip 26.2.2 and Python's default SSL context verify HTTPS
+    # against it, so it precedes the pip steps.
+    .apt_install("ca-certificates")
+    # Replace the base's pip before it downloads anything (see
+    # PIP_BOOTSTRAP_VERSION).
+    .run_commands(PIP_BOOTSTRAP_COMMAND)
     .pip_install(
         "policyengine-us==2.49.2",
         "policyengine-uk==2.134.6",
@@ -53,6 +80,10 @@ image = (
         "pydantic==2.12.5",
         "pyyaml==6.0.3",
     )
+    # certifi (read by requests and httpx) at uv.lock's version; releases
+    # from 2026.10.19 on drop the emSign root. It is a separate step after
+    # the dependency install, so a certifi bump does not rebuild that step.
+    .pip_install("certifi==2026.10.23")
     .env(
         {
             "NUMEXPR_MAX_THREADS": "4",
