@@ -1,3 +1,5 @@
+> We corrected PolicyEngine's charity status here on 2026-11-17. The email we sent on December 2, 2025 used different text (PolicyEngine/newsletters, editions/2025-12-02-us-giving-tuesday.html), and we can't edit a sent email.
+
 # Newsletter: GiveCalc v2 Launch
 
 **Subject line options:**
@@ -46,7 +48,7 @@ But that calculation misses several important factors.
 
 ### Support PolicyEngine
 
-GiveCalc is free because PolicyEngine is a 501(c)(3) nonprofit. Our open-source tax and benefit models power research for congressional offices, think tanks, and journalists.
+GiveCalc is free because PolicyEngine is a nonprofit, a fiscally sponsored project of the PSL Foundation (a 501(c)(3) public charity). Our open-source tax and benefit models power research for congressional offices, think tanks, and journalists.
 
 **[Make a tax-deductible donation to PolicyEngine](https://policyengine.org/us/donate)** — and use GiveCalc to see exactly how much it costs you.
 
